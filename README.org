@@ -1,0 +1,166 @@
+#+title: EmacsSimple - A Lightweight Emacs Configuration
+#+author: James Dyer
+#+date: 2024
+#+description: A stripped-down Emacs configuration that avoids external packages, perfect for lightweight usage in VMs or basic tasks.
+#+startup: content
+#+todo: TODO | DONE
+#+property: header-args :tangle no
+
+* Introduction
+
+*EmacsSimple* is a stripped-down version of my primary Emacs configuration. It is designed to leverage only the default built-in features of Emacs (v27.1 and later). This makes it ideal for virtual machines or scenarios where you need a fast, package-free Emacs setup that works out of the box on most systems.
+
+Supported Platforms:
+- SUSE Linux Enterprise (SLES15)
+- Windows 10
+
+The configuration focuses on ease of use by providing custom keybindings, basic completion support, and visual enhancements without relying on any external packages.
+
+* Key Features
+
+1. *Built-in Completion*
+   - Default abbrev and file/directory name-based completion via `hippie-expand`.
+   - Vanilla modeline configuration using `fido-mode` for fast, minibuffer-based completion.
+
+2. *Keybindings for Navigation and Files*
+   - Custom global keybindings for fast access to commonly used directories, files, and dired buffers.
+   - Shortcut keys for managing tabs and buffers efficiently.
+
+3. *Window and Visual Controls*
+   - Keybindings to toggle window visual elements such as fonts, line numbers, themes, and more.
+   - Control window management, centered buffer, and theme switching.
+
+4. *Custom Functions*
+   - Handcrafted Lisp functions to improve usability, such as `toggle-centered-buffer`, `my/dired-duplicate-file`, and `my/copy-buffer-to-kill-ring`. These empower work with files, navigating text, or even adjusting Emacs’s appearance.
+
+5. *No External Packages Required*
+   - This configuration sticks entirely to built-in Emacs features, allowing it to be portable, fast, and functional in any setup without the need for installing external ELPA or MELPA packages.
+
+* Setup
+
+1. Clone the repository:
+
+   #+begin_src bash
+   git clone https://github.com/yourusername/EmacsSimple ~/.emacs.d.simple
+   #+end_src
+
+
+2. Symlink the init file:
+
+   #+begin_src bash
+   ln -s ~/.emacs.d.simple/init.el ~/.emacs.d/init.el
+   #+end_src
+
+3. Launch Emacs:
+
+   #+begin_src bash
+   emacs
+   #+end_src
+
+4. Optional: Customize the paths and keybindings in the **init.el** file to better fit your workflow.
+
+* Configuration Highlights
+
+Here’s a breakdown of some key sections in the configuration:
+
+** Completion
+
+Provides simple abbreviation-based completion and an enhanced `hippie-expand` using the following functions:
+
+#+begin_src elisp
+;; -> completion
+(setq-default abbrev-mode t)
+(setq hippie-expand-try-functions-list
+      '(try-complete-file-name-partially
+        try-complete-file-name
+        try-expand-all-abbrevs
+        try-expand-dabbrev
+        try-expand-dabbrev-all-buffers
+        try-expand-dabbrev-from-kill
+        try-complete-lisp-symbol-partially
+        try-complete-lisp-symbol))
+#+end_src
+
+** Basic Mode-line with Fido Mode
+
+Improves the vanilla Emacs minibuffer with more responsive completion using `icomplete`:
+
+#+begin_src elisp
+;; -> modeline-completion-vanilla
+(fido-mode 1)
+(define-key icomplete-minibuffer-map (kbd "M-RET") 'my-icomplete-exit-minibuffer-with-input)
+(setq icomplete-compute-delay 0)
+(setq icomplete-show-matches-on-no-input t)
+#+end_src
+
+** Keybindings for Custom Navigation
+
+Define global keybindings for quick access to files and tabs:
+
+#+begin_src elisp
+;; -> keys-navigation
+(global-set-key (kbd "M-o") my-jump-keymap)
+(define-key my-jump-keymap (kbd "e") (lambda () (interactive) (find-file "~/.emacs.d/init.el")))
+
+;; Open scratch buffer
+(define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
+#+end_src
+
+**Basic Backups and Data Safety**
+Control backup behavior for Emacs:
+
+#+begin_src elisp
+;; -> backups
+(setq make-backup-files 1)
+(setq backup-directory-alist '(("." . "~/backup"))
+      backup-by-copying t
+      version-control t
+      delete-old-versions t
+      kept-new-versions 10
+      kept-old-versions 5)
+#+end_src
+
+**Window Management and Visual Tuning**
+Toggle windows, fonts, and visual features:
+
+#+begin_src elisp
+;; -> keys-visual
+(global-set-key (kbd "C-q") my-win-keymap)
+(define-key my-win-keymap (kbd "n") #'display-line-numbers-mode)
+(define-key my-win-keymap (kbd "f") #'font-lock-mode)
+(define-key my-win-keymap (kbd "m") #'my/load-theme)
+#+end_src
+
+* Default Modes and UX Settings
+
+Some key modes are enabled by default for a smoother editing experience:
+
+#+begin_src elisp
+;; -> modes
+(column-number-mode 1)
+(show-paren-mode t)
+(global-auto-revert-mode t)
+(tab-bar-history-mode 1)
+#+end_src
+
+** Additional Configurations
+
+Along with the above highlights, the configuration includes extensive keybindings, system-specific tweaks (for Windows and Linux), and a set of helper functions for day-to-day text processing, file management, and window handling.
+
+* Custom Functions
+
+#+begin_src elisp
+;; Duplicates a file in Dired mode with an incremented name
+(defun my/dired-duplicate-file (arg)
+  "Create a copy of a file in Dired with a numerical increment."
+  (interactive "p")
+  ;; Implementation...
+  )
+#+end_src
+
+For a more complete list, explore the `init.el` configuration file.
+
+* Notes
+
+- This configuration intentionally avoids external Emacs packages like `use-package` or `straight.el` to maintain simplicity and remove the requirement for package management.
+- Tested on both Linux (SLES15) and Windows environments for compatibility and portability.
