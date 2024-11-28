@@ -21,208 +21,213 @@ This is a literate configuration and therefore is self documenting!
 Ensures essential packages like `org`, `dired-x`, and `org-agenda` are loaded at startup.
 
 #+begin_src elisp
-  ;;
-  ;; -> requires
-  ;;
-  (require 'org)
-  (require 'grep)
-  (require 'bookmark)
-  (require 'dired)
+;;
+;; -> requires
+;;
+(require 'org)
+(require 'grep)
+(require 'bookmark)
+(require 'dired)
 #+end_src
 
-* completion
+* completion-core
 
 Simple abbrev completion
 
 #+begin_src elisp
-  ;;
-  ;; -> completion
-  ;;
-  (setq-default abbrev-mode t)
-  (setq hippie-expand-try-functions-list
-        '(try-complete-file-name-partially
-          try-complete-file-name
-          try-expand-all-abbrevs try-expand-dabbrev
-          try-expand-dabbrev-all-buffers try-expand-dabbrev-from-kill
-          try-complete-lisp-symbol-partially try-complete-lisp-symbol))
+;;
+;; -> completion-core
+;;
+(setq-default abbrev-mode t)
+(setq hippie-expand-try-functions-list
+      '(try-complete-file-name-partially
+        try-complete-file-name
+        try-expand-all-abbrevs try-expand-dabbrev
+        try-expand-dabbrev-all-buffers try-expand-dabbrev-from-kill
+        try-complete-lisp-symbol-partially try-complete-lisp-symbol))
 #+end_src
 
 * modeline-completion
 
 Setup for both vanilla modeline.
 
-** vanilla
-
 #+begin_src elisp
-  ;;
-  ;; -> modeline-completion-vanilla
-  ;;
-  (fido-mode 1)
-  (defun my-icomplete-exit-minibuffer-with-input ()
-    "Exit the minibuffer with the current input, without forcing completion."
-    (interactive)
-    (exit-minibuffer))
-  (define-key icomplete-minibuffer-map (kbd "M-RET") 'my-icomplete-exit-minibuffer-with-input)
-  (setq icomplete-compute-delay 0)
-  (setq icomplete-show-matches-on-no-input t)
+;;
+;; -> modeline-completion-vanilla
+;;
+(fido-mode 1)
+(defun my-icomplete-exit-minibuffer-with-input ()
+  "Exit the minibuffer with the current input, without forcing completion."
+  (interactive)
+  (exit-minibuffer))
+(define-key icomplete-minibuffer-map (kbd "M-RET") 'my-icomplete-exit-minibuffer-with-input)
+(setq icomplete-compute-delay 0)
+(setq icomplete-show-matches-on-no-input t)
 #+end_src
 
-* keys-navigation
+* keys-navigation-core
 
 Defines custom keybindings for navigating through files and Emacs features like tabs, dired, and scratch buffers.
 
 #+begin_src elisp
-  ;;
-  ;; -> keys-navigation
-  ;;
-  (defvar my-jump-keymap (make-sparse-keymap))
-  (global-set-key (kbd "M-o") my-jump-keymap)
-  (define-key my-jump-keymap (kbd "=") #'tab-bar-new-tab)
-  (define-key my-jump-keymap (kbd "e") (lambda () (interactive) (find-file "~/.emacs.d/init.el")))
-  (define-key my-jump-keymap (kbd "f") #'find-name-dired)
-  (define-key my-jump-keymap (kbd "g") (lambda () (interactive) (find-file "~/.config")))
-  (define-key my-jump-keymap (kbd "h") (lambda () (interactive) (find-file "~")))
-  (define-key my-jump-keymap (kbd "j") (lambda () (interactive) (find-file "/mnt/hgfs/SharedVM/aaa--todo.org")))
-  (define-key my-jump-keymap (kbd "k") (lambda () (interactive) (find-file "/mnt/hgfs/SharedVM/confluence--emacs-init.org")))
-  (define-key my-jump-keymap (kbd "l") #'recentf-open-files)
-  (define-key my-jump-keymap (kbd "m") #'customize-themes)
-  (define-key my-jump-keymap (kbd "n") (lambda () (interactive) (find-file "~/nas")))
-  (define-key my-jump-keymap (kbd "o") #'bookmark-jump)
-  (define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
-  (define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "/mnt/hgfs/SharedVM")))
-  (define-key my-jump-keymap (kbd "-") #'tab-close)
+;;
+;; -> keys-navigation-core
+;;
+(defvar my-jump-keymap (make-sparse-keymap))
+(global-set-key (kbd "M-o") my-jump-keymap)
+(define-key my-jump-keymap (kbd "=") #'tab-bar-new-tab)
+(define-key my-jump-keymap (kbd "b") (lambda () (interactive) (find-file "~/bin")))
+(define-key my-jump-keymap (kbd "e")
+            (lambda ()
+              (interactive)
+              (find-file (expand-file-name "init.el" user-emacs-directory))))
+(define-key my-jump-keymap (kbd "f") #'find-name-dired)
+(define-key my-jump-keymap (kbd "g") (lambda () (interactive) (find-file "~/.config")))
+(define-key my-jump-keymap (kbd "h") (lambda () (interactive) (find-file "~")))
+(define-key my-jump-keymap (kbd "j") (lambda () (interactive) (find-file "/mnt/hgfs/SharedVM/aaa--todo.org")))
+(define-key my-jump-keymap (kbd "k") (lambda () (interactive) (find-file "/mnt/hgfs/SharedVM/confluence--emacs-init.org")))
+(define-key my-jump-keymap (kbd "l") #'recentf-open-files)
+(define-key my-jump-keymap (kbd "m") #'customize-themes)
+(define-key my-jump-keymap (kbd "n") (lambda () (interactive) (find-file "~/nas")))
+(define-key my-jump-keymap (kbd "o") #'bookmark-jump)
+(define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
+(define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "/mnt/hgfs/SharedVM")))
+(define-key my-jump-keymap (kbd "-") #'tab-close)
 #+end_src
 
-* keys-visual
+* keys-visual-core
 
 Sets up keybindings for quickly toggling visual features like font, theme, line numbers, and other window displays.
 
 #+begin_src elisp
-  ;;
-  ;; -> keys-visual
-  ;;
-  (defvar my-win-keymap (make-sparse-keymap))
-  (global-set-key (kbd "C-q") my-win-keymap)
-  (define-key my-win-keymap (kbd "c") #'display-fill-column-indicator-mode)
-  (define-key my-win-keymap (kbd "d") #'window-divider-mode)
-  (define-key my-win-keymap (kbd "e") #'whitespace-mode)
-  (define-key my-win-keymap (kbd "f") #'font-lock-mode)
-  (define-key my-win-keymap (kbd "h") #'global-hl-line-mode)
-  (define-key my-win-keymap (kbd "l") #'my/sync-tab-bar-to-theme)
-  (define-key my-win-keymap (kbd "m") #'my/load-theme)
-  (define-key my-win-keymap (kbd "n") #'display-line-numbers-mode)
-  (define-key my-win-keymap (kbd "o") #'toggle-centered-buffer)
-  (define-key my-win-keymap (kbd "p") #'variable-pitch-mode)
-  (define-key my-win-keymap (kbd "q") #'toggle-menu-bar-mode-from-frame)
-  (define-key my-win-keymap (kbd "s") #'my/toggle-internal-border-width)
-  (define-key my-win-keymap (kbd "u") #'set-cursor-color)
-  (define-key my-win-keymap (kbd "v") #'visual-line-mode)
-  (define-key my-win-keymap (kbd "b") #'(lambda () (interactive)(tab-bar-mode 'toggle)))
+;;
+;; -> keys-visual-core
+;;
+(defvar my-win-keymap (make-sparse-keymap))
+(global-set-key (kbd "C-q") my-win-keymap)
+(define-key my-win-keymap (kbd "c") #'display-fill-column-indicator-mode)
+(define-key my-win-keymap (kbd "d") #'window-divider-mode)
+(define-key my-win-keymap (kbd "e") #'whitespace-mode)
+(define-key my-win-keymap (kbd "f") #'font-lock-mode)
+(define-key my-win-keymap (kbd "h") #'global-hl-line-mode)
+(define-key my-win-keymap (kbd "k") #'my/toggle-mode-line)
+(define-key my-win-keymap (kbd "l") #'my/sync-tab-bar-to-theme)
+(define-key my-win-keymap (kbd "m") #'my/load-theme)
+(define-key my-win-keymap (kbd "n") #'display-line-numbers-mode)
+(define-key my-win-keymap (kbd "o") #'toggle-centered-buffer)
+(define-key my-win-keymap (kbd "p") #'variable-pitch-mode)
+(define-key my-win-keymap (kbd "q") #'toggle-menu-bar-mode-from-frame)
+(define-key my-win-keymap (kbd "s") #'my/toggle-internal-border-width)
+(define-key my-win-keymap (kbd "u") #'set-cursor-color)
+(define-key my-win-keymap (kbd "v") #'visual-line-mode)
+(define-key my-win-keymap (kbd "b") #'(lambda () (interactive)(tab-bar-mode 'toggle)))
 #+end_src
 
-* keys-other
+* keys-other-core
 
 Configures a sparse keymap for miscellaneous actions like evaluating expressions and capturing content with Org mode.
 
 #+begin_src elisp
-  ;;
-  ;; -> keys-other
-  ;;
-  (global-set-key (kbd "M-s ,") #'my/mark-line)
-  (global-set-key (kbd "M-s g") #'rgrep)
-  (global-set-key (kbd "M-s h") #'my/mark-block)
-  (global-set-key (kbd "M-s j") #'eval-defun)
-  (global-set-key (kbd "M-s l") #'my/find-file)
-  (global-set-key (kbd "M-s v") #'eval-expression)
-  (global-set-key (kbd "M-s =") #'ediff-buffers)
-  (global-set-key (kbd "M-s w") #'(lambda ()(interactive)
-                                    (org-html-export-to-html)
-                                    (my/html-promote-headers)
-                                    (my/html-org-table-highlight)))
-  (global-set-key (kbd "M-s z") #'my/copy-buffer-to-kill-ring)
+;;
+;; -> keys-other-core
+;;
+(global-set-key (kbd "M-s ,") #'my/mark-line)
+(global-set-key (kbd "M-s g") #'rgrep)
+(global-set-key (kbd "M-s h") #'my/mark-block)
+(global-set-key (kbd "M-s j") #'eval-defun)
+(global-set-key (kbd "M-s f") #'my/find-file)
+(global-set-key (kbd "M-s l") #'eval-expression)
+(global-set-key (kbd "M-s =") #'ediff-buffers)
+(global-set-key (kbd "M-s w") #'(lambda ()(interactive)
+                                  (org-html-export-to-html)
+                                  (my/html-promote-headers)
+                                  (my/html-org-table-highlight)))
+(global-set-key (kbd "M-s e") #'(lambda ()(interactive)
+                                  (org-odt-export-to-odt)
+                                  (async-shell-command
+                                   "libreoffice --headless --convert-to docx confluence--setup-sles.odt" "*create-docs*")))
+(global-set-key (kbd "M-s z") #'my/copy-buffer-to-kill-ring)
 #+end_src
 
-* keybinding
+* keybinding-core
 
 Demonstrates a broad set of global keybindings for common actions like saving buffers, controlling text scale, and navigating large documents.
 
 #+begin_src elisp
-  ;;
-  ;; -> keybinding
-  ;;
-  (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
-  (global-set-key (kbd "C-c a") #'org-agenda)
-  (global-set-key (kbd "C-c d") #'my/dired-duplicate-file)
-  (global-set-key (kbd "C-c h") #'my/shell-create)
-  (global-set-key (kbd "C-c m") #'my/repeat-window-size)
-  (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
-  (global-set-key (kbd "C-c o s") #'outline-show-all)
-  (global-set-key (kbd "C-c u") #'my/dired-du)
-  (global-set-key (kbd "C-o") #'other-window)
-  (global-set-key (kbd "C-x ;") #'my/switch-to-thing)
-  (global-set-key (kbd "C-x C-b") 'ibuffer)
-  (global-set-key (kbd "C-x [") #'beginning-of-buffer)
-  (global-set-key (kbd "C-x ]") #'end-of-buffer)
-  (global-set-key (kbd "C-x j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
-  (global-set-key (kbd "C-x k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
-  (global-set-key (kbd "C-x l") #'scroll-lock-mode)
-  (global-set-key (kbd "C-x m") #'my/switch-to-thing)
-  (global-set-key (kbd "C-x s") #'save-buffer)
-  (global-set-key (kbd "C-x v e") 'vc-ediff)
-  (global-set-key (kbd "C-x x g") #'revert-buffer)
-  (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
-  (global-set-key (kbd "M-z") #'my/comment-or-uncomment)
-  (global-set-key (kbd "C-z") #'my/comment-or-uncomment)
-  (global-set-key (kbd "M-c") #'delete-other-windows)
-  (global-set-key (kbd "M-'") #'set-mark-command)
-  (global-set-key (kbd "M-0") 'delete-window)
-  (global-set-key (kbd "M-1") #'delete-other-windows)
-  (global-set-key (kbd "M-2") #'split-window-vertically)
-  (global-set-key (kbd "M-3") #'split-window-horizontally)
-  (global-set-key (kbd "M-1") #'delete-other-windows)
-  (global-set-key (kbd "M--") #'split-window-vertically)
-  (global-set-key (kbd "M-=") #'split-window-horizontally)
-  (global-set-key (kbd "M-9") #'hippie-expand)
-  ;;  (global-set-key (kbd "M-;") 'my/comment-or-uncomment)
-  (global-set-key (kbd "M-;") 'delete-other-windows)
-  (global-set-key (kbd "M-[") #'yank)
-  (global-set-key (kbd "M-]") #'yank-pop)
-  (global-set-key (kbd "M-e") #'dired-jump)
-  (global-set-key (kbd "M-g i") 'imenu)
-  (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
-  (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
-  (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
-  (global-set-key (kbd "M-l") #'split-window-horizontally)
-  (global-set-key (kbd "M-m") #'split-window-vertically)
-  (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
-  (global-unset-key (kbd "C-h h"))
-  (global-unset-key (kbd "C-t"))
-  (global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
-  (with-eval-after-load 'ibuffer
-    (define-key ibuffer-mode-map (kbd "C-o") nil)
-    (define-key ibuffer-mode-map (kbd "M-j") nil))
-  (with-eval-after-load 'vc-dir
-    (define-key vc-dir-mode-map (kbd "e") #'vc-ediff)
-    (define-key vc-dir-mode-map (kbd "C-o") nil)
-    (define-key vc-dir-mode-map (kbd "M-j") nil))
+;;
+;; -> keybinding-core
+;;
+(global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
+(global-set-key (kbd "C-c a") #'org-agenda)
+(global-set-key (kbd "C-c d") #'my/dired-duplicate-file)
+(global-set-key (kbd "C-c h") #'my/shell-create)
+(global-set-key (kbd "C-c n") #'my/repeat-window-size)
+(global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
+(global-set-key (kbd "C-c o s") #'outline-show-all)
+(global-set-key (kbd "C-c u") #'my/dired-du)
+(global-set-key (kbd "C-o") #'other-window)
+(global-set-key (kbd "C-x ;") #'my/switch-to-thing)
+(global-set-key (kbd "C-x C-b") 'ibuffer)
+(global-set-key (kbd "C-x [") #'beginning-of-buffer)
+(global-set-key (kbd "C-x ]") #'end-of-buffer)
+(global-set-key (kbd "C-x j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
+(global-set-key (kbd "C-x k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
+(global-set-key (kbd "C-x l") #'scroll-lock-mode)
+(global-set-key (kbd "C-x m") #'my/switch-to-thing)
+(global-set-key (kbd "C-x s") #'save-buffer)
+(global-set-key (kbd "C-x v e") 'vc-ediff)
+(global-set-key (kbd "C-x x g") #'revert-buffer)
+(global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
+(global-set-key (kbd "M-z") #'my/comment-or-uncomment)
+(global-set-key (kbd "C-z") #'my/comment-or-uncomment)
+(global-set-key (kbd "M-c") #'delete-other-windows)
+(global-set-key (kbd "M-'") #'set-mark-command)
+(global-set-key (kbd "M-0") 'delete-window)
+(global-set-key (kbd "M-1") #'delete-other-windows)
+(global-set-key (kbd "M-2") #'split-window-vertically)
+(global-set-key (kbd "M-3") #'split-window-horizontally)
+(global-set-key (kbd "M-1") #'delete-other-windows)
+(global-set-key (kbd "M-9") #'hippie-expand)
+;;  (global-set-key (kbd "M-;") 'my/comment-or-uncomment)
+(global-set-key (kbd "M-;") 'delete-other-windows)
+(global-set-key (kbd "M-[") #'yank)
+(global-set-key (kbd "M-]") #'yank-pop)
+(global-set-key (kbd "M-e") #'dired-jump)
+(global-set-key (kbd "M-g i") 'imenu)
+(global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
+(global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
+(global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
+(global-set-key (kbd "M-l") #'split-window-horizontally)
+(global-set-key (kbd "M-m") #'split-window-vertically)
+(global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
+(global-unset-key (kbd "C-h h"))
+(global-unset-key (kbd "C-t"))
+(global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
+(with-eval-after-load 'ibuffer
+  (define-key ibuffer-mode-map (kbd "C-o") nil)
+  (define-key ibuffer-mode-map (kbd "M-j") nil))
+(with-eval-after-load 'vc-dir
+  (define-key vc-dir-mode-map (kbd "e") #'vc-ediff)
+  (define-key vc-dir-mode-map (kbd "C-o") nil)
+  (define-key vc-dir-mode-map (kbd "M-j") nil))
 #+end_src
 
-* modes
+* modes-core
 
 Turns on various modes like `global-font-lock-mode` for syntax highlighting and `show-paren-mode` for matching parenthesis visualization, and configures preferences for a wide array of basic behaviours and visual indicators.
 
 #+begin_src elisp
-  ;;
-  ;; -> modes
-  ;;
-  (column-number-mode 1)
-  (desktop-save-mode -1)
-  (display-time-mode 1)
-  (global-auto-revert-mode t)
-  (savehist-mode 1)
-  (show-paren-mode t)
-  (tab-bar-history-mode 1)
-  (global-font-lock-mode t)
+;;
+;; -> modes-core
+;;
+(column-number-mode 1)
+(desktop-save-mode -1)
+(display-time-mode 1)
+(global-auto-revert-mode t)
+(savehist-mode 1)
+(show-paren-mode t)
+(tab-bar-history-mode 1)
+(global-font-lock-mode t)
 #+end_src
 
 * bell
@@ -230,11 +235,11 @@ Turns on various modes like `global-font-lock-mode` for syntax highlighting and 
 Suppresses the auditory bell function in Emacs and opts for a visible bell or completely ignores bell triggers, improving the user interface experience during invalid operations.
 
 #+begin_src elisp
-  ;;
-  ;; -> bell
-  ;;
-  (setq visible-bell t)
-  (setq ring-bell-function 'ignore)
+;;
+;; -> bell
+;;
+(setq visible-bell t)
+(setq ring-bell-function 'ignore)
 #+end_src
 
 * setqs
@@ -242,18 +247,19 @@ Suppresses the auditory bell function in Emacs and opts for a visible bell or co
 This broad category includes a wide range of `setq` configurations that modify the behaviour of Emacs's core features — from file handling to search behaviours, reinforcing the customizability of Emacs.
 
 #+begin_src elisp
-  ;;
-  ;; -> setqs
-  ;;
-  (setq completion-styles '(basic partial-completion emacs22))
-  (setq custom-safe-themes t)
-  (setq delete-selection-mode nil)
-  (setq dired-dwim-target t)
-  (setq enable-local-variables :all)
-  (setq frame-title-format "%f")
-  (setq kill-whole-line t)
-  (setq-default truncate-lines t)
-  (setq frame-inhibit-implied-resize t)
+;;
+;; -> setqs
+;;
+(setq completion-styles '(basic partial-completion emacs22))
+(setq custom-safe-themes t)
+(setq delete-selection-mode nil)
+(setq dired-dwim-target t)
+(setq enable-local-variables :all)
+(setq frame-title-format "%f")
+(setq kill-whole-line t)
+(setq-default truncate-lines t)
+(setq frame-inhibit-implied-resize t)
+(setq native-comp-async-report-warnings-errors nil)
 #+end_src
 
 * confirm
@@ -261,14 +267,14 @@ This broad category includes a wide range of `setq` configurations that modify t
 Configures aliases and settings for reducing the need for confirmations in repetitive tasks, streamlining user workflows.
 
 #+begin_src elisp
-  ;;
-  ;; -> confirm
-  ;;
-  (defalias 'yes-or-no-p 'y-or-n-p)
-  (setq confirm-kill-emacs 'y-or-n-p)
-  (setq confirm-kill-processes nil)
-  (setq confirm-nonexistent-file-or-buffer nil)
-  (set-buffer-modified-p nil)
+;;
+;; -> confirm
+;;
+(defalias 'yes-or-no-p 'y-or-n-p)
+(setq confirm-kill-emacs 'y-or-n-p)
+(setq confirm-kill-processes nil)
+(setq confirm-nonexistent-file-or-buffer nil)
+(set-buffer-modified-p nil)
 #+end_src
 
 * backups
@@ -276,16 +282,16 @@ Configures aliases and settings for reducing the need for confirmations in repet
 Adjusts Emacs's file backup settings for a better experience, specifying backup file locations and policies to prevent data loss while keeping the working directory clean.
 
 #+begin_src elisp
-  ;;
-  ;; -> backups
-  ;;
-  (setq make-backup-files 1)
-  (setq backup-directory-alist '(("." . "~/backup"))
-        backup-by-copying t    ; Don't delink hardlinks
-        version-control t      ; Use version numbers on backups
-        delete-old-versions t  ; Automatically delete excess backups
-        kept-new-versions 10   ; how many of the newest versions to keep
-        kept-old-versions 5)   ; and how many of the old
+;;
+;; -> backups
+;;
+(setq make-backup-files 1)
+(setq backup-directory-alist '(("." . "~/backup"))
+      backup-by-copying t    ; Don't delink hardlinks
+      version-control t      ; Use version numbers on backups
+      delete-old-versions t  ; Automatically delete excess backups
+      kept-new-versions 10   ; how many of the newest versions to keep
+      kept-old-versions 5)   ; and how many of the old
 #+end_src
 
 * custom-settings
@@ -293,347 +299,373 @@ Adjusts Emacs's file backup settings for a better experience, specifying backup 
 Places for `custom-set-variables` and `custom-set-faces` used by Emacs's customization system to record user preferences set through the graphical customize interface.
 
 #+begin_src elisp
-  ;;
-  ;; -> custom-settings
-  ;;
-  (custom-set-variables
-   ;; custom-set-variables was added by Custom.
-   ;; If you edit it by hand, you could mess it up, so be careful.
-   ;; Your init file should contain only one such instance.
-   ;; If there is more than one, they won't work right.
-   '(custom-enabled-themes '(wombat))
-   '(warning-suppress-log-types '((frameset)))
-   '(warning-suppress-types '((frameset))))
+;;
+;; -> custom-settings
+;;
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(org-level-1 ((t (:inherit default :weight regular :height 1.1))))
+ '(org-level-2 ((t (:inherit default :weight light :height 1.0))))
+ '(org-level-3 ((t (:inherit default :weight light :height 1.0))))
+ '(org-level-4 ((t (:inherit default :weight light :height 1.0))))
+ '(org-level-5 ((t (:inherit default :weight light :height 1.0))))
+ '(org-level-6 ((t (:inherit default :weight light :height 1.0))))
+ '(ediff-current-diff-A ((t (:extend t :background "#b5daeb" :foreground "#000000"))))
+ '(ediff-even-diff-A ((t (:background "#bafbba" :foreground "#000000" :extend t))))
+ '(ediff-fine-diff-A ((t (:background "#f4bd92" :foreground "#000000" :extend t))))
+ '(ediff-odd-diff-A ((t (:background "#b8fbb8" :foreground "#000000" :extend t))))
+ '(font-lock-warning-face ((t (:foreground "#930000" :inverse-video nil))))
+ '(org-link ((t (:underline nil))))
+ '(indent-guide-face ((t (:background "#282828" :foreground "#666666"))))
+ '(widget-button ((t (:inherit fixed-pitch :weight regular))))
+ '(window-divider ((t (:foreground "black"))))
+ '(org-tag ((t (:height 0.99))))
+ '(vertical-border ((t (:foreground "#000000")))))
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-enabled-themes '(wombat))
+ '(warning-suppress-log-types '((frameset)))
+ '(warning-suppress-types '((frameset))))
 #+end_src
 
-* defun
+* defun-core
 
 Defines a suite of custom functions to extend Emacs's functionality tailored to specific tasks or personal preferences, showcasing the extensibility of Emacs with Lisp programming.
 
 #+begin_src elisp
-  ;;
-  ;; -> defun
-  ;;
-  (defun save-macro (name)
-    "Save a macro by NAME."
-    (interactive "SName of the macro: ")
-    (kmacro-name-last-macro name)
-    (find-file user-init-file)
-    (goto-char (point-max))
-    (newline)
-    (insert-kbd-macro name)
-    (newline))
-  ;;
-  (defun my/comment-or-uncomment ()
-    "Comments or uncomments the current line or region."
-    (interactive)
-    (if (region-active-p)
-        (comment-or-uncomment-region
-         (region-beginning)(region-end))
+;;
+;; -> defun-core
+;;
+(defun save-macro (name)
+  "Save a macro by NAME."
+  (interactive "SName of the macro: ")
+  (kmacro-name-last-macro name)
+  (find-file user-init-file)
+  (goto-char (point-max))
+  (newline)
+  (insert-kbd-macro name)
+  (newline))
+;;
+(defun my/comment-or-uncomment ()
+  "Comments or uncomments the current line or region."
+  (interactive)
+  (if (region-active-p)
       (comment-or-uncomment-region
-       (line-beginning-position)(line-end-position))))
-  ;;
-  (defun my/dired-duplicate-file (arg)
-    "Duplicate a file from DIRED with an incremented number.
+       (region-beginning)(region-end))
+    (comment-or-uncomment-region
+     (line-beginning-position)(line-end-position))))
+;;
+(defun my/dired-duplicate-file (arg)
+  "Duplicate a file from DIRED with an incremented number.
                               If ARG is provided, it sets the counter."
-    (interactive "p")
-    (let* ((file (dired-get-file-for-visit))
-           (dir (file-name-directory file))
-           (name (file-name-nondirectory file))
-           (base-name (file-name-sans-extension name))
-           (extension (file-name-extension name t))
-           (counter (if arg (prefix-numeric-value arg) 1))
-           (new-file))
-      (while (and (setq new-file
-                        (format "%s%s_%03d%s" dir base-name counter extension))
-                  (file-exists-p new-file))
-        (setq counter (1+ counter)))
-      (if (file-directory-p file)
-          (copy-directory file new-file)
-        (copy-file file new-file))
-      (dired-revert)))
-  ;;
-  (defun my/mark-line ()
-    "Mark whole line."
-    (interactive)
-    (beginning-of-line)
-    (push-mark (point) nil t)
-    (end-of-line))
-  ;;
-  (defun my/mark-block ()
-    "Marking a block of text surrounded by a newline."
-    (interactive)
-    (when (not (region-active-p))
-      (backward-char))
-    (skip-chars-forward " \n\t")
-    (re-search-backward "^[ \t]*\n" nil 1)
-    (skip-chars-forward " \n\t")
-    (when (not (region-active-p))
-      (push-mark))
-    (re-search-forward "^[ \t]*\n" nil 1)
-    (skip-chars-backward " \n\t")
-    (setq mark-active t))
-  ;;
-  (defun my/repeat-history ()
-    ""
-    (interactive)
-    (let ((map (make-sparse-keymap)))
-      (define-key map (kbd "j") (lambda () (interactive)
-                                  (tab-bar-history-back)))
-      (define-key map (kbd "k") (lambda () (interactive)
-                                  (tab-bar-history-forward)))
-      (set-transient-map map t)))
-  ;;
-  (defun my/repeat-window-size ()
-    "Sset up a sparse keymap for repeating window actions."
-    (interactive)
-    (let ((map (make-sparse-keymap)))
-      (define-key map (kbd "m") (lambda () (interactive)
-                                  (window-swap-states)))
-      (define-key map (kbd "h") (lambda () (interactive)
-                                  (enlarge-window 2 t)))
-      (define-key map (kbd "l") (lambda () (interactive)
-                                  (enlarge-window -2 t)))
-      (define-key map (kbd "j") (lambda () (interactive)
-                                  (enlarge-window 1 nil)))
-      (define-key map (kbd "k") (lambda () (interactive)
-                                  (enlarge-window -1 nil)))
-      (set-transient-map map t)))
-  ;;
-  (defun my/sync-tab-bar-to-theme ()
-    "Synchronize tab-bar faces with the current theme, and set mode-line background color interactively using `read-color`."
-    (interactive)
-    ;; Use `read-color` to get the mode-line background color from the user
-    (let ((selected-color (read-color "Choose mode-line background color (default is #ff8c00): " nil t)))
-      (set-hl-line-darker-background)
-      (set-face-attribute 'mode-line nil :height 120 :underline nil :overline nil :box nil
-                          :background selected-color :foreground "#000000")
-      (set-face-attribute 'mode-line-inactive nil :height 120 :underline nil :overline nil
-                          :background "#000000" :foreground "#aaaaaa")
-      (let ((default-bg (face-background 'default))
-            (default-fg (face-foreground 'default))
-            (default-hl (face-background 'highlight))
-            (inactive-fg (face-foreground 'mode-line-inactive)))
-        (custom-set-faces
-         `(vertical-border ((t (:foreground ,(darken-color default-fg 60)))))
-         `(window-divider ((t (:foreground ,(darken-color default-fg 60)))))
-         `(fringe ((t (:foreground ,default-bg :background ,default-bg))))
-         `(tab-bar ((t (:inherit default :background ,default-bg :foreground ,default-fg))))
-         `(tab-bar-tab ((t (:inherit 'highlight :background ,selected-color :foreground "#000000"))))
-         `(tab-bar-tab-inactive ((t (:inherit default :background ,default-bg :foreground ,inactive-fg
-                                              :box (:line-width 2 :color ,default-bg :style released-button)))))))))
-  ;;
-  (defun my/dired-du ()
-    "Run 'du -hc' on the directory under the cursor in Dired."
-    (interactive)
-    (let ((current-dir (dired-get-file-for-visit)))
-      (if (file-directory-p current-dir)
-          (dired-do-async-shell-command "du -hc" nil (list current-dir))
-        (message "The current point is not a directory."))))
-  ;;
-  (defun darken-color (color percent)
-    "Return a darker shade of COLOR by reducing its brightness by PERCENT."
-    (let* ((rgb (color-values color))
-           (factor (/ (- 100 percent) 100.0))
-           (darker-rgb (mapcar (lambda (x) (max 0 (round (* x factor)))) rgb)))
-      (apply 'format "#%02x%02x%02x" (mapcar (lambda (x) (/ x 256)) darker-rgb))))
-  ;;
-  (defun set-hl-line-darker-background ()
-    "Set the hl-line background to a slightly darker shade of the default background,
+  (interactive "p")
+  (let* ((file (dired-get-file-for-visit))
+         (dir (file-name-directory file))
+         (name (file-name-nondirectory file))
+         (base-name (file-name-sans-extension name))
+         (extension (file-name-extension name t))
+         (counter (if arg (prefix-numeric-value arg) 1))
+         (new-file))
+    (while (and (setq new-file
+                      (format "%s%s_%03d%s" dir base-name counter extension))
+                (file-exists-p new-file))
+      (setq counter (1+ counter)))
+    (if (file-directory-p file)
+        (copy-directory file new-file)
+      (copy-file file new-file))
+    (dired-revert)))
+;;
+(defun my/mark-line ()
+  "Mark whole line."
+  (interactive)
+  (beginning-of-line)
+  (push-mark (point) nil t)
+  (end-of-line))
+;;
+(defun my/mark-block ()
+  "Marking a block of text surrounded by a newline."
+  (interactive)
+  (when (not (region-active-p))
+    (backward-char))
+  (skip-chars-forward " \n\t")
+  (re-search-backward "^[ \t]*\n" nil 1)
+  (skip-chars-forward " \n\t")
+  (when (not (region-active-p))
+    (push-mark))
+  (re-search-forward "^[ \t]*\n" nil 1)
+  (skip-chars-backward " \n\t")
+  (setq mark-active t))
+;;
+(defun my/repeat-history ()
+  ""
+  (interactive)
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "j") (lambda () (interactive)
+                                (tab-bar-history-back)))
+    (define-key map (kbd "k") (lambda () (interactive)
+                                (tab-bar-history-forward)))
+    (set-transient-map map t)))
+;;
+(defun my/repeat-window-size ()
+  "Sset up a sparse keymap for repeating window actions."
+  (interactive)
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "n") (lambda () (interactive)
+                                (window-swap-states)))
+    (define-key map (kbd "h") (lambda () (interactive)
+                                (enlarge-window 2 t)))
+    (define-key map (kbd "l") (lambda () (interactive)
+                                (enlarge-window -2 t)))
+    (define-key map (kbd "j") (lambda () (interactive)
+                                (enlarge-window 1 nil)))
+    (define-key map (kbd "k") (lambda () (interactive)
+                                (enlarge-window -1 nil)))
+    (set-transient-map map t)))
+;;
+(defun my/sync-tab-bar-to-theme ()
+  "Synchronize tab-bar faces with the current theme, and set mode-line background color interactively using `read-color`."
+  (interactive)
+  ;; Use `read-color` to get the mode-line background color from the user
+  (let ((selected-color (read-color)))
+    (set-hl-line-darker-background)
+    (set-face-attribute 'mode-line nil :height 120 :underline nil :overline nil :box nil
+                        :background selected-color :foreground "#000000")
+    (set-face-attribute 'mode-line-inactive nil :height 120 :underline nil :overline nil
+                        :background "#000000" :foreground "#aaaaaa")
+    (let ((default-bg (face-background 'default))
+          (default-fg (face-foreground 'default))
+          (default-hl (face-background 'highlight))
+          (inactive-fg (face-foreground 'mode-line-inactive)))
+      (custom-set-faces
+       `(vertical-border ((t (:foreground ,(darken-color default-fg 60)))))
+       `(window-divider ((t (:foreground ,(darken-color default-fg 60)))))
+       `(fringe ((t (:foreground ,default-bg :background ,default-bg))))
+       `(tab-bar ((t (:inherit default :background ,default-bg :foreground ,default-fg))))
+       `(tab-bar-tab ((t (:inherit 'highlight :background ,selected-color :foreground "#000000"))))
+       `(tab-bar-tab-inactive ((t (:inherit default :background ,default-bg :foreground ,inactive-fg
+                                            :box (:line-width 2 :color ,default-bg :style released-button)))))))))
+;;
+(defun my/dired-du ()
+  "Run 'du -hc' on the directory under the cursor in Dired."
+  (interactive)
+  (let ((current-dir (dired-get-file-for-visit)))
+    (if (file-directory-p current-dir)
+        (dired-do-async-shell-command "du -hc" nil (list current-dir))
+      (message "The current point is not a directory."))))
+;;
+(defun darken-color (color percent)
+  "Return a darker shade of COLOR by reducing its brightness by PERCENT."
+  (let* ((rgb (color-values color))
+         (factor (/ (- 100 percent) 100.0))
+         (darker-rgb (mapcar (lambda (x) (max 0 (round (* x factor)))) rgb)))
+    (apply 'format "#%02x%02x%02x" (mapcar (lambda (x) (/ x 256)) darker-rgb))))
+;;
+(defun set-hl-line-darker-background ()
+  "Set the hl-line background to a slightly darker shade of the default background,
                                           preserving the original foreground colors of the current line."
-    (interactive)
-    (require 'hl-line)
-    (unless global-hl-line-mode
-      (global-hl-line-mode 1))
-    (when (facep 'hl-line)
-      (let* ((bg (face-background 'default))
-             (darker-bg (darken-color bg 15)))
-        (custom-set-faces
-         `(hl-line ((t (:background ,darker-bg))))))))
-  ;;
-  (defun my/load-theme ()
-    "Prompt to select a theme from available themes and load the selected theme."
-    (interactive)
-    (let ((theme (completing-read "Choose theme: " (mapcar 'symbol-name (custom-available-themes)))))
-      (dolist (item custom-enabled-themes)
-        (disable-theme item))
-      (load-theme (intern theme) t)))
-  ;;
-  (defun my/switch-to-thing ()
-    "Switch to a buffer, open a recent file, jump to a bookmark,
+  (interactive)
+  (require 'hl-line)
+  (unless global-hl-line-mode
+    (global-hl-line-mode 1))
+  (when (facep 'hl-line)
+    (let* ((bg (face-background 'default))
+           (darker-bg (darken-color bg 15)))
+      (custom-set-faces
+       `(hl-line ((t (:background ,darker-bg))))))))
+;;
+(defun my/load-theme ()
+  "Prompt to select a theme from available themes and load the selected theme."
+  (interactive)
+  (let ((theme (completing-read "Choose theme: " (mapcar 'symbol-name (custom-available-themes)))))
+    (dolist (item custom-enabled-themes)
+      (disable-theme item))
+    (load-theme (intern theme) t)))
+;;
+(defun my/switch-to-thing ()
+  "Switch to a buffer, open a recent file, jump to a bookmark,
                                       or change the theme from a unified interface."
-    (interactive)
-    (let* ((buffers (mapcar #'buffer-name (buffer-list)))
-           (recent-files recentf-list)
-           (bookmarks (bookmark-all-names))
-           (all-options (append buffers recent-files bookmarks))
-           (selection (completing-read "Switch to: " all-options)))
-      (pcase selection
-        ((pred (lambda (sel) (member sel buffers))) (switch-to-buffer selection))
-        ((pred (lambda (sel) (member sel bookmarks))) (bookmark-jump selection))
-        (_ (find-file selection)))))
-  ;;
-  (defvar highlight-rules
-    '((th . (("TODO" . "#999")))
-      (td . (("\\&gt" . "#bbb")
-             ("-\\&gt" . "#ccc")
-             ("- " . "#ddd")
-             ("- - - - " . "#eee")
-             ("- - - - - - - - " . "#fff")
-             ("TODO" . "#fdd")
-             ("DOING" . "#ddf")
-             ("DONE" . "#dfd"))))
-    "Alist of elements ('th or 'td) and associated keywords/colors for row highlighting.")
-  ;;
-  (defun apply-row-style (row-start row-attributes color)
-    "Apply a background COLOR to the row starting at ROW-START with ROW-ATTRIBUTES."
-    (goto-char row-start)
-    (kill-line)
-    (insert (format "<tr%s style=\"background: %s\">\n" row-attributes color)))
-  ;;
-  (defun highlight-row-by-rules (row-start row-end row-attributes element)
-    "Highlight a row based on ELEMENT ('th or 'td) keyword rules within ROW-START to ROW-END."
-    (let ((rules (cdr (assoc element highlight-rules))))
-      (dolist (rule rules)
-        (let ((keyword (car rule))
-              (color (cdr rule)))
-          (when (save-excursion
-                  (and (re-search-forward (format "<%s.*>%s.*</%s>" element keyword element) row-end t)
-                       (goto-char row-start)))
-            (apply-row-style row-start row-attributes color))))))
-  ;;
-  (defun my/html-org-table-highlight ()
-    "Open the exported HTML file, find tables with specific classes,
+  (interactive)
+  (let* ((buffers (mapcar #'buffer-name (buffer-list)))
+         (recent-files recentf-list)
+         (bookmarks (bookmark-all-names))
+         (all-options (append buffers recent-files bookmarks))
+         (selection (completing-read "Switch to: " all-options)))
+    (pcase selection
+      ((pred (lambda (sel) (member sel buffers))) (switch-to-buffer selection))
+      ((pred (lambda (sel) (member sel bookmarks))) (bookmark-jump selection))
+      (_ (find-file selection)))))
+;;
+(defvar highlight-rules
+  '((th . (("TODO" . "#999")))
+    (td . (("\\&gt" . "#bbb")
+           ("-\\&gt" . "#ccc")
+           ("- " . "#ddd")
+           ("- - - - " . "#eee")
+           ("- - - - - - - - " . "#fff")
+           ("TODO" . "#fdd")
+           ("DOING" . "#ddf")
+           ("DONE" . "#dfd"))))
+  "Alist of elements ('th or 'td) and associated keywords/colors for row highlighting.")
+;;
+(defun apply-row-style (row-start row-attributes color)
+  "Apply a background COLOR to the row starting at ROW-START with ROW-ATTRIBUTES."
+  (goto-char row-start)
+  (kill-line)
+  (insert (format "<tr%s style=\"background: %s\">\n" row-attributes color)))
+;;
+(defun highlight-row-by-rules (row-start row-end row-attributes element)
+  "Highlight a row based on ELEMENT ('th or 'td) keyword rules within ROW-START to ROW-END."
+  (let ((rules (cdr (assoc element highlight-rules))))
+    (dolist (rule rules)
+      (let ((keyword (car rule))
+            (color (cdr rule)))
+        (when (save-excursion
+                (and (re-search-forward (format "<%s.*>%s.*</%s>" element keyword element) row-end t)
+                     (goto-char row-start)))
+          (apply-row-style row-start row-attributes color))))))
+;;
+(defun my/html-org-table-highlight ()
+  "Open the exported HTML file, find tables with specific classes,
                                                       and add background styles to rows containing keywords in <td> or <th> elements."
-    (interactive)
-    (let* ((org-file (buffer-file-name))
-           (html-file (concat (file-name-sans-extension org-file) ".html")))
-      (with-temp-buffer
-        (insert-file-contents html-file)
-        (goto-char (point-min))
-        (while (re-search-forward "<table.*>" nil t)
-          (let ((table-start (point))
-                (table-end (save-excursion
-                             (when (re-search-forward "</table>" nil t)
-                               (point)))))
-            (when table-end
-              (save-restriction
-                (narrow-to-region table-start table-end)
-                (goto-char (point-min))
-                (while (re-search-forward "<tr\\(.*\\)>" nil t)
-                  (let ((row-start (match-beginning 0))
-                        (row-attributes (match-string 1))
-                        (row-end (save-excursion (search-forward "</tr>"))))
-                    (highlight-row-by-rules row-start row-end row-attributes 'th)
-                    (highlight-row-by-rules row-start row-end row-attributes 'td)))))))
-        (write-region (point-min) (point-max) html-file))))
-  ;;
-  (defun my/format-to-table (&optional match properties-to-display)
-    "Format Org headings into a structured alist, optionally filtered by MATCH
-  and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"))."
-    (interactive)
-    (let ((rows '())
-          (header '("TODO" "Tags" "Title" "Comments")) ;; Start without "Properties"
-          (max-level 0))
-      (save-excursion
-        (goto-char (point-min))
-        (when match (re-search-forward (format "\\*%s\\*$" (regexp-quote match)) nil t))
-        ;; Add property names to the header dynamically
-        (setq header (append header properties-to-display))
-        (org-map-entries
-         (lambda ()
-           (let* ((entry (org-element-at-point))
-                  (heading (org-get-heading t t t t))
-                  (level (org-outline-level))
-                  (tags (remove "noexport" (org-get-tags)))
-                  (todo (org-get-todo-state))
-                  (vis-indent "- ")
-                  (contents "")
-                  (all-properties (org-entry-properties))
-                  (filtered-properties
-                   (delq nil
-                         (mapcar (lambda (prop)
-                                   (cdr (assoc prop all-properties)))
-                                 properties-to-display))))
-             (prin1 filtered-properties)
-             (org-end-of-meta-data nil)
-             (skip-chars-forward " \n\t")
-             (when (eq (org-element-type (org-element-at-point)) 'paragraph)
-               (let ((start (point)))
-                 (org-next-visible-heading 1)
-                 (setq contents (buffer-substring-no-properties start (point)))
-                 (dolist (pattern '("^#\\+begin.*" "^#\\+end.*" "\n+"))
-                   (setq contents (replace-regexp-in-string pattern
-                                                            (if (string= pattern "\n+") " " "")
-                                                            (string-trim contents))))))
-             (setq max-level (max max-level level))
-             (push (append
-                    (list
-                     (or todo "")
-                     (string-join tags ":")
-                     (cond ((= level 1)
-                            (concat "> " heading))
-                           ((= level 2)
-                            (concat "> " heading))
-                           ((= level 3)
-                            (concat "*> " heading "*"))
-                           ((= level 4)
-                            (concat "*" heading "*"))
-                           (t
-                            (concat "/"
-                                    (mapconcat (lambda (_) vis-indent)
-                                               (make-list (* (- level 4) 1) "") "") heading "/")))
-                     (or contents ""))
-                    filtered-properties)
-                   rows)))
-         nil (when match 'tree)))
-      (setq rows (reverse rows))
-      (push 'hline rows)
-      (cons header rows)))
-  ;;
-  (defun my/html-promote-headers ()
-    "Promote all headers in the HTML file by one level (e.g., h2 -> h1, h3 -> h2, etc.), accounting for attributes."
-    (interactive)
-    (let* ((org-file (buffer-file-name))
-           (html-file (concat (file-name-sans-extension org-file) ".html")))
-      (with-temp-buffer
-        (insert-file-contents html-file)
-        (goto-char (point-min))
-        (let ((header-levels '("h1" "h2" "h3" "h4" "h5" "h6")))
-          (dolist (level header-levels)
-            (let* ((current-level (string-to-number (substring level 1)))
-                   (new-level (max 1 (1- current-level)))  ;; Promote but don't go below h1
-                   (open-tag-regex (format "<%s\\([^>]*\\)>" level))  ;; Regex for opening tag with attributes
-                   (close-tag-regex (format "</%s>" level))  ;; Regex for closing tag
-                   (new-open-tag (format "<h%d\\1>" new-level))  ;; Replacement for opening tag, preserving attributes
-                   (new-close-tag (format "</h%d>" new-level)))  ;; Replacement for closing tag
-              ;; Replace opening tags
+  (interactive)
+  (let* ((org-file (buffer-file-name))
+         (html-file (concat (file-name-sans-extension org-file) ".html")))
+    (with-temp-buffer
+      (insert-file-contents html-file)
+      (goto-char (point-min))
+      (while (re-search-forward "<table.*>" nil t)
+        (let ((table-start (point))
+              (table-end (save-excursion
+                           (when (re-search-forward "</table>" nil t)
+                             (point)))))
+          (when table-end
+            (save-restriction
+              (narrow-to-region table-start table-end)
               (goto-char (point-min))
-              (while (re-search-forward open-tag-regex nil t)
-                (replace-match new-open-tag))
-              ;; Replace closing tags
-              (goto-char (point-min))
-              (while (re-search-forward close-tag-regex nil t)
-                (replace-match new-close-tag)))))
-        (write-region (point-min) (point-max) html-file))))
-  ;;
-  (defun toggle-centered-buffer ()
-    "Toggle center alignment of the buffer by adjusting window margins based on the fill-column."
-    (interactive)
-    (let* ((current-margins (window-margins))
-           (margin (if (or (equal current-margins '(0 . 0))
-                           (null (car (window-margins))))
-                       (/ (- (window-total-width) fill-column) 2)
-                     0)))
-      (visual-line-mode 1)
-      (set-window-margins nil margin margin)))
-  ;;
-  (defun my/copy-buffer-to-kill-ring ()
-    "Copy the entire buffer to the kill ring without changing the point."
-    (interactive)
+              (while (re-search-forward "<tr\\(.*\\)>" nil t)
+                (let ((row-start (match-beginning 0))
+                      (row-attributes (match-string 1))
+                      (row-end (save-excursion (search-forward "</tr>"))))
+                  (highlight-row-by-rules row-start row-end row-attributes 'th)
+                  (highlight-row-by-rules row-start row-end row-attributes 'td)))))))
+      (write-region (point-min) (point-max) html-file))))
+;;
+(defun my/format-to-table (&optional match properties-to-display)
+  "Format Org headings into a structured alist, optionally filtered by MATCH
+and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"))."
+  (interactive)
+  (let ((rows '())
+        (header '("TODO" "Tags" "Title" "Comments")) ;; Start without "Properties"
+        (max-level 0))
     (save-excursion
-      (kill-ring-save (point-min) (point-max)))
-    (message (concat (buffer-file-name) " Copied")))
+      (goto-char (point-min))
+      (when match (re-search-forward (format "\\*%s\\*$" (regexp-quote match)) nil t))
+      ;; Add property names to the header dynamically
+      (setq header (append header properties-to-display))
+      (org-map-entries
+       (lambda ()
+         (let* ((entry (org-element-at-point))
+                (heading (org-get-heading t t t t))
+                (level (org-outline-level))
+                (tags (remove "noexport" (org-get-tags)))
+                (todo (org-get-todo-state))
+                (vis-indent "- ")
+                (contents "")
+                (all-properties (org-entry-properties))
+                (filtered-properties
+                 (mapcar (lambda (prop)
+                           (if (cdr (assoc prop all-properties))
+                               (cdr (assoc prop all-properties))
+                             ""))
+                         properties-to-display)))
+           (prin1 properties-to-display)
+           (prin1 all-properties)
+           (prin1 filtered-properties)
+           (org-end-of-meta-data nil)
+           (skip-chars-forward " \n\t")
+           (when (eq (org-element-type (org-element-at-point)) 'paragraph)
+             (let ((start (point)))
+               (org-next-visible-heading 1)
+               (setq contents (buffer-substring-no-properties start (point)))
+               (dolist (pattern '("^#\\+begin.*" "^#\\+end.*" "\n+"))
+                 (setq contents (replace-regexp-in-string pattern
+                                                          (if (string= pattern "\n+") " " "")
+                                                          (string-trim contents))))))
+           (setq max-level (max max-level level))
+           (push (append
+                  (list
+                   (or todo "")
+                   (string-join tags ":")
+                   (cond ((= level 1)
+                          (concat "> " heading))
+                         ((= level 2)
+                          (concat "> " heading))
+                         ((= level 3)
+                          (concat "*> " heading "*"))
+                         ((= level 4)
+                          (concat "*" heading "*"))
+                         (t
+                          (concat "/"
+                                  (mapconcat (lambda (_) vis-indent)
+                                             (make-list (* (- level 4) 1) "") "") heading "/")))
+                   (or contents ""))
+                  filtered-properties)
+                 rows)))
+       nil (when match 'tree)))
+    (setq rows (reverse rows))
+    (push 'hline rows)
+    (cons header rows)))
+;;
+(defun my/html-promote-headers ()
+  "Promote all headers in the HTML file by one level (e.g., h2 -> h1, h3 -> h2, etc.), accounting for attributes."
+  (interactive)
+  (let* ((org-file (buffer-file-name))
+         (html-file (concat (file-name-sans-extension org-file) ".html")))
+    (with-temp-buffer
+      (insert-file-contents html-file)
+      (goto-char (point-min))
+      (let ((header-levels '("h1" "h2" "h3" "h4" "h5" "h6")))
+        (dolist (level header-levels)
+          (let* ((current-level (string-to-number (substring level 1)))
+                 (new-level (max 1 (1- current-level)))  ;; Promote but don't go below h1
+                 (open-tag-regex (format "<%s\\([^>]*\\)>" level))  ;; Regex for opening tag with attributes
+                 (close-tag-regex (format "</%s>" level))  ;; Regex for closing tag
+                 (new-open-tag (format "<h%d\\1>" new-level))  ;; Replacement for opening tag, preserving attributes
+                 (new-close-tag (format "</h%d>" new-level)))  ;; Replacement for closing tag
+            ;; Replace opening tags
+            (goto-char (point-min))
+            (while (re-search-forward open-tag-regex nil t)
+              (replace-match new-open-tag))
+            ;; Replace closing tags
+            (goto-char (point-min))
+            (while (re-search-forward close-tag-regex nil t)
+              (replace-match new-close-tag)))))
+      (write-region (point-min) (point-max) html-file))))
+;;
+(defun toggle-centered-buffer ()
+  "Toggle center alignment of the buffer by adjusting window margins based on the fill-column."
+  (interactive)
+  (let* ((current-margins (window-margins))
+         (margin (if (or (equal current-margins '(0 . 0))
+                         (null (car (window-margins))))
+                     (/ (- (window-total-width) fill-column) 2)
+                   0)))
+    (visual-line-mode 1)
+    (set-window-margins nil margin margin)))
+;;
+(defun my/copy-buffer-to-kill-ring ()
+  "Copy the entire buffer to the kill ring without changing the point."
+  (interactive)
+  (save-excursion
+    (kill-ring-save (point-min) (point-max)))
+  (message (concat (buffer-file-name) " Copied")))
 #+end_src
 
 * window-positioning
@@ -641,38 +673,38 @@ Defines a suite of custom functions to extend Emacs's functionality tailored to 
 Configures rules and behaviours for display-buffer functions to control how new buffers are shown, whether in existing windows or new splits, enhancing window management in Emacs.
 
 #+begin_src elisp
-  ;;
-  ;; -> window-positioning
-  ;;
-  (add-to-list 'display-buffer-alist
-               '("\\*.*shell"
-                 (display-buffer-reuse-window display-buffer-in-direction)
-                 (direction . bottommost)
-                 (dedicated . t)
-                 (window-height . 0.2)
-                 (inhibit-same-window . t)))
-  (add-to-list 'display-buffer-alist
-               '("\\*Messages" display-buffer-same-window))
+;;
+;; -> window-positioning
+;;
+(add-to-list 'display-buffer-alist
+             '("\\*.*shell"
+               (display-buffer-reuse-window display-buffer-in-direction)
+               (direction . bottommost)
+               (dedicated . t)
+               (window-height . 0.2)
+               (inhibit-same-window . t)))
+(add-to-list 'display-buffer-alist
+             '("\\*Messages" display-buffer-same-window))
 #+end_src
 
-* org
+* org-core
 
 Extends and customizes Org mode for document structuring, note-taking, and project management, highlighting customization options for exporting, appearance, and functionality enhancements.
 
 #+begin_src elisp
-  ;;
-  ;; -> org
-  ;;
-  (setq org-startup-indented t)
-  (setq org-use-speed-commands t)
-  (setq org-hide-leading-stars t)
-  (setq org-todo-keywords
-        '((sequence "TODO" "DOING" "|" "DONE" "CANCELLED"))
-        org-todo-keyword-faces
-        '(("TODO" . "#ee5566")
-          ("DOING" . "#5577aa")
-          ("DONE" . "#77aa66")
-          ("CANCELLED" . "#426b3e")))
+;;
+;; -> org-core
+;;
+(setq org-startup-indented t)
+(setq org-use-speed-commands t)
+(setq org-hide-leading-stars t)
+(setq org-todo-keywords
+      '((sequence "TODO" "DOING" "|" "DONE" "CANCELLED"))
+      org-todo-keyword-faces
+      '(("TODO" . "#ee5566")
+        ("DOING" . "#5577aa")
+        ("DONE" . "#77aa66")
+        ("CANCELLED" . "#426b3e")))
 #+end_src
 
 * scroll
@@ -680,54 +712,54 @@ Extends and customizes Org mode for document structuring, note-taking, and proje
 Adjusts scrolling behaviours and settings for a smoother navigation experience within buffer contents.
 
 #+begin_src elisp
-  ;;
-  ;; -> scroll
-  ;;
-  (setq scroll-margin 10)
-  (setq scroll-conservatively 10)
-  (setq scroll-preserve-screen-position t)
+;;
+;; -> scroll
+;;
+(setq scroll-margin 10)
+(setq scroll-conservatively 10)
+(setq scroll-preserve-screen-position t)
 #+end_src
 
-* dired
+* dired-core
 
 Enhances Dired, the directory editor, with additional functionalities like async deletion, improving file management workflows within Emacs.
 
 #+begin_src elisp
-  ;;
-  ;; -> dired
-  ;;
-  (setq dired-listing-switches "-alGgh")
-  ;; I don't ever want a confirmation of a deletion
-  (setq dired-auto-revert-buffer t)
-  (setq dired-confirm-shell-command nil)
-  (setq dired-no-confirm t)
-  (setq dired-deletion-confirmer '(lambda (x) t))
-  ;; always recursively delete
-  (setq dired-recursive-deletes 'always)
-  (with-eval-after-load 'dired
-    (define-key dired-mode-map (kbd "C-o") nil)
-    (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
+;;
+;; -> dired-core
+;;
+(setq dired-listing-switches "-alGgh")
+;; I don't ever want a confirmation of a deletion
+(setq dired-auto-revert-buffer t)
+(setq dired-confirm-shell-command nil)
+(setq dired-no-confirm t)
+(setq dired-deletion-confirmer '(lambda (x) t))
+;; always recursively delete
+(setq dired-recursive-deletes 'always)
+(with-eval-after-load 'dired
+  (define-key dired-mode-map (kbd "C-o") nil)
+  (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
 #+end_src
 
-* visuals
+* visuals-core
 
 Configures various visual aspects of Emacs, including menu bar, toolbar, and scroll bar visibility, as well as window transparency and edge padding for a cleaner and more focused editing environment.
 
 #+begin_src elisp
-  ;;
-  ;; -> visuals
-  ;;
-  (menu-bar-mode -1)
-  (scroll-bar-mode -1)
-  (tool-bar-mode -1)
-  (setq inhibit-startup-screen t)
-  (setq window-divider-default-bottom-width 2)
-  (setq window-divider-default-right-width 2)
-  (setq window-divider-default-places t)
-  (window-divider-mode -1)
-  (defvar my/internal-border-width 0 "Default internal border width for toggling.")
-  (modify-all-frames-parameters `((internal-border-width . ,my/internal-border-width)))
-  (set-fringe-mode '(20 . 20))
+;;
+;; -> visuals-core
+;;
+(menu-bar-mode -1)
+(scroll-bar-mode -1)
+(tool-bar-mode -1)
+(setq inhibit-startup-screen t)
+(setq window-divider-default-bottom-width 2)
+(setq window-divider-default-right-width 2)
+(setq window-divider-default-places t)
+(window-divider-mode -1)
+(defvar my/internal-border-width 0 "Default internal border width for toggling.")
+(modify-all-frames-parameters `((internal-border-width . ,my/internal-border-width)))
+(set-fringe-mode '(20 . 20))
 #+end_src
 
 * imenu
@@ -735,56 +767,55 @@ Configures various visual aspects of Emacs, including menu bar, toolbar, and scr
 Customizes the Imenu index-building functionality for improved navigation within structured documents or source code, demonstrating regex-based configurations for specific file types.
 
 #+begin_src elisp
-  ;;
-  ;; -> imenu
-  ;;
+;;
+;; -> imenu
+;;
 
-  (defun my-imenu-create-index ()
-    "Create an index using definitions starting with ';; ->'."
-    (let ((index-alist '())
-          (regex "^;;[[:space:]]->\\(.+\\)$"))
-      (save-excursion
-        (goto-char (point-min))
-        (while (re-search-forward regex nil t)
-          (let ((name (s-trim (match-string 1)))
-                (pos (match-beginning 0)))
-            (push (cons name (set-marker (make-marker) pos)) index-alist))))
-      (setq imenu--index-alist (sort
-                                index-alist
-                                (lambda (a b)
-                                  (string< (car a) (car b)))))))
+(defun my-imenu-create-index ()
+  "Create an index using definitions starting with ';; ->'."
+  (let ((index-alist '())
+        (regex "^;;[[:space:]]->\\(.+\\)$"))
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward regex nil t)
+        (let ((name (s-trim (match-string 1)))
+              (pos (match-beginning 0)))
+          (push (cons name (set-marker (make-marker) pos)) index-alist))))
+    (setq imenu--index-alist (sort
+                              index-alist
+                              (lambda (a b)
+                                (string< (car a) (car b)))))))
 
-  ;; (setq imenu-create-index-function #'my-imenu-create-index)
+;; (setq imenu-create-index-function #'my-imenu-create-index)
 
-  (add-hook 'emacs-lisp-mode-hook
-            (lambda ()
-              (setq truncate-lines t)
-              (setq imenu-sort-function 'imenu--sort-by-name)
-              (setq imenu-generic-expression
-                    '((nil "^;;[[:space:]]+-> \\(.*\\)$" 1)))
-              (imenu-add-menubar-index)))
+(add-hook 'emacs-lisp-mode-hook
+          (lambda ()
+            (setq truncate-lines t)
+            (setq imenu-sort-function 'imenu--sort-by-name)
+            (setq imenu-generic-expression
+                  '((nil "^;;[[:space:]]+-> \\(.*\\)$" 1)))
+            (imenu-add-menubar-index)))
 
-  (add-hook 'conf-space-mode-hook
-            (lambda ()
-              (setq imenu-sort-function 'imenu--sort-by-name)
-              (setq imenu-generic-expression
-                    '((nil "^#[[:space:]]+-> \\(.*\\)$" 1)))
-              (imenu-add-menubar-index)))
+(add-hook 'conf-space-mode-hook
+          (lambda ()
+            (setq imenu-sort-function 'imenu--sort-by-name)
+            (setq imenu-generic-expression
+                  '((nil "^#[[:space:]]+-> \\(.*\\)$" 1)))
+            (imenu-add-menubar-index)))
 
 #+end_src
-
 
 * recentf
 
 Optimizes the handling of recently opened files list, tweaking preferences for the number of items shown and integration points for quick access to recent files.
 
 #+begin_src elisp
-  ;;
-  ;; -> recentf
-  ;;
-  (recentf-mode 1)
-  (setq recentf-max-menu-items 200)
-  (setq recentf-max-saved-items 200)
+;;
+;; -> recentf
+;;
+(recentf-mode 1)
+(setq recentf-max-menu-items 200)
+(setq recentf-max-saved-items 200)
 #+end_src
 
 * modeline
@@ -792,24 +823,39 @@ Optimizes the handling of recently opened files list, tweaking preferences for t
 Customizes the modeline for displaying active modes, buffer names, or other context-sensitive information, improving the feedback and control available at a glance.
 
 #+begin_src elisp
-  ;;
-  ;; -> modeline
-  ;;
-  (setq-default mode-line-format
-                (list
-                 '(:eval (if (and (buffer-file-name) (buffer-modified-p))
-                             (propertize " * " 'face
-                                         '(:background "#ff0000" :foreground "#ffffff" :inherit bold)) ""))
-                 '(:eval
-                   (propertize (format "%s" (abbreviate-file-name default-directory)) 'face '(:inherit bold)))
-                 '(:eval
-                   (if (not (equal major-mode 'dired-mode))
-                       (propertize (format "%s " (buffer-name)))
-                     " "))
-                 'mode-line-position
-                 'mode-line-modes
-                 'mode-line-misc-info
-                 '(:eval (format " | Point: %d" (point)))))
+;;
+;; -> modeline
+;;
+(setq my/mode-line-format
+      (list
+       '(:eval (if (and (buffer-file-name) (buffer-modified-p))
+                   (propertize " * " 'face
+                               '(:background "#ff0000" :foreground "#ffffff" :inherit bold)) ""))
+       '(:eval
+         (propertize (format "%s" (abbreviate-file-name default-directory)) 'face '(:inherit bold)))
+       '(:eval
+         (if (not (equal major-mode 'dired-mode))
+             (propertize (format "%s " (buffer-name)))
+           " "))
+       'mode-line-position
+       'mode-line-modes
+       'mode-line-misc-info
+       '(:eval (format " | Point: %d" (point)))))
+
+(setq-default mode-line-format my/mode-line-format)
+
+(defun my/toggle-mode-line ()
+  "Toggle the visibility of the mode-line by checking its current state."
+  (interactive)
+  (if (eq mode-line-format nil)
+      (progn
+        (setq-default mode-line-format my/mode-line-format)
+        (setq frame-title-format "%f"))
+    (progn
+      (setq-default mode-line-format nil)
+      (setq frame-title-format mode-line-format)))
+  (force-mode-line-update t))
+
 #+end_src
 
 * find
@@ -817,29 +863,29 @@ Customizes the modeline for displaying active modes, buffer names, or other cont
 Highlights customization for the Find and Grep tools within Emacs, including appearance, behaviour, and integration points fostering efficient content search and navigation.
 
 #+begin_src elisp
-  ;;
-  ;; -> find
-  ;;
-  (defun my/find-file ()
-    "Find file from current directory in many different ways."
-    (interactive)
-    (let* ((find-options '(("find -type f -printf \"$PWD/%p\\0\"" . :string)
-                           ("fd --absolute-path --type f -0" . :string)
-                           ("rg --follow --files --null" . :string)
-                           ("find-name-dired" . :command)))
-           (selection (completing-read "Select : " find-options))
-           (file-list)
-           (file))
-      (pcase (alist-get selection find-options nil nil #'string=)
-        (:command
-         (call-interactively (intern selection)))
-        (:string
-         (setq file-list (split-string (shell-command-to-string selection) "\0" t))
-         (setq file (completing-read
-                     (format "Find file in %s: "
-                             (abbreviate-file-name default-directory))
-                     file-list))))
-      (when file (find-file (expand-file-name file)))))
+;;
+;; -> find
+;;
+(defun my/find-file ()
+  "Find file from current directory in many different ways."
+  (interactive)
+  (let* ((find-options '(("find -type f -printf \"$PWD/%p\\0\"" . :string)
+                         ("fd --absolute-path --type f -0" . :string)
+                         ("rg --follow --files --null" . :string)
+                         ("find-name-dired" . :command)))
+         (selection (completing-read "Select : " find-options))
+         (file-list)
+         (file))
+    (pcase (alist-get selection find-options nil nil #'string=)
+      (:command
+       (call-interactively (intern selection)))
+      (:string
+       (setq file-list (split-string (shell-command-to-string selection) "\0" t))
+       (setq file (completing-read
+                   (format "Find file in %s: "
+                           (abbreviate-file-name default-directory))
+                   file-list))))
+    (when file (find-file (expand-file-name file)))))
 #+end_src
 
 * grep
@@ -847,32 +893,32 @@ Highlights customization for the Find and Grep tools within Emacs, including app
 My aim here is to make deadgrep as similar to rgrep as possible for easier switching back and forth between a more vanilla like emacs experience.
 
 #+begin_src elisp
-  ;;
-  ;; -> grep
-  ;;
-  (eval-after-load 'grep
-    '(progn
-       (dolist (dir '("nas" ".cache" "cache" "elpa" "chromium" ".local/share" "syncthing" ".mozilla" ".local/lib" "Games"))
-         (push dir grep-find-ignored-directories))
-       (dolist (file '(".cache" "*cache*" "*.iso" "*.xmp" "*.jpg" "*.mp4"))
-         (push file grep-find-ignored-files))
-       ))
+;;
+;; -> grep
+;;
+(eval-after-load 'grep
+  '(progn
+     (dolist (dir '("nas" ".cache" "cache" "elpa" "chromium" ".local/share" "syncthing" ".mozilla" ".local/lib" "Games"))
+       (push dir grep-find-ignored-directories))
+     (dolist (file '(".cache" "*cache*" "*.iso" "*.xmp" "*.jpg" "*.mp4"))
+       (push file grep-find-ignored-files))
+     ))
 #+end_src
 
-* spelling
+* spelling-core
 
 Configures spell checking tools and dictionaries, integrating external tools like `aspell` or `hunspell`, and interfaces for checking and correcting spelling within documents.
 
 #+begin_src elisp
-  ;;
-  ;; -> spelling
-  ;;
-  (setq ispell-local-dictionary "en_GB")
-  (setq ispell-program-name "hunspell")
-  (global-set-key (kbd "C-c s l") #'(lambda()(interactive)
-                                      (flyspell-buffer)
-                                      (flyspell-mode)))
-  (global-set-key (kbd "C-c s s") #'ispell-word)
+;;
+;; -> spelling-core
+;;
+(setq ispell-local-dictionary "en_GB")
+(setq ispell-program-name "hunspell")
+(global-set-key (kbd "C-c s l") #'(lambda()(interactive)
+                                    (flyspell-buffer)
+                                    (flyspell-mode)))
+(global-set-key (kbd "C-c s s") #'ispell-word)
 #+end_src
 
 * gdb
@@ -880,14 +926,14 @@ Configures spell checking tools and dictionaries, integrating external tools lik
 Sets up GDB, the GNU Debugger, integration for debugging within Emacs, tweaking interface elements and keybindings for a more convenient debugging workflow.
 
 #+begin_src elisp
-  ;;
-  ;; -> gdb
-  ;;
-  (setq gdb-display-io-nopopup 1)
-  (setq gdb-many-windows t)
-  (global-set-key (kbd "<f9>") 'gud-break)
-  (global-set-key (kbd "<f10>") 'gud-next)
-  (global-set-key (kbd "<f11>") 'gud-step)
+;;
+;; -> gdb
+;;
+(setq gdb-display-io-nopopup 1)
+(setq gdb-many-windows t)
+(global-set-key (kbd "<f9>") 'gud-break)
+(global-set-key (kbd "<f10>") 'gud-next)
+(global-set-key (kbd "<f11>") 'gud-step)
 #+end_src
 
 * compilation
@@ -895,15 +941,15 @@ Sets up GDB, the GNU Debugger, integration for debugging within Emacs, tweaking 
 Customizes the Compilation mode for handling output from external commands, adjusting styles, behaviours, and filtering for an improved feedback loop during code build or script execution.
 
 #+begin_src elisp
-  ;;
-  ;; -> compilation
-  ;;
-  (setq compilation-always-kill t)
-  (setq compilation-context-lines 3)
-  (setq compilation-scroll-output t)
-  ;; ignore warnings
-  (setq compilation-skip-threshold 2)
-  (global-set-key (kbd "<f5>") 'my/project-compile)
+;;
+;; -> compilation
+;;
+(setq compilation-always-kill t)
+(setq compilation-context-lines 3)
+(setq compilation-scroll-output t)
+;; ignore warnings
+(setq compilation-skip-threshold 2)
+(global-set-key (kbd "<f5>") 'my/project-compile)
 #+end_src
 
 * diff
@@ -911,14 +957,14 @@ Customizes the Compilation mode for handling output from external commands, adju
 Customizes the appearance and behaviour of diff and merge tools within Emacs, adjusting styles for better readability and control over version control diffs and conflict resolution.
 
 #+begin_src elisp
-  ;;
-  ;; -> diff
-  ;;
-  (setq ediff-window-setup-function 'ediff-setup-windows-plain)
-  (setq ediff-highlight-all-diffs t)
-  (setq ediff-split-window-function 'split-window-horizontally)
-  (add-hook 'ediff-prepare-buffer-hook #'outline-show-all)
-  (add-hook 'ediff-prepare-buffer-hook (lambda () (visual-line-mode -1)))
+;;
+;; -> diff
+;;
+(setq ediff-window-setup-function 'ediff-setup-windows-plain)
+(setq ediff-highlight-all-diffs t)
+(setq ediff-split-window-function 'split-window-horizontally)
+(add-hook 'ediff-prepare-buffer-hook #'outline-show-all)
+(add-hook 'ediff-prepare-buffer-hook (lambda () (visual-line-mode -1)))
 #+end_src
 
 * identation
@@ -926,11 +972,11 @@ Customizes the appearance and behaviour of diff and merge tools within Emacs, ad
 Defining very specific indentation and highlight guides
 
 #+begin_src elisp
-  ;;
-  ;; -> indentation
-  ;;
-  (setq-default indent-tabs-mode nil)
-  (setq-default tab-width 4)
+;;
+;; -> indentation
+;;
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 4)
 #+end_src
 
 * etags
@@ -938,125 +984,125 @@ Defining very specific indentation and highlight guides
 Generation of etags to have an offline alternative to LSP, uses the following bash script:
 
 #+begin_src bash :tangle no
-  #!/bin/bash
-  TAGF=$PWD/TAGS
-  rm -f "$TAGF"
-  for src in `find $PWD \( -path \*/.cache -o \
-                 -path \*/.gnupg -o \
-                 -path \*/.local -o \
-                 -path \*/.mozilla -o \
-                 -path \*/.thunderbird -o \
-                 -path \*/.wine -o \
-                 -path \*/Games -o \
-                 -path \*/cache -o \
-                 -path \*/chromium -o \
-                 -path \*/elpa -o \
-                 -path \*/nas -o \
-                 -path \*/syncthing -o \
-                 -path \*/Image-Line -o \
-                 -path \*/.cargo -o \
-                 -path \*/.git -o \
-                 -path \*/.svn -o \
-                 -path \*/.themes -o \
-                 -path \*/themes -o \
-                 -path \*/objs -o \
-                 -path \*/ArtRage \) \
-                 -prune -o -type f -print`;
-  do
-      case "${src}" in
-          ,*.ad[absm]|*.[CFHMSacfhlmpsty]|*.def|*.in[cs]|*.s[as]|*.src|*.cc|\
-              ,*.hh|*.[chy]++|*.[ch]pp|*.[chy]xx|*.pdb|*.[ch]s|*.[Cc][Oo][Bb]|\
-              ,*.[eh]rl|*.f90|*.for|*.java|*.[cem]l|*.clisp|*.lisp|*.[Ll][Ss][Pp]|\
-              [Mm]akefile*|*.pas|*.[Pp][LlMm]|*.psw|*.lm|*.pc|*.prolog|*.oak|\
-              ,*.p[sy]|*.sch|*.scheme|*.[Ss][Cc][Mm]|*.[Ss][Mm]|*.bib|*.cl[os]|\
-              ,*.ltx|*.sty|*.TeX|*.tex|*.texi|*.texinfo|*.txi|*.x[bp]m|*.yy|\
-              ,*.[Ss][Qq][Ll])
-              etags --append "${src}" -o "$TAGF";
-              echo ${src}
-              ;;
-          ,*)
-              FTYPE=`file ${src}`;
-              case "${FTYPE}" in
-                  ,*script*text*)
-                      etags --append "${src}" -o "$TAGF";
-                      echo ${src}
-                      ;;
-                  ,*text*)
-                      if head -n1 "${src}" | grep '^#!' >/dev/null 2>&1;
-                      then
-                          etags --append "${src}" -o "$TAGF";
-                          echo ${src}
-                      fi;
-                      ;;
-              esac;
-              ;;
-      esac;
-  done
-  echo
-  echo "Finished!"
-  echo
+#!/bin/bash
+TAGF=$PWD/TAGS
+rm -f "$TAGF"
+for src in `find $PWD \( -path \*/.cache -o \
+               -path \*/.gnupg -o \
+               -path \*/.local -o \
+               -path \*/.mozilla -o \
+               -path \*/.thunderbird -o \
+               -path \*/.wine -o \
+               -path \*/Games -o \
+               -path \*/cache -o \
+               -path \*/chromium -o \
+               -path \*/elpa -o \
+               -path \*/nas -o \
+               -path \*/syncthing -o \
+               -path \*/Image-Line -o \
+               -path \*/.cargo -o \
+               -path \*/.git -o \
+               -path \*/.svn -o \
+               -path \*/.themes -o \
+               -path \*/themes -o \
+               -path \*/objs -o \
+               -path \*/ArtRage \) \
+               -prune -o -type f -print`;
+do
+    case "${src}" in
+        ,*.ad[absm]|*.[CFHMSacfhlmpsty]|*.def|*.in[cs]|*.s[as]|*.src|*.cc|\
+            ,*.hh|*.[chy]++|*.[ch]pp|*.[chy]xx|*.pdb|*.[ch]s|*.[Cc][Oo][Bb]|\
+            ,*.[eh]rl|*.f90|*.for|*.java|*.[cem]l|*.clisp|*.lisp|*.[Ll][Ss][Pp]|\
+            [Mm]akefile*|*.pas|*.[Pp][LlMm]|*.psw|*.lm|*.pc|*.prolog|*.oak|\
+            ,*.p[sy]|*.sch|*.scheme|*.[Ss][Cc][Mm]|*.[Ss][Mm]|*.bib|*.cl[os]|\
+            ,*.ltx|*.sty|*.TeX|*.tex|*.texi|*.texinfo|*.txi|*.x[bp]m|*.yy|\
+            ,*.[Ss][Qq][Ll])
+            etags --append "${src}" -o "$TAGF";
+            echo ${src}
+            ;;
+        ,*)
+            FTYPE=`file ${src}`;
+            case "${FTYPE}" in
+                ,*script*text*)
+                    etags --append "${src}" -o "$TAGF";
+                    echo ${src}
+                    ;;
+                ,*text*)
+                    if head -n1 "${src}" | grep '^#!' >/dev/null 2>&1;
+                    then
+                        etags --append "${src}" -o "$TAGF";
+                        echo ${src}
+                    fi;
+                    ;;
+            esac;
+            ;;
+    esac;
+done
+echo
+echo "Finished!"
+echo
 #+end_src
 
 #+begin_src elisp
-  ;;
-  ;; -> etags
-  ;;
-  ;;
-  (defun my/etags-load ()
-    "Load TAGS file from the first it can find up the directory stack."
+;;
+;; -> etags
+;;
+;;
+(defun my/etags-load ()
+  "Load TAGS file from the first it can find up the directory stack."
+  (interactive)
+  (let ((my-tags-file (locate-dominating-file default-directory "TAGS")))
+    (when my-tags-file
+      (message "Loading tags file: %s" my-tags-file)
+      (visit-tags-table my-tags-file))))
+;;
+(when (executable-find "my-generate-etags.sh")
+  (defun my/etags-update ()
+    "Call external bash script to generate new etags for all languages it can find."
     (interactive)
-    (let ((my-tags-file (locate-dominating-file default-directory "TAGS")))
-      (when my-tags-file
-        (message "Loading tags file: %s" my-tags-file)
-        (visit-tags-table my-tags-file))))
-  ;;
-  (when (executable-find "my-generate-etags.sh")
-    (defun my/etags-update ()
-      "Call external bash script to generate new etags for all languages it can find."
-      (interactive)
-      (async-shell-command "my-generate-etags.sh" "*etags*")))
-  ;;
-  (defun predicate-exclusion-p (dir)
-    "exclusion of directories"
-    (not
-     (or
-      (string-match "/home/jdyer/examples/CPPrograms/nil" dir)
-      )))
-  ;;
-  (defun my/generate-etags ()
-    "Generate TAGS file for various source files in `default-directory` and its subdirectories."
-    (interactive)
-    (message "Getting file list...")
-    (let ((all-files
-           (append
-            (directory-files-recursively default-directory "\\(?:\\.cpp$\\|\\.c$\\|\\.h$\\)" nil 'predicate-exclusion-p)
-            (directory-files-recursively default-directory "\\(?:\\.cs$\\|\\.cs$\\)" nil 'predicate-exclusion-p)
-            (directory-files-recursively default-directory "\\(?:\\.ads$\\|\\.adb$\\)" nil 'predicate-exclusion-p)))
-          (tags-file-path (expand-file-name (concat default-directory "TAGS"))))
-      (unless (file-directory-p default-directory)
-        (error "Default directory does not exist: %s" default-directory))
-      ;; Generate TAGS file
-      (dolist (file all-files)
-        (message file)
-        (shell-command (format "etags --append \%s -o %s" file tags-file-path)))))
-  ;; (global-set-key (kbd "C-x p l") 'my/etags-load)
-  ;; (global-set-key (kbd "C-x p u") 'my/etags-update)
+    (async-shell-command "my-generate-etags.sh" "*etags*")))
+;;
+(defun predicate-exclusion-p (dir)
+  "exclusion of directories"
+  (not
+   (or
+    (string-match "/home/jdyer/examples/CPPrograms/nil" dir)
+    )))
+;;
+(defun my/generate-etags ()
+  "Generate TAGS file for various source files in `default-directory` and its subdirectories."
+  (interactive)
+  (message "Getting file list...")
+  (let ((all-files
+         (append
+          (directory-files-recursively default-directory "\\(?:\\.cpp$\\|\\.c$\\|\\.h$\\)" nil 'predicate-exclusion-p)
+          (directory-files-recursively default-directory "\\(?:\\.cs$\\|\\.cs$\\)" nil 'predicate-exclusion-p)
+          (directory-files-recursively default-directory "\\(?:\\.ads$\\|\\.adb$\\)" nil 'predicate-exclusion-p)))
+        (tags-file-path (expand-file-name (concat default-directory "TAGS"))))
+    (unless (file-directory-p default-directory)
+      (error "Default directory does not exist: %s" default-directory))
+    ;; Generate TAGS file
+    (dolist (file all-files)
+      (message file)
+      (shell-command (format "etags --append \%s -o %s" file tags-file-path)))))
+;; (global-set-key (kbd "C-x p l") 'my/etags-load)
+;; (global-set-key (kbd "C-x p u") 'my/etags-update)
 #+end_src
 
-* shell
+* shell-core
 
 Demonstrates customizations for shell integration within Emacs, optimizing settings for shell modes, command history, and shorthand functions for frequent shell-related tasks.
 
 #+begin_src elisp
-  ;;
-  ;; -> shell
-  ;;
-  (defun my/shell-create (name)
-    "Create a custom-named eshell buffer with NAME."
-    (interactive "sName: ")
-    (eshell 'new)
-    (let ((new-buffer-name (concat "*eshell-" name "*")))
-      (rename-buffer new-buffer-name t)))
+;;
+;; -> shell-core
+;;
+(defun my/shell-create (name)
+  "Create a custom-named eshell buffer with NAME."
+  (interactive "sName: ")
+  (eshell 'new)
+  (let ((new-buffer-name (concat "*eshell-" name "*")))
+    (rename-buffer new-buffer-name t)))
 #+end_src
 
 * tab-bar
@@ -1064,68 +1110,67 @@ Demonstrates customizations for shell integration within Emacs, optimizing setti
 Details configurations for Emacs's tab bar, showcasing customizations for tab behaviour, appearance, and integration points for keyboard navigation and tab management.
 
 #+begin_src elisp
-  ;;
-  ;; -> tab-bar
-  ;;
-  (setq tab-bar-new-tab-to 'rightmost)
-  (setq tab-bar-close-button-show nil)
-  (my/sync-tab-bar-to-theme)
+;;
+;; -> tab-bar
+;;
+(setq tab-bar-new-tab-to 'rightmost)
+(setq tab-bar-close-button-show nil)
 #+end_src
 
-* windows-specific
+* windows-specific-core
 
 Curates configurations specific to the Windows operating system, adjusting paths, fonts, and environment variables for optimal use of Emacs on Windows.
 
 #+begin_src elisp
-  ;;
-  ;; -> windows-specific
-  ;;
-  (when (eq system-type 'windows-nt)
-    (setq home-dir "c:/users/jimbo")
-    (let ((xPaths
-           `(,(expand-file-name "~/bin")
-             "c:/GnuWin32/bin"
-             "c:/GNAT/2021/bin")))
-      (setenv "PATH" (mapconcat 'identity xPaths ";"))
-      (setq exec-path (append xPaths (list "." exec-directory))))
-    (custom-theme-set-faces
-     'user
-     '(variable-pitch ((t (:family "Consolas" :height 140 :weight normal))))
-     '(fixed-pitch ((t ( :family "Consolas" :height 140)))))
-    (setq font-general "Consolas 14")
-    (set-frame-font font-general nil t)
-    (add-to-list 'default-frame-alist `(font . ,font-general)))
+;;
+;; -> windows-specific-core
+;;
+(when (eq system-type 'windows-nt)
+  (setq home-dir "c:/users/jimbo")
+  (let ((xPaths
+         `(,(expand-file-name "~/bin")
+           "c:/GnuWin32/bin"
+           "c:/GNAT/2021/bin")))
+    (setenv "PATH" (mapconcat 'identity xPaths ";"))
+    (setq exec-path (append xPaths (list "." exec-directory))))
+  (custom-theme-set-faces
+   'user
+   '(variable-pitch ((t (:family "Consolas" :height 140 :weight normal))))
+   '(fixed-pitch ((t ( :family "Consolas" :height 140)))))
+  (setq font-general "Consolas 14")
+  (set-frame-font font-general nil t)
+  (add-to-list 'default-frame-alist `(font . ,font-general)))
 #+end_src
 
-* linux-specific
+* linux-specific-core
 
 Curates configurations specific to Linux, making adjustments for paths, fonts, and system integrations ensuring Emacs is well integrated with the Linux desktop environment.
 
 #+begin_src elisp
-  ;;
-  ;; -> linux-specific
-  ;;
-  (when (eq system-type 'gnu/linux)
-    (custom-theme-set-faces
-     'user
-     '(variable-pitch ((t (:family "DejaVu Sans" :height 120 :weight normal))))
-     '(fixed-pitch ((t ( :family "Source Code Pro" :height 110)))))
-    (setq font-general "Source Code Pro 12")
-    (set-frame-font font-general nil t)
-    (add-to-list 'default-frame-alist `(font . ,font-general)))
+;;
+;; -> linux-specific-core
+;;
+(when (eq system-type 'gnu/linux)
+  (custom-theme-set-faces
+   'user
+   '(variable-pitch ((t (:family "DejaVu Sans" :height 120 :weight normal))))
+   '(fixed-pitch ((t ( :family "Source Code Pro" :height 110)))))
+  (setq font-general "Source Code Pro 12")
+  (set-frame-font font-general nil t)
+  (add-to-list 'default-frame-alist `(font . ,font-general)))
 #+end_src
 
-* development
+* development-core
 
 #+begin_src elisp
-  ;;
-  ;; -> development
-  ;;
-  (global-set-key (kbd "C-c t") 'toggle-centered-buffer)
-
+;;
+;; -> development-core
+;;
+(global-set-key (kbd "C-c t") 'toggle-centered-buffer)
+;;
 (defun my/md-to-org-convert-buffer (&optional offset)
   "Convert the current buffer from Markdown to Org-mode format, adjusting heading levels by OFFSET.
-If OFFSET is positive, promote headings (move left). If OFFSET is negative, demote headings (move right)."
+    If OFFSET is positive, promote headings (move left). If OFFSET is negative, demote headings (move right)."
   (interactive "p") ;; `p` allows capturing the universal argument as an integer
   (let ((offset (or offset 0))) ;; Default to 0 if no argument is provided
     (save-excursion
@@ -1133,62 +1178,53 @@ If OFFSET is positive, promote headings (move left). If OFFSET is negative, demo
       (goto-char (point-min))
       (while (re-search-forward "^\\([ \t]*\\)[*-+] \\(.*\\)$" nil t)
         (replace-match (concat (match-string 1) "- \\2")))
-
       ;; Bold: `**bold**` -> `*bold*` only if directly adjacent
       (goto-char (point-min))
       (while (re-search-forward "\\b\\*\\*\\([^ ]\\(.*?\\)[^ ]\\)\\*\\*\\b" nil t)
         (replace-match "*\\1*"))
-
       ;; Italics: `_italic_` -> `/italic/`
       (goto-char (point-min))
       (while (re-search-forward "\\b_\\([^ ]\\(.*?\\)[^ ]\\)_\\b" nil t)
         (replace-match "/\\1/"))
-
       ;; Links: `[text](url)` -> `[[url][text]]`
       (goto-char (point-min))
       (while (re-search-forward "\\[\\(.*?\\)\\](\\(.*?\\))" nil t)
         (replace-match "[[\\2][\\1]]"))
-
       ;; Code blocks: Markdown ```lang ... ``` to Org #+begin_src ... #+end_src
       (goto-char (point-min))
       (while (re-search-forward "```\\(.*?\\)\\(?:\n\\|\\s-\\)\\(\\(?:.\\|\n\\)*?\\)```" nil t)
         (replace-match "#+begin_src \\1\n\\2#+end_src"))
-
       ;; Inline code: `code` -> =code=
       (goto-char (point-min))
       (while (re-search-forward "`\\(.*?\\)`" nil t)
         (replace-match "=\\1="))
-
       ;; Horizontal rules: `---` or `***` -> `-----`
       (goto-char (point-min))
       (while (re-search-forward "^\\(-{3,}\\|\\*{3,}\\)$" nil t)
         (replace-match "-----"))
-
       ;; Images: `![alt text](url)` -> `[[url]]`
       (goto-char (point-min))
       (while (re-search-forward "!\\[.*?\\](\\(.*?\\))" nil t)
         (replace-match "[[\\1]]"))
-
       (goto-char (point-min))
       ;; Headers: Adjust '#' based on OFFSET
       (while (re-search-forward "^\\(#+\\) \\(.*\\)$" nil t)
         (let* ((current-level (length (match-string 1)))
                (new-level (max 1 (+ current-level offset)))) ;; Ensure level doesn't go below 1
           (replace-match (concat (make-string new-level ?*) " \\2"))))
-
       ;; Remove any trailing whitespace for a clean Org-mode file
       (delete-trailing-whitespace))))
-
+;;
 (defun my/md-to-org-convert-file (input-file output-file)
   "Convert a Markdown file INPUT-FILE to an Org-mode file OUTPUT-FILE."
   (with-temp-buffer
     (insert-file-contents input-file)
     (md-to-org-convert-buffer)
     (write-file output-file)))
-
+;;
 (defun my/convert-markdown-clipboard-to-org (&optional arg)
   "Convert Markdown content from clipboard to Org format and insert it at point.
-With a universal argument ARG, adjust heading levels based on ARG."
+    With a universal argument ARG, adjust heading levels based on ARG."
   (interactive "P") ;; Capture universal argument
   (let ((markdown-content (current-kill 0))
         (original-buffer (current-buffer)))
@@ -1198,11 +1234,11 @@ With a universal argument ARG, adjust heading levels based on ARG."
       (let ((org-content (buffer-string)))
         (with-current-buffer original-buffer
           (insert org-content))))))
-
+;;
 (global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
-
-(setq org-export-with-drawers t)
-
+;;
+;; (setq org-export-with-drawers t)
+;;
 (defun org-promote-all-headings ()
   "Promote all headings in the current Org buffer along with their subheadings."
   (interactive)
@@ -1210,5 +1246,87 @@ With a universal argument ARG, adjust heading levels based on ARG."
     (goto-char (point-min))
     (while (outline-next-heading)
       (org-promote-subtree))))
+
+#+end_src
+
+* LLM-core
+
+#+begin_src elisp
+;;
+;; -> LLM-core
+;;
+;;
+(defun safe-add-to-load-path (dir)
+  "Add DIR to `load-path` if it exists."
+  (when (file-directory-p dir)
+    (add-to-list 'load-path dir)))
+
+;; Add directories to load-path only if they exist
+(safe-add-to-load-path (expand-file-name "lisp/shell-maker" user-emacs-directory))
+(safe-add-to-load-path (expand-file-name "lisp/chatgpt-shell" user-emacs-directory))
+(safe-add-to-load-path (expand-file-name "lisp/gptel" user-emacs-directory))
+
+;; Conditionally require and configure packages if their files exist
+(when (locate-library "gptel")
+  (require 'gptel)
+  (require 'gptel-ollama)
+  (require 'gptel-curl)
+  (gptel-make-ollama "llama3_2"
+    :host "localhost:11434"
+    :stream t
+    :models '(llama3_2:latest))
+  (setq gptel-model 'qwen2.5-coder-7b-instruct-q5_k_m:latest
+        gptel-backend (gptel-make-ollama "llama3_2"
+                        :host "localhost:11434"
+                        :stream t
+                        :models '(llama3_2:latest))))
+
+(when (locate-library "shell-maker")
+  (require 'shell-maker))
+
+(when (locate-library "chatgpt-shell")
+  (require 'chatgpt-shell)
+  (setq chatgpt-shell-models
+        '(((:provider . "Ollama")
+           (:label . "Ollama-llama")
+           (:version . "llama3_2")
+           (:short-version)
+           (:token-width . 4)
+           (:context-window . 8192)
+           (:handler . chatgpt-shell-ollama--handle-ollama-command)
+           (:filter . chatgpt-shell-ollama--extract-ollama-response)
+           (:payload . chatgpt-shell-ollama-make-payload)
+           (:url . chatgpt-shell-ollama--make-url))))
+  (with-eval-after-load 'chatgpt-shell
+    (defun chatgpt-shell-menu ()
+      "Menu for ChatGPT Shell commands."
+      (interactive)
+      (let ((key (read-key
+                  (propertize
+                   "ChatGPT Shell Commands:\n
+    e: Explain Code      d: Describe Code           l: Start Shell
+    p: Proofread Region  r: Refactor Code           t: Save Session Transcript
+    g: Write Git Commit  u: Generate Unit Test      o: Summarize Last Command Output
+    s: Send Region       a: Send and Review Region  m: Swap Model\n
+      q: Quit\n\nPress a key: " 'face 'minibuffer-prompt))))
+        (pcase key
+          (?e (call-interactively 'chatgpt-shell-explain-code))
+          (?p (call-interactively 'chatgpt-shell-proofread-region))
+          (?g (call-interactively 'chatgpt-shell-write-git-commit))
+          (?s (call-interactively 'chatgpt-shell-send-region))
+          (?d (call-interactively 'chatgpt-shell-describe-code))
+          (?r (call-interactively 'chatgpt-shell-refactor-code))
+          (?u (call-interactively 'chatgpt-shell-generate-unit-test))
+          (?a (call-interactively 'chatgpt-shell-send-and-review-region))
+          (?l (call-interactively 'chatgpt-shell))
+          (?t (call-interactively 'chatgpt-shell-save-session-transcript))
+          (?o (call-interactively 'chatgpt-shell-eshell-summarize-last-command-output))
+          (?w (call-interactively 'chatgpt-shell-eshell-whats-wrong-with-last-command))
+          (?i (call-interactively 'chatgpt-shell-describe-image))
+          (?m (call-interactively 'chatgpt-shell-swap-model))
+          (?q (message "Quit ChatGPT Shell menu."))
+          (?\C-g (message "Quit ChatGPT Shell menu."))
+          (_ (message "Invalid key: %c" key))))))
+  (global-set-key (kbd "C-c g") 'chatgpt-shell-menu))
 
 #+end_src
