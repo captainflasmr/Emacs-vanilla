@@ -7,7 +7,7 @@
 (require 'dired)
 
 ;;
-;; -> completion
+;; -> completion-core
 ;;
 (setq-default abbrev-mode t)
 (setq hippie-expand-try-functions-list
@@ -30,12 +30,16 @@
 (setq icomplete-show-matches-on-no-input t)
 
 ;;
-;; -> keys-navigation
+;; -> keys-navigation-core
 ;;
 (defvar my-jump-keymap (make-sparse-keymap))
 (global-set-key (kbd "M-o") my-jump-keymap)
 (define-key my-jump-keymap (kbd "=") #'tab-bar-new-tab)
-(define-key my-jump-keymap (kbd "e") (lambda () (interactive) (find-file "~/.emacs.d/init.el")))
+(define-key my-jump-keymap (kbd "b") (lambda () (interactive) (find-file "~/bin")))
+(define-key my-jump-keymap (kbd "e")
+            (lambda ()
+              (interactive)
+              (find-file (expand-file-name "init.el" user-emacs-directory))))
 (define-key my-jump-keymap (kbd "f") #'find-name-dired)
 (define-key my-jump-keymap (kbd "g") (lambda () (interactive) (find-file "~/.config")))
 (define-key my-jump-keymap (kbd "h") (lambda () (interactive) (find-file "~")))
@@ -50,7 +54,7 @@
 (define-key my-jump-keymap (kbd "-") #'tab-close)
 
 ;;
-;; -> keys-visual
+;; -> keys-visual-core
 ;;
 (defvar my-win-keymap (make-sparse-keymap))
 (global-set-key (kbd "C-q") my-win-keymap)
@@ -59,6 +63,7 @@
 (define-key my-win-keymap (kbd "e") #'whitespace-mode)
 (define-key my-win-keymap (kbd "f") #'font-lock-mode)
 (define-key my-win-keymap (kbd "h") #'global-hl-line-mode)
+(define-key my-win-keymap (kbd "k") #'my/toggle-mode-line)
 (define-key my-win-keymap (kbd "l") #'my/sync-tab-bar-to-theme)
 (define-key my-win-keymap (kbd "m") #'my/load-theme)
 (define-key my-win-keymap (kbd "n") #'display-line-numbers-mode)
@@ -71,29 +76,33 @@
 (define-key my-win-keymap (kbd "b") #'(lambda () (interactive)(tab-bar-mode 'toggle)))
 
 ;;
-;; -> keys-other
+;; -> keys-other-core
 ;;
 (global-set-key (kbd "M-s ,") #'my/mark-line)
 (global-set-key (kbd "M-s g") #'rgrep)
 (global-set-key (kbd "M-s h") #'my/mark-block)
 (global-set-key (kbd "M-s j") #'eval-defun)
-(global-set-key (kbd "M-s l") #'my/find-file)
-(global-set-key (kbd "M-s v") #'eval-expression)
+(global-set-key (kbd "M-s f") #'my/find-file)
+(global-set-key (kbd "M-s l") #'eval-expression)
 (global-set-key (kbd "M-s =") #'ediff-buffers)
 (global-set-key (kbd "M-s w") #'(lambda ()(interactive)
                                   (org-html-export-to-html)
                                   (my/html-promote-headers)
                                   (my/html-org-table-highlight)))
+(global-set-key (kbd "M-s e") #'(lambda ()(interactive)
+                                  (org-odt-export-to-odt)
+                                  (async-shell-command
+                                   "libreoffice --headless --convert-to docx confluence--setup-sles.odt" "*create-docs*")))
 (global-set-key (kbd "M-s z") #'my/copy-buffer-to-kill-ring)
 
 ;;
-;; -> keybinding
+;; -> keybinding-core
 ;;
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "C-c d") #'my/dired-duplicate-file)
 (global-set-key (kbd "C-c h") #'my/shell-create)
-(global-set-key (kbd "C-c m") #'my/repeat-window-size)
+(global-set-key (kbd "C-c n") #'my/repeat-window-size)
 (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
 (global-set-key (kbd "C-c o s") #'outline-show-all)
 (global-set-key (kbd "C-c u") #'my/dired-du)
@@ -119,8 +128,6 @@
 (global-set-key (kbd "M-2") #'split-window-vertically)
 (global-set-key (kbd "M-3") #'split-window-horizontally)
 (global-set-key (kbd "M-1") #'delete-other-windows)
-(global-set-key (kbd "M--") #'split-window-vertically)
-(global-set-key (kbd "M-=") #'split-window-horizontally)
 (global-set-key (kbd "M-9") #'hippie-expand)
 ;;  (global-set-key (kbd "M-;") 'my/comment-or-uncomment)
 (global-set-key (kbd "M-;") 'delete-other-windows)
@@ -146,7 +153,7 @@
   (define-key vc-dir-mode-map (kbd "M-j") nil))
 
 ;;
-;; -> modes
+;; -> modes-core
 ;;
 (column-number-mode 1)
 (desktop-save-mode -1)
@@ -175,6 +182,7 @@
 (setq kill-whole-line t)
 (setq-default truncate-lines t)
 (setq frame-inhibit-implied-resize t)
+(setq native-comp-async-report-warnings-errors nil)
 
 ;;
 ;; -> confirm
@@ -199,6 +207,29 @@
 ;;
 ;; -> custom-settings
 ;;
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(org-level-1 ((t (:inherit default :weight regular :height 1.1))))
+ '(org-level-2 ((t (:inherit default :weight light :height 1.0))))
+ '(org-level-3 ((t (:inherit default :weight light :height 1.0))))
+ '(org-level-4 ((t (:inherit default :weight light :height 1.0))))
+ '(org-level-5 ((t (:inherit default :weight light :height 1.0))))
+ '(org-level-6 ((t (:inherit default :weight light :height 1.0))))
+ '(ediff-current-diff-A ((t (:extend t :background "#b5daeb" :foreground "#000000"))))
+ '(ediff-even-diff-A ((t (:background "#bafbba" :foreground "#000000" :extend t))))
+ '(ediff-fine-diff-A ((t (:background "#f4bd92" :foreground "#000000" :extend t))))
+ '(ediff-odd-diff-A ((t (:background "#b8fbb8" :foreground "#000000" :extend t))))
+ '(font-lock-warning-face ((t (:foreground "#930000" :inverse-video nil))))
+ '(org-link ((t (:underline nil))))
+ '(indent-guide-face ((t (:background "#282828" :foreground "#666666"))))
+ '(widget-button ((t (:inherit fixed-pitch :weight regular))))
+ '(window-divider ((t (:foreground "black"))))
+ '(org-tag ((t (:height 0.99))))
+ '(vertical-border ((t (:foreground "#000000")))))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -209,7 +240,7 @@
  '(warning-suppress-types '((frameset))))
 
 ;;
-;; -> defun
+;; -> defun-core
 ;;
 (defun save-macro (name)
   "Save a macro by NAME."
@@ -232,7 +263,7 @@
 ;;
 (defun my/dired-duplicate-file (arg)
   "Duplicate a file from DIRED with an incremented number.
-                            If ARG is provided, it sets the counter."
+                              If ARG is provided, it sets the counter."
   (interactive "p")
   (let* ((file (dired-get-file-for-visit))
          (dir (file-name-directory file))
@@ -285,7 +316,7 @@
   "Sset up a sparse keymap for repeating window actions."
   (interactive)
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "m") (lambda () (interactive)
+    (define-key map (kbd "n") (lambda () (interactive)
                                 (window-swap-states)))
     (define-key map (kbd "h") (lambda () (interactive)
                                 (enlarge-window 2 t)))
@@ -301,7 +332,7 @@
   "Synchronize tab-bar faces with the current theme, and set mode-line background color interactively using `read-color`."
   (interactive)
   ;; Use `read-color` to get the mode-line background color from the user
-  (let ((selected-color (read-color "Choose mode-line background color (default is #ff8c00): " nil t)))
+  (let ((selected-color (read-color)))
     (set-hl-line-darker-background)
     (set-face-attribute 'mode-line nil :height 120 :underline nil :overline nil :box nil
                         :background selected-color :foreground "#000000")
@@ -337,7 +368,7 @@
 ;;
 (defun set-hl-line-darker-background ()
   "Set the hl-line background to a slightly darker shade of the default background,
-                                        preserving the original foreground colors of the current line."
+                                          preserving the original foreground colors of the current line."
   (interactive)
   (require 'hl-line)
   (unless global-hl-line-mode
@@ -358,7 +389,7 @@
 ;;
 (defun my/switch-to-thing ()
   "Switch to a buffer, open a recent file, jump to a bookmark,
-                                    or change the theme from a unified interface."
+                                      or change the theme from a unified interface."
   (interactive)
   (let* ((buffers (mapcar #'buffer-name (buffer-list)))
          (recent-files recentf-list)
@@ -401,7 +432,7 @@
 ;;
 (defun my/html-org-table-highlight ()
   "Open the exported HTML file, find tables with specific classes,
-                                                    and add background styles to rows containing keywords in <td> or <th> elements."
+                                                      and add background styles to rows containing keywords in <td> or <th> elements."
   (interactive)
   (let* ((org-file (buffer-file-name))
          (html-file (concat (file-name-sans-extension org-file) ".html")))
@@ -448,10 +479,13 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
                 (contents "")
                 (all-properties (org-entry-properties))
                 (filtered-properties
-                 (delq nil
-                       (mapcar (lambda (prop)
-                                 (cdr (assoc prop all-properties)))
-                               properties-to-display))))
+                 (mapcar (lambda (prop)
+                           (if (cdr (assoc prop all-properties))
+                               (cdr (assoc prop all-properties))
+                             ""))
+                         properties-to-display)))
+           (prin1 properties-to-display)
+           (prin1 all-properties)
            (prin1 filtered-properties)
            (org-end-of-meta-data nil)
            (skip-chars-forward " \n\t")
@@ -546,7 +580,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
              '("\\*Messages" display-buffer-same-window))
 
 ;;
-;; -> org
+;; -> org-core
 ;;
 (setq org-startup-indented t)
 (setq org-use-speed-commands t)
@@ -567,7 +601,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 (setq scroll-preserve-screen-position t)
 
 ;;
-;; -> dired
+;; -> dired-core
 ;;
 (setq dired-listing-switches "-alGgh")
 ;; I don't ever want a confirmation of a deletion
@@ -582,7 +616,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
 
 ;;
-;; -> visuals
+;; -> visuals-core
 ;;
 (menu-bar-mode -1)
 (scroll-bar-mode -1)
@@ -642,21 +676,35 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 ;;
 ;; -> modeline
 ;;
-(setq-default mode-line-format
-              (list
-               '(:eval (if (and (buffer-file-name) (buffer-modified-p))
-                           (propertize " * " 'face
-                                       '(:background "#ff0000" :foreground "#ffffff" :inherit bold)) ""))
-               '(:eval
-                 (propertize (format "%s" (abbreviate-file-name default-directory)) 'face '(:inherit bold)))
-               '(:eval
-                 (if (not (equal major-mode 'dired-mode))
-                     (propertize (format "%s " (buffer-name)))
-                   " "))
-               'mode-line-position
-               'mode-line-modes
-               'mode-line-misc-info
-               '(:eval (format " | Point: %d" (point)))))
+(setq my/mode-line-format
+      (list
+       '(:eval (if (and (buffer-file-name) (buffer-modified-p))
+                   (propertize " * " 'face
+                               '(:background "#ff0000" :foreground "#ffffff" :inherit bold)) ""))
+       '(:eval
+         (propertize (format "%s" (abbreviate-file-name default-directory)) 'face '(:inherit bold)))
+       '(:eval
+         (if (not (equal major-mode 'dired-mode))
+             (propertize (format "%s " (buffer-name)))
+           " "))
+       'mode-line-position
+       'mode-line-modes
+       'mode-line-misc-info
+       '(:eval (format " | Point: %d" (point)))))
+
+(setq-default mode-line-format my/mode-line-format)
+
+(defun my/toggle-mode-line ()
+  "Toggle the visibility of the mode-line by checking its current state."
+  (interactive)
+  (if (eq mode-line-format nil)
+      (progn
+        (setq-default mode-line-format my/mode-line-format)
+        (setq frame-title-format "%f"))
+    (progn
+      (setq-default mode-line-format nil)
+      (setq frame-title-format mode-line-format)))
+  (force-mode-line-update t))
 
 ;;
 ;; -> find
@@ -694,7 +742,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
      ))
 
 ;;
-;; -> spelling
+;; -> spelling-core
 ;;
 (setq ispell-local-dictionary "en_GB")
 (setq ispell-program-name "hunspell")
@@ -782,7 +830,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 ;; (global-set-key (kbd "C-x p u") 'my/etags-update)
 
 ;;
-;; -> shell
+;; -> shell-core
 ;;
 (defun my/shell-create (name)
   "Create a custom-named eshell buffer with NAME."
@@ -796,10 +844,9 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 ;;
 (setq tab-bar-new-tab-to 'rightmost)
 (setq tab-bar-close-button-show nil)
-(my/sync-tab-bar-to-theme)
 
 ;;
-;; -> windows-specific
+;; -> windows-specific-core
 ;;
 (when (eq system-type 'windows-nt)
   (setq home-dir "c:/users/jimbo")
@@ -818,7 +865,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
   (add-to-list 'default-frame-alist `(font . ,font-general)))
 
 ;;
-;; -> linux-specific
+;; -> linux-specific-core
 ;;
 (when (eq system-type 'gnu/linux)
   (custom-theme-set-faces
@@ -830,13 +877,13 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
   (add-to-list 'default-frame-alist `(font . ,font-general)))
 
 ;;
-  ;; -> development
-  ;;
-  (global-set-key (kbd "C-c t") 'toggle-centered-buffer)
-
+;; -> development-core
+;;
+(global-set-key (kbd "C-c t") 'toggle-centered-buffer)
+;;
 (defun my/md-to-org-convert-buffer (&optional offset)
   "Convert the current buffer from Markdown to Org-mode format, adjusting heading levels by OFFSET.
-If OFFSET is positive, promote headings (move left). If OFFSET is negative, demote headings (move right)."
+    If OFFSET is positive, promote headings (move left). If OFFSET is negative, demote headings (move right)."
   (interactive "p") ;; `p` allows capturing the universal argument as an integer
   (let ((offset (or offset 0))) ;; Default to 0 if no argument is provided
     (save-excursion
@@ -844,62 +891,53 @@ If OFFSET is positive, promote headings (move left). If OFFSET is negative, demo
       (goto-char (point-min))
       (while (re-search-forward "^\\([ \t]*\\)[*-+] \\(.*\\)$" nil t)
         (replace-match (concat (match-string 1) "- \\2")))
-
       ;; Bold: `**bold**` -> `*bold*` only if directly adjacent
       (goto-char (point-min))
       (while (re-search-forward "\\b\\*\\*\\([^ ]\\(.*?\\)[^ ]\\)\\*\\*\\b" nil t)
         (replace-match "*\\1*"))
-
       ;; Italics: `_italic_` -> `/italic/`
       (goto-char (point-min))
       (while (re-search-forward "\\b_\\([^ ]\\(.*?\\)[^ ]\\)_\\b" nil t)
         (replace-match "/\\1/"))
-
       ;; Links: `[text](url)` -> `[[url][text]]`
       (goto-char (point-min))
       (while (re-search-forward "\\[\\(.*?\\)\\](\\(.*?\\))" nil t)
         (replace-match "[[\\2][\\1]]"))
-
       ;; Code blocks: Markdown ```lang ... ``` to Org #+begin_src ... #+end_src
       (goto-char (point-min))
       (while (re-search-forward "```\\(.*?\\)\\(?:\n\\|\\s-\\)\\(\\(?:.\\|\n\\)*?\\)```" nil t)
         (replace-match "#+begin_src \\1\n\\2#+end_src"))
-
       ;; Inline code: `code` -> =code=
       (goto-char (point-min))
       (while (re-search-forward "`\\(.*?\\)`" nil t)
         (replace-match "=\\1="))
-
       ;; Horizontal rules: `---` or `***` -> `-----`
       (goto-char (point-min))
       (while (re-search-forward "^\\(-{3,}\\|\\*{3,}\\)$" nil t)
         (replace-match "-----"))
-
       ;; Images: `![alt text](url)` -> `[[url]]`
       (goto-char (point-min))
       (while (re-search-forward "!\\[.*?\\](\\(.*?\\))" nil t)
         (replace-match "[[\\1]]"))
-
       (goto-char (point-min))
       ;; Headers: Adjust '#' based on OFFSET
       (while (re-search-forward "^\\(#+\\) \\(.*\\)$" nil t)
         (let* ((current-level (length (match-string 1)))
                (new-level (max 1 (+ current-level offset)))) ;; Ensure level doesn't go below 1
           (replace-match (concat (make-string new-level ?*) " \\2"))))
-
       ;; Remove any trailing whitespace for a clean Org-mode file
       (delete-trailing-whitespace))))
-
+;;
 (defun my/md-to-org-convert-file (input-file output-file)
   "Convert a Markdown file INPUT-FILE to an Org-mode file OUTPUT-FILE."
   (with-temp-buffer
     (insert-file-contents input-file)
     (md-to-org-convert-buffer)
     (write-file output-file)))
-
+;;
 (defun my/convert-markdown-clipboard-to-org (&optional arg)
   "Convert Markdown content from clipboard to Org format and insert it at point.
-With a universal argument ARG, adjust heading levels based on ARG."
+    With a universal argument ARG, adjust heading levels based on ARG."
   (interactive "P") ;; Capture universal argument
   (let ((markdown-content (current-kill 0))
         (original-buffer (current-buffer)))
@@ -909,11 +947,11 @@ With a universal argument ARG, adjust heading levels based on ARG."
       (let ((org-content (buffer-string)))
         (with-current-buffer original-buffer
           (insert org-content))))))
-
+;;
 (global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
-
-(setq org-export-with-drawers t)
-
+;;
+;; (setq org-export-with-drawers t)
+;;
 (defun org-promote-all-headings ()
   "Promote all headings in the current Org buffer along with their subheadings."
   (interactive)
@@ -921,3 +959,80 @@ With a universal argument ARG, adjust heading levels based on ARG."
     (goto-char (point-min))
     (while (outline-next-heading)
       (org-promote-subtree))))
+
+;;
+;; -> LLM-core
+;;
+;;
+(defun safe-add-to-load-path (dir)
+  "Add DIR to `load-path` if it exists."
+  (when (file-directory-p dir)
+    (add-to-list 'load-path dir)))
+
+;; Add directories to load-path only if they exist
+(safe-add-to-load-path (expand-file-name "lisp/shell-maker" user-emacs-directory))
+(safe-add-to-load-path (expand-file-name "lisp/chatgpt-shell" user-emacs-directory))
+(safe-add-to-load-path (expand-file-name "lisp/gptel" user-emacs-directory))
+
+;; Conditionally require and configure packages if their files exist
+(when (locate-library "gptel")
+  (require 'gptel)
+  (require 'gptel-ollama)
+  (require 'gptel-curl)
+  (gptel-make-ollama "llama3_2"
+    :host "localhost:11434"
+    :stream t
+    :models '(llama3_2:latest))
+  (setq gptel-model 'qwen2.5-coder-7b-instruct-q5_k_m:latest
+        gptel-backend (gptel-make-ollama "llama3_2"
+                        :host "localhost:11434"
+                        :stream t
+                        :models '(llama3_2:latest))))
+
+(when (locate-library "shell-maker")
+  (require 'shell-maker))
+
+(when (locate-library "chatgpt-shell")
+  (require 'chatgpt-shell)
+  (setq chatgpt-shell-models
+        '(((:provider . "Ollama")
+           (:label . "Ollama-llama")
+           (:version . "llama3_2")
+           (:short-version)
+           (:token-width . 4)
+           (:context-window . 8192)
+           (:handler . chatgpt-shell-ollama--handle-ollama-command)
+           (:filter . chatgpt-shell-ollama--extract-ollama-response)
+           (:payload . chatgpt-shell-ollama-make-payload)
+           (:url . chatgpt-shell-ollama--make-url))))
+  (with-eval-after-load 'chatgpt-shell
+    (defun chatgpt-shell-menu ()
+      "Menu for ChatGPT Shell commands."
+      (interactive)
+      (let ((key (read-key
+                  (propertize
+                   "ChatGPT Shell Commands:\n
+    e: Explain Code      d: Describe Code           l: Start Shell
+    p: Proofread Region  r: Refactor Code           t: Save Session Transcript
+    g: Write Git Commit  u: Generate Unit Test      o: Summarize Last Command Output
+    s: Send Region       a: Send and Review Region  m: Swap Model\n
+      q: Quit\n\nPress a key: " 'face 'minibuffer-prompt))))
+        (pcase key
+          (?e (call-interactively 'chatgpt-shell-explain-code))
+          (?p (call-interactively 'chatgpt-shell-proofread-region))
+          (?g (call-interactively 'chatgpt-shell-write-git-commit))
+          (?s (call-interactively 'chatgpt-shell-send-region))
+          (?d (call-interactively 'chatgpt-shell-describe-code))
+          (?r (call-interactively 'chatgpt-shell-refactor-code))
+          (?u (call-interactively 'chatgpt-shell-generate-unit-test))
+          (?a (call-interactively 'chatgpt-shell-send-and-review-region))
+          (?l (call-interactively 'chatgpt-shell))
+          (?t (call-interactively 'chatgpt-shell-save-session-transcript))
+          (?o (call-interactively 'chatgpt-shell-eshell-summarize-last-command-output))
+          (?w (call-interactively 'chatgpt-shell-eshell-whats-wrong-with-last-command))
+          (?i (call-interactively 'chatgpt-shell-describe-image))
+          (?m (call-interactively 'chatgpt-shell-swap-model))
+          (?q (message "Quit ChatGPT Shell menu."))
+          (?\C-g (message "Quit ChatGPT Shell menu."))
+          (_ (message "Invalid key: %c" key))))))
+  (global-set-key (kbd "C-c g") 'chatgpt-shell-menu))
