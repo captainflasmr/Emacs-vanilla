@@ -18,46 +18,52 @@ The configuration focuses on ease of use by providing custom keybindings, basic 
 
 * Key Features
 
-1. *Built-in Completion*
+- *Built-in Completion*
    - Default abbrev and file/directory name-based completion via `hippie-expand`.
    - Vanilla modeline configuration using `fido-mode` for fast, minibuffer-based completion.
 
-2. *Keybindings for Navigation and Files*
+- *Keybindings for Navigation and Files*
    - Custom global keybindings for fast access to commonly used directories, files, and dired buffers.
    - Shortcut keys for managing tabs and buffers efficiently.
 
-3. *Window and Visual Controls*
+- *Window and Visual Controls*
    - Keybindings to toggle window visual elements such as fonts, line numbers, themes, and more.
    - Control window management, centered buffer, and theme switching.
 
-4. *Custom Functions*
+- *Custom Functions*
    - Handcrafted Lisp functions to improve usability, such as `toggle-centered-buffer`, `my/dired-duplicate-file`, and `my/copy-buffer-to-kill-ring`. These empower work with files, navigating text, or even adjusting Emacs’s appearance.
 
-5. *No External Packages Required*
+- *No External Packages Required*
    - This configuration sticks entirely to built-in Emacs features, allowing it to be portable, fast, and functional in any setup without the need for installing external ELPA or MELPA packages.
 
 * Setup
 
-1. Clone the repository:
+- Clone the repository:
 
    #+begin_src bash
-   git clone https://github.com/yourusername/EmacsSimple ~/.emacs.d.simple
+   git clone https://github.com/yourusername/Emacs-core ~/.emacs.d.core
    #+end_src
 
 
-2. Symlink the init file:
+- Symlink the init file:
 
    #+begin_src bash
-   ln -s ~/.emacs.d.simple/init.el ~/.emacs.d/init.el
+   ln -s ~/.emacs.d.core/init.el ~/.emacs.d/init.el
    #+end_src
 
-3. Launch Emacs:
+OR
+
+- Define startup directory
+
+   emacs --init-directory=~/.emacs.d.core
+
+- Launch Emacs:
 
    #+begin_src bash
    emacs
    #+end_src
 
-4. Optional: Customize the paths and keybindings in the **init.el** file to better fit your workflow.
+- Optional: Customize the paths and keybindings in the **init.el** file to better fit your workflow.
 
 * Configuration Highlights
 
@@ -86,7 +92,6 @@ Provides simple abbreviation-based completion and an enhanced `hippie-expand` us
 Improves the vanilla Emacs minibuffer with more responsive completion using `icomplete`:
 
 #+begin_src elisp
-;; -> modeline-completion-vanilla
 (fido-mode 1)
 (define-key icomplete-minibuffer-map (kbd "M-RET") 'my-icomplete-exit-minibuffer-with-input)
 (setq icomplete-compute-delay 0)
