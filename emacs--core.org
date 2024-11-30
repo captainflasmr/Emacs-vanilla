@@ -885,7 +885,7 @@ Highlights customization for the Find and Grep tools within Emacs, including app
 
 * grep-core
 
-My aim here is to make deadgrep as similar to rgrep as possible for easier switching back and forth between a more vanilla like emacs experience.
+My aim here is to make rgrep as similar to deadgrep as possible for easier switching back and forth between a more vanilla like emacs experience.
 
 #+begin_src elisp
 ;;
