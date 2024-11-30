@@ -1,5 +1,5 @@
 ;;
-;; -> requires
+;; -> requires-core
 ;;
 (require 'org)
 (require 'grep)
@@ -18,7 +18,7 @@
         try-complete-lisp-symbol-partially try-complete-lisp-symbol))
 
 ;;
-;; -> modeline-completion-vanilla
+;; -> modeline-completion-core
 ;;
 (fido-mode 1)
 (defun my-icomplete-exit-minibuffer-with-input ()
@@ -157,7 +157,7 @@
 ;;
 (column-number-mode 1)
 (desktop-save-mode -1)
-(display-time-mode 1)
+(display-time-mode -1)
 (global-auto-revert-mode t)
 (savehist-mode 1)
 (show-paren-mode t)
@@ -165,13 +165,13 @@
 (global-font-lock-mode t)
 
 ;;
-;; -> bell
+;; -> bell-core
 ;;
 (setq visible-bell t)
 (setq ring-bell-function 'ignore)
 
 ;;
-;; -> setqs
+;; -> setqs-core
 ;;
 (setq completion-styles '(basic partial-completion emacs22))
 (setq custom-safe-themes t)
@@ -185,7 +185,7 @@
 (setq native-comp-async-report-warnings-errors nil)
 
 ;;
-;; -> confirm
+;; -> confirm-core
 ;;
 (defalias 'yes-or-no-p 'y-or-n-p)
 (setq confirm-kill-emacs 'y-or-n-p)
@@ -194,7 +194,7 @@
 (set-buffer-modified-p nil)
 
 ;;
-;; -> backups
+;; -> backups-core
 ;;
 (setq make-backup-files 1)
 (setq backup-directory-alist '(("." . "~/backup"))
@@ -205,14 +205,14 @@
       kept-old-versions 5)   ; and how many of the old
 
 ;;
-;; -> custom-settings
+;; -> custom-settings-core
 ;;
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(org-level-1 ((t (:inherit default :weight regular :height 1.1))))
+ '(org-level-1 ((t (:inherit default :weight regular :height 1.0))))
  '(org-level-2 ((t (:inherit default :weight light :height 1.0))))
  '(org-level-3 ((t (:inherit default :weight light :height 1.0))))
  '(org-level-4 ((t (:inherit default :weight light :height 1.0))))
@@ -567,7 +567,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
   (message (concat (buffer-file-name) " Copied")))
 
 ;;
-;; -> window-positioning
+;; -> window-positioning-core
 ;;
 (add-to-list 'display-buffer-alist
              '("\\*.*shell"
@@ -594,7 +594,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
         ("CANCELLED" . "#426b3e")))
 
 ;;
-;; -> scroll
+;; -> scroll-core
 ;;
 (setq scroll-margin 10)
 (setq scroll-conservatively 10)
@@ -631,7 +631,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 (set-fringe-mode '(20 . 20))
 
 ;;
-;; -> imenu
+;; -> imenu-core
 ;;
 
 (defun my-imenu-create-index ()
@@ -667,14 +667,14 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
             (imenu-add-menubar-index)))
 
 ;;
-;; -> recentf
+;; -> recentf-core
 ;;
 (recentf-mode 1)
 (setq recentf-max-menu-items 200)
 (setq recentf-max-saved-items 200)
 
 ;;
-;; -> modeline
+;; -> modeline-core
 ;;
 (setq my/mode-line-format
       (list
@@ -707,7 +707,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
   (force-mode-line-update t))
 
 ;;
-;; -> find
+;; -> find-core
 ;;
 (defun my/find-file ()
   "Find file from current directory in many different ways."
@@ -731,7 +731,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
     (when file (find-file (expand-file-name file)))))
 
 ;;
-;; -> grep
+;; -> grep-core
 ;;
 (eval-after-load 'grep
   '(progn
@@ -752,7 +752,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 (global-set-key (kbd "C-c s s") #'ispell-word)
 
 ;;
-;; -> gdb
+;; -> gdb-core
 ;;
 (setq gdb-display-io-nopopup 1)
 (setq gdb-many-windows t)
@@ -761,7 +761,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 (global-set-key (kbd "<f11>") 'gud-step)
 
 ;;
-;; -> compilation
+;; -> compilation-core
 ;;
 (setq compilation-always-kill t)
 (setq compilation-context-lines 3)
@@ -771,7 +771,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 (global-set-key (kbd "<f5>") 'my/project-compile)
 
 ;;
-;; -> diff
+;; -> diff-core
 ;;
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
 (setq ediff-highlight-all-diffs t)
@@ -780,7 +780,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 (add-hook 'ediff-prepare-buffer-hook (lambda () (visual-line-mode -1)))
 
 ;;
-;; -> project
+;; -> project-core
 ;;
 
 (defun my/project-create-compilation-search-path ()
@@ -798,13 +798,13 @@ With directories under project root using find."
 (setq project-vc-extra-root-markers '(".project"))
 
 ;;
-;; -> indentation
+;; -> indentation-core
 ;;
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 4)
 
 ;;
-;; -> etags
+;; -> etags-core
 ;;
 ;;
 (defun my/etags-load ()
@@ -858,13 +858,15 @@ With directories under project root using find."
     (rename-buffer new-buffer-name t)))
 
 ;;
-;; -> tab-bar
+;; -> tab-bar-core
 ;;
+(setq tab-bar-close-button-show nil)
+(setq tab-bar-new-button-show nil)
 (setq tab-bar-new-tab-to 'rightmost)
 (setq tab-bar-close-button-show nil)
 
 ;;
-;; -> windows-specific
+;; -> windows-specific-core
 ;;
 
 (when (eq system-type 'windows-nt)
@@ -971,7 +973,7 @@ With directories under project root using find."
         (with-current-buffer original-buffer
           (insert org-content))))))
 ;;
-(defun org-promote-all-headings (&optional arg)
+(defun my/org-promote-all-headings (&optional arg)
   "Promote all headings in the current Org buffer along with their subheadings."
   (interactive "p")
   (org-map-entries
@@ -979,6 +981,7 @@ With directories under project root using find."
      (dotimes (_ arg) (org-promote)))))
 ;;
 (global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
+(global-set-key (kbd "M-s u") #'my/org-promote-all-headings)
 
 ;;
 ;; -> LLM-core
