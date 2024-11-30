@@ -16,13 +16,13 @@ A simple universal emacs configuration that will work with the following VMs wit
 
 This is a literate configuration and therefore is self documenting!
 
-* requires
+* requires-core
 
 Ensures essential packages like `org`, `dired-x`, and `org-agenda` are loaded at startup.
 
 #+begin_src elisp
 ;;
-;; -> requires
+;; -> requires-core
 ;;
 (require 'org)
 (require 'grep)
@@ -47,13 +47,13 @@ Simple abbrev completion
         try-complete-lisp-symbol-partially try-complete-lisp-symbol))
 #+end_src
 
-* modeline-completion
+* modeline-completion-core
 
 Setup for both vanilla modeline.
 
 #+begin_src elisp
 ;;
-;; -> modeline-completion-vanilla
+;; -> modeline-completion-core
 ;;
 (fido-mode 1)
 (defun my-icomplete-exit-minibuffer-with-input ()
@@ -222,7 +222,7 @@ Turns on various modes like `global-font-lock-mode` for syntax highlighting and 
 ;;
 (column-number-mode 1)
 (desktop-save-mode -1)
-(display-time-mode 1)
+(display-time-mode -1)
 (global-auto-revert-mode t)
 (savehist-mode 1)
 (show-paren-mode t)
@@ -230,25 +230,25 @@ Turns on various modes like `global-font-lock-mode` for syntax highlighting and 
 (global-font-lock-mode t)
 #+end_src
 
-* bell
+* bell-core
 
 Suppresses the auditory bell function in Emacs and opts for a visible bell or completely ignores bell triggers, improving the user interface experience during invalid operations.
 
 #+begin_src elisp
 ;;
-;; -> bell
+;; -> bell-core
 ;;
 (setq visible-bell t)
 (setq ring-bell-function 'ignore)
 #+end_src
 
-* setqs
+* setqs-core
 
 This broad category includes a wide range of `setq` configurations that modify the behaviour of Emacs's core features — from file handling to search behaviours, reinforcing the customizability of Emacs.
 
 #+begin_src elisp
 ;;
-;; -> setqs
+;; -> setqs-core
 ;;
 (setq completion-styles '(basic partial-completion emacs22))
 (setq custom-safe-themes t)
@@ -262,13 +262,13 @@ This broad category includes a wide range of `setq` configurations that modify t
 (setq native-comp-async-report-warnings-errors nil)
 #+end_src
 
-* confirm
+* confirm-core
 
 Configures aliases and settings for reducing the need for confirmations in repetitive tasks, streamlining user workflows.
 
 #+begin_src elisp
 ;;
-;; -> confirm
+;; -> confirm-core
 ;;
 (defalias 'yes-or-no-p 'y-or-n-p)
 (setq confirm-kill-emacs 'y-or-n-p)
@@ -277,13 +277,13 @@ Configures aliases and settings for reducing the need for confirmations in repet
 (set-buffer-modified-p nil)
 #+end_src
 
-* backups
+* backups-core
 
 Adjusts Emacs's file backup settings for a better experience, specifying backup file locations and policies to prevent data loss while keeping the working directory clean.
 
 #+begin_src elisp
 ;;
-;; -> backups
+;; -> backups-core
 ;;
 (setq make-backup-files 1)
 (setq backup-directory-alist '(("." . "~/backup"))
@@ -294,20 +294,20 @@ Adjusts Emacs's file backup settings for a better experience, specifying backup 
       kept-old-versions 5)   ; and how many of the old
 #+end_src
 
-* custom-settings
+* custom-settings-core
 
 Places for `custom-set-variables` and `custom-set-faces` used by Emacs's customization system to record user preferences set through the graphical customize interface.
 
 #+begin_src elisp
 ;;
-;; -> custom-settings
+;; -> custom-settings-core
 ;;
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(org-level-1 ((t (:inherit default :weight regular :height 1.1))))
+ '(org-level-1 ((t (:inherit default :weight regular :height 1.0))))
  '(org-level-2 ((t (:inherit default :weight light :height 1.0))))
  '(org-level-3 ((t (:inherit default :weight light :height 1.0))))
  '(org-level-4 ((t (:inherit default :weight light :height 1.0))))
@@ -668,13 +668,13 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
   (message (concat (buffer-file-name) " Copied")))
 #+end_src
 
-* window-positioning
+* window-positioning-core
 
 Configures rules and behaviours for display-buffer functions to control how new buffers are shown, whether in existing windows or new splits, enhancing window management in Emacs.
 
 #+begin_src elisp
 ;;
-;; -> window-positioning
+;; -> window-positioning-core
 ;;
 (add-to-list 'display-buffer-alist
              '("\\*.*shell"
@@ -707,13 +707,13 @@ Extends and customizes Org mode for document structuring, note-taking, and proje
         ("CANCELLED" . "#426b3e")))
 #+end_src
 
-* scroll
+* scroll-core
 
 Adjusts scrolling behaviours and settings for a smoother navigation experience within buffer contents.
 
 #+begin_src elisp
 ;;
-;; -> scroll
+;; -> scroll-core
 ;;
 (setq scroll-margin 10)
 (setq scroll-conservatively 10)
@@ -762,13 +762,13 @@ Configures various visual aspects of Emacs, including menu bar, toolbar, and scr
 (set-fringe-mode '(20 . 20))
 #+end_src
 
-* imenu
+* imenu-core
 
 Customizes the Imenu index-building functionality for improved navigation within structured documents or source code, demonstrating regex-based configurations for specific file types.
 
 #+begin_src elisp
 ;;
-;; -> imenu
+;; -> imenu-core
 ;;
 
 (defun my-imenu-create-index ()
@@ -805,26 +805,26 @@ Customizes the Imenu index-building functionality for improved navigation within
 
 #+end_src
 
-* recentf
+* recentf-core
 
 Optimizes the handling of recently opened files list, tweaking preferences for the number of items shown and integration points for quick access to recent files.
 
 #+begin_src elisp
 ;;
-;; -> recentf
+;; -> recentf-core
 ;;
 (recentf-mode 1)
 (setq recentf-max-menu-items 200)
 (setq recentf-max-saved-items 200)
 #+end_src
 
-* modeline
+* modeline-core
 
 Customizes the modeline for displaying active modes, buffer names, or other context-sensitive information, improving the feedback and control available at a glance.
 
 #+begin_src elisp
 ;;
-;; -> modeline
+;; -> modeline-core
 ;;
 (setq my/mode-line-format
       (list
@@ -858,13 +858,13 @@ Customizes the modeline for displaying active modes, buffer names, or other cont
 
 #+end_src
 
-* find
+* find-core
 
 Highlights customization for the Find and Grep tools within Emacs, including appearance, behaviour, and integration points fostering efficient content search and navigation.
 
 #+begin_src elisp
 ;;
-;; -> find
+;; -> find-core
 ;;
 (defun my/find-file ()
   "Find file from current directory in many different ways."
@@ -888,13 +888,13 @@ Highlights customization for the Find and Grep tools within Emacs, including app
     (when file (find-file (expand-file-name file)))))
 #+end_src
 
-* grep
+* grep-core
 
 My aim here is to make deadgrep as similar to rgrep as possible for easier switching back and forth between a more vanilla like emacs experience.
 
 #+begin_src elisp
 ;;
-;; -> grep
+;; -> grep-core
 ;;
 (eval-after-load 'grep
   '(progn
@@ -921,13 +921,13 @@ Configures spell checking tools and dictionaries, integrating external tools lik
 (global-set-key (kbd "C-c s s") #'ispell-word)
 #+end_src
 
-* gdb
+* gdb-core
 
 Sets up GDB, the GNU Debugger, integration for debugging within Emacs, tweaking interface elements and keybindings for a more convenient debugging workflow.
 
 #+begin_src elisp
 ;;
-;; -> gdb
+;; -> gdb-core
 ;;
 (setq gdb-display-io-nopopup 1)
 (setq gdb-many-windows t)
@@ -936,13 +936,13 @@ Sets up GDB, the GNU Debugger, integration for debugging within Emacs, tweaking 
 (global-set-key (kbd "<f11>") 'gud-step)
 #+end_src
 
-* compilation
+* compilation-core
 
 Customizes the Compilation mode for handling output from external commands, adjusting styles, behaviours, and filtering for an improved feedback loop during code build or script execution.
 
 #+begin_src elisp
 ;;
-;; -> compilation
+;; -> compilation-core
 ;;
 (setq compilation-always-kill t)
 (setq compilation-context-lines 3)
@@ -952,13 +952,13 @@ Customizes the Compilation mode for handling output from external commands, adju
 (global-set-key (kbd "<f5>") 'my/project-compile)
 #+end_src
 
-* diff
+* diff-core
 
 Customizes the appearance and behaviour of diff and merge tools within Emacs, adjusting styles for better readability and control over version control diffs and conflict resolution.
 
 #+begin_src elisp
 ;;
-;; -> diff
+;; -> diff-core
 ;;
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
 (setq ediff-highlight-all-diffs t)
@@ -967,13 +967,13 @@ Customizes the appearance and behaviour of diff and merge tools within Emacs, ad
 (add-hook 'ediff-prepare-buffer-hook (lambda () (visual-line-mode -1)))
 #+end_src
 
-* project
+* project-core
 
 Customizes Emacs's project management features for handling multiple projects, demonstrating configurations for project discovery, switching, and build command integration.
 
 #+begin_src elisp
 ;;
-;; -> project
+;; -> project-core
 ;;
 
 (defun my/project-create-compilation-search-path ()
@@ -992,19 +992,19 @@ With directories under project root using find."
 
 #+end_src
 
-* identation
+* identation-core
 
 Defining very specific indentation and highlight guides
 
 #+begin_src elisp
 ;;
-;; -> indentation
+;; -> indentation-core
 ;;
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 4)
 #+end_src
 
-* etags
+* etags-core
 
 Generation of etags to have an offline alternative to LSP, uses the following bash script:
 
@@ -1070,7 +1070,7 @@ echo
 
 #+begin_src elisp
 ;;
-;; -> etags
+;; -> etags-core
 ;;
 ;;
 (defun my/etags-load ()
@@ -1130,14 +1130,16 @@ Demonstrates customizations for shell integration within Emacs, optimizing setti
     (rename-buffer new-buffer-name t)))
 #+end_src
 
-* tab-bar
+* tab-bar-core
 
 Details configurations for Emacs's tab bar, showcasing customizations for tab behaviour, appearance, and integration points for keyboard navigation and tab management.
 
 #+begin_src elisp
 ;;
-;; -> tab-bar
+;; -> tab-bar-core
 ;;
+(setq tab-bar-close-button-show nil)
+(setq tab-bar-new-button-show nil)
 (setq tab-bar-new-tab-to 'rightmost)
 (setq tab-bar-close-button-show nil)
 #+end_src
@@ -1148,7 +1150,7 @@ Curates configurations specific to the Windows operating system, adjusting paths
 
 #+begin_src elisp
 ;;
-;; -> windows-specific
+;; -> windows-specific-core
 ;;
 
 (when (eq system-type 'windows-nt)
@@ -1266,7 +1268,7 @@ Curates configurations specific to Linux, making adjustments for paths, fonts, a
         (with-current-buffer original-buffer
           (insert org-content))))))
 ;;
-(defun org-promote-all-headings (&optional arg)
+(defun my/org-promote-all-headings (&optional arg)
   "Promote all headings in the current Org buffer along with their subheadings."
   (interactive "p")
   (org-map-entries
@@ -1274,6 +1276,7 @@ Curates configurations specific to Linux, making adjustments for paths, fonts, a
      (dotimes (_ arg) (org-promote)))))
 ;;
 (global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
+(global-set-key (kbd "M-s u") #'my/org-promote-all-headings)
 
 #+end_src
 
