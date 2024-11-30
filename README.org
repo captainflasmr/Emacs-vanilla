@@ -1,4 +1,4 @@
-#+title: EmacsSimple - A Lightweight Emacs Configuration
+#+title: Emacs-core - A Lightweight Emacs Configuration
 #+author: James Dyer
 #+date: 2024
 #+description: A stripped-down Emacs configuration that avoids external packages, perfect for lightweight usage in VMs or basic tasks.
@@ -8,7 +8,7 @@
 
 * Introduction
 
-*EmacsSimple* is a stripped-down version of my primary Emacs configuration. It is designed to leverage only the default built-in features of Emacs (v27.1 and later). This makes it ideal for virtual machines or scenarios where you need a fast, package-free Emacs setup that works out of the box on most systems.
+*Emacs-core* is a stripped-down version of my primary Emacs configuration. It is designed to leverage only the default built-in features of Emacs (v27.1 and later). This makes it ideal for virtual machines or scenarios where you need a fast, package-free Emacs setup that works out of the box on most systems.
 
 Supported Platforms:
 - SUSE Linux Enterprise (SLES15)

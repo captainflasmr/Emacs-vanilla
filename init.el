@@ -43,14 +43,16 @@
 (define-key my-jump-keymap (kbd "f") #'find-name-dired)
 (define-key my-jump-keymap (kbd "g") (lambda () (interactive) (find-file "~/.config")))
 (define-key my-jump-keymap (kbd "h") (lambda () (interactive) (find-file "~")))
-(define-key my-jump-keymap (kbd "j") (lambda () (interactive) (find-file "/mnt/hgfs/SharedVM/aaa--todo.org")))
-(define-key my-jump-keymap (kbd "k") (lambda () (interactive) (find-file "/mnt/hgfs/SharedVM/confluence--emacs-init.org")))
+(define-key my-jump-keymap (kbd "j") (lambda () (interactive) (find-file "~/DCIM/content/aaa--todo.org")))
+(define-key my-jump-keymap (kbd "k")
+            (lambda () (interactive)
+              (find-file (concat user-emacs-directory "emacs--core.org"))))
 (define-key my-jump-keymap (kbd "l") #'recentf-open-files)
 (define-key my-jump-keymap (kbd "m") #'customize-themes)
 (define-key my-jump-keymap (kbd "n") (lambda () (interactive) (find-file "~/nas")))
 (define-key my-jump-keymap (kbd "o") #'bookmark-jump)
 (define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
-(define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "/mnt/hgfs/SharedVM")))
+(define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "~/DCIM/content/")))
 (define-key my-jump-keymap (kbd "-") #'tab-close)
 
 ;;
@@ -82,7 +84,6 @@
 (global-set-key (kbd "M-s g") #'rgrep)
 (global-set-key (kbd "M-s h") #'my/mark-block)
 (global-set-key (kbd "M-s j") #'eval-defun)
-(global-set-key (kbd "M-s f") #'my/find-file)
 (global-set-key (kbd "M-s l") #'eval-expression)
 (global-set-key (kbd "M-s =") #'ediff-buffers)
 (global-set-key (kbd "M-s w") #'(lambda ()(interactive)
@@ -93,12 +94,13 @@
                                   (org-odt-export-to-odt)
                                   (async-shell-command
                                    "libreoffice --headless --convert-to docx confluence--setup-sles.odt" "*create-docs*")))
-(global-set-key (kbd "M-s z") #'my/copy-buffer-to-kill-ring)
+(global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
 
 ;;
 ;; -> keybinding-core
 ;;
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
+(global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "C-c d") #'my/dired-duplicate-file)
 (global-set-key (kbd "C-c h") #'my/shell-create)
@@ -129,7 +131,6 @@
 (global-set-key (kbd "M-3") #'split-window-horizontally)
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-9") #'hippie-expand)
-;;  (global-set-key (kbd "M-;") 'my/comment-or-uncomment)
 (global-set-key (kbd "M-;") 'delete-other-windows)
 (global-set-key (kbd "M-[") #'yank)
 (global-set-key (kbd "M-]") #'yank-pop)
@@ -143,7 +144,6 @@
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
-(global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
 (with-eval-after-load 'ibuffer
   (define-key ibuffer-mode-map (kbd "C-o") nil)
   (define-key ibuffer-mode-map (kbd "M-j") nil))
@@ -176,7 +176,6 @@
 (setq completion-styles '(basic partial-completion emacs22))
 (setq custom-safe-themes t)
 (setq delete-selection-mode nil)
-(setq dired-dwim-target t)
 (setq enable-local-variables :all)
 (setq frame-title-format "%f")
 (setq kill-whole-line t)
@@ -229,7 +228,7 @@
  '(window-divider ((t (:foreground "black"))))
  '(org-tag ((t (:height 0.99))))
  '(vertical-border ((t (:foreground "#000000")))))
-
+;;
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -603,13 +602,12 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 ;;
 ;; -> dired-core
 ;;
+(setq dired-dwim-target t)
 (setq dired-listing-switches "-alGgh")
-;; I don't ever want a confirmation of a deletion
 (setq dired-auto-revert-buffer t)
 (setq dired-confirm-shell-command nil)
 (setq dired-no-confirm t)
 (setq dired-deletion-confirmer '(lambda (x) t))
-;; always recursively delete
 (setq dired-recursive-deletes 'always)
 (with-eval-after-load 'dired
   (define-key dired-mode-map (kbd "C-o") nil)
@@ -633,7 +631,6 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 ;;
 ;; -> imenu-core
 ;;
-
 (defun my-imenu-create-index ()
   "Create an index using definitions starting with ';; ->'."
   (let ((index-alist '())
@@ -648,9 +645,9 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
                               index-alist
                               (lambda (a b)
                                 (string< (car a) (car b)))))))
-
+;;
 ;; (setq imenu-create-index-function #'my-imenu-create-index)
-
+;;
 (add-hook 'emacs-lisp-mode-hook
           (lambda ()
             (setq truncate-lines t)
@@ -658,7 +655,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
             (setq imenu-generic-expression
                   '((nil "^;;[[:space:]]+-> \\(.*\\)$" 1)))
             (imenu-add-menubar-index)))
-
+;;
 (add-hook 'conf-space-mode-hook
           (lambda ()
             (setq imenu-sort-function 'imenu--sort-by-name)
@@ -691,9 +688,9 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
        'mode-line-modes
        'mode-line-misc-info
        '(:eval (format " | Point: %d" (point)))))
-
+;;
 (setq-default mode-line-format my/mode-line-format)
-
+;;
 (defun my/toggle-mode-line ()
   "Toggle the visibility of the mode-line by checking its current state."
   (interactive)
@@ -750,6 +747,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
                                     (flyspell-buffer)
                                     (flyspell-mode)))
 (global-set-key (kbd "C-c s s") #'ispell-word)
+(global-set-key (kbd "C-c s j") #'ispell-word)
 
 ;;
 ;; -> gdb-core
@@ -782,14 +780,15 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 ;;
 ;; -> project-core
 ;;
-
 (defun my/project-create-compilation-search-path ()
   "Populate the 'compilation-search-path' variable.
 With directories under project root using find."
   (interactive)
   (let ((find-command
          (concat "find " (project-root (project-current t))
-                 " \\( -path \\*/.local -o -path \\*/.config -o -path \\*/.svn -o -path \\*/.git -o -path \\*/nas \\) -prune -o -type d -print")))
+                 " \\( -path \\*/.local -o -path \\*/.config -o
+ -path \\*/.svn -o -path \\*/.git -o -path \\*/nas \\) -prune -o
+ -type d -print")))
     (setq compilation-search-path
           (split-string
            (shell-command-to-string find-command)
