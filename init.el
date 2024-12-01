@@ -87,6 +87,11 @@ Windows are labeled starting from the top-left window and proceed clockwise."
 ;;
 ;; -> keys-visual-core
 ;;
+(add-hook 'text-mode-hook 'visual-line-mode)
+
+;;
+;; -> keys-visual-core
+;;
 (defvar my-win-keymap (make-sparse-keymap))
 (global-set-key (kbd "C-q") my-win-keymap)
 (define-key my-win-keymap (kbd "c") #'display-fill-column-indicator-mode)
@@ -131,12 +136,10 @@ Windows are labeled starting from the top-left window and proceed clockwise."
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
 (global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
 (global-set-key (kbd "C-c a") #'org-agenda)
-(global-set-key (kbd "C-c d") #'my/dired-duplicate-file)
 (global-set-key (kbd "C-c h") #'my/shell-create)
 (global-set-key (kbd "C-c n") #'my/repeat-window-size)
 (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
 (global-set-key (kbd "C-c o s") #'outline-show-all)
-(global-set-key (kbd "C-c u") #'my/dired-du)
 (global-set-key (kbd "C-o") #'other-window)
 (global-set-key (kbd "C-x ;") #'my/switch-to-thing)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
@@ -158,7 +161,6 @@ Windows are labeled starting from the top-left window and proceed clockwise."
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-2") #'split-window-vertically)
 (global-set-key (kbd "M-3") #'split-window-horizontally)
-(global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-9") #'hippie-expand)
 (global-set-key (kbd "M-;") 'delete-other-windows)
 (global-set-key (kbd "M-[") #'yank)
@@ -355,30 +357,6 @@ Windows are labeled starting from the top-left window and proceed clockwise."
     (define-key map (kbd "k") (lambda () (interactive)
                                 (enlarge-window -1 nil)))
     (set-transient-map map t)))
-;;
-(defun my/sync-tab-bar-to-theme ()
-  "Synchronize tab-bar faces with the current theme, and set
-mode-line background color interactively using `read-color`."
-  (interactive)
-  ;; Use `read-color` to get the mode-line background color from the user
-  (let ((selected-color (read-color)))
-    (set-hl-line-darker-background)
-    (set-face-attribute 'mode-line nil :height 120 :underline nil :overline nil :box nil
-                        :background selected-color :foreground "#000000")
-    (set-face-attribute 'mode-line-inactive nil :height 120 :underline nil :overline nil
-                        :background "#000000" :foreground "#aaaaaa")
-    (let ((default-bg (face-background 'default))
-          (default-fg (face-foreground 'default))
-          (default-hl (face-background 'highlight))
-          (inactive-fg (face-foreground 'mode-line-inactive)))
-      (custom-set-faces
-       `(vertical-border ((t (:foreground ,(darken-color default-fg 60)))))
-       `(window-divider ((t (:foreground ,(darken-color default-fg 60)))))
-       `(fringe ((t (:foreground ,default-bg :background ,default-bg))))
-       `(tab-bar ((t (:inherit default :background ,default-bg :foreground ,default-fg))))
-       `(tab-bar-tab ((t (:inherit 'highlight :background ,selected-color :foreground "#000000"))))
-       `(tab-bar-tab-inactive ((t (:inherit default :background ,default-bg :foreground ,inactive-fg
-                                            :box (:line-width 2 :color ,default-bg :style released-button)))))))))
 ;;
 (defun my/dired-du ()
   "Run 'du -hc' and count the total number of files in the directory under
@@ -602,6 +580,30 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
   (save-excursion
     (kill-ring-save (point-min) (point-max)))
   (message (concat (buffer-file-name) " Copied")))
+;;
+(defun my/sync-tab-bar-to-theme ()
+  "Synchronize tab-bar faces with the current theme, and set
+mode-line background color interactively using `read-color`."
+  (interactive)
+  ;; Use `read-color` to get the mode-line background color from the user
+  (let ((selected-color (read-color)))
+    (set-hl-line-darker-background)
+    (set-face-attribute 'mode-line nil :height 120 :underline nil :overline nil :box nil
+                        :background selected-color :foreground "#000000")
+    (set-face-attribute 'mode-line-inactive nil :height 120 :underline nil :overline nil
+                        :background "#000000" :foreground "#aaaaaa")
+    (let ((default-bg (face-background 'default))
+          (default-fg (face-foreground 'default))
+          (default-hl (face-background 'highlight))
+          (inactive-fg (face-foreground 'mode-line-inactive)))
+      (custom-set-faces
+       `(vertical-border ((t (:foreground ,(darken-color default-fg 60)))))
+       `(window-divider ((t (:foreground ,(darken-color default-fg 60)))))
+       `(fringe ((t (:foreground ,default-bg :background ,default-bg))))
+       `(tab-bar ((t (:inherit default :background ,default-bg :foreground ,default-fg))))
+       `(tab-bar-tab ((t (:inherit 'highlight :background ,selected-color :foreground "#000000"))))
+       `(tab-bar-tab-inactive ((t (:inherit default :background ,default-bg :foreground ,inactive-fg
+                                            :box (:line-width 2 :color ,default-bg :style released-button)))))))))
 
 ;;
 ;; -> window-positioning-core
@@ -648,6 +650,8 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 (setq dired-deletion-confirmer '(lambda (x) t))
 (setq dired-recursive-deletes 'always)
 (with-eval-after-load 'dired
+  (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
+  (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
   (define-key dired-mode-map (kbd "C-o") nil)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
 
