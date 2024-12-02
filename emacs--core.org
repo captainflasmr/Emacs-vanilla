@@ -98,9 +98,9 @@ Defines custom keybindings for navigating through files and Emacs features like 
 
 (defun my/quick-window-jump ()
   "Jump to a window by typing its assigned character label.
-Windows are labeled starting from the top-left window and proceed clockwise."
+Windows are labeled starting from the top-left window and proceed top to bottom left to right."
   (interactive)
-  (let* ((window-list (my/get-windows-clockwise))
+  (let* ((window-list (my/get-windows))
          (window-keys (seq-take '("j" "k" "l" ";" "a" "s" "d" "f")
                                 (length window-list)))
          (window-map (cl-pairlis window-keys window-list))
@@ -109,19 +109,15 @@ Windows are labeled starting from the top-left window and proceed clockwise."
         (select-window selected-window)
       (message "No window assigned to key: %c" key))))
 
-(defun my/get-windows-clockwise ()
-  "Return a list of windows in the current frame, ordered clockwise starting from the top-left window."
-  (let ((windows (window-list nil 'no-mini)))
-    (mapcar #'car
-            (sort (mapcar (lambda (w)
-                            (cons w (window-edges w)))
-                          windows)
-                  (lambda (a b)
-                    (let ((edges-a (cdr a))
-                          (edges-b (cdr b)))
-                      (or (< (cadr edges-a) (cadr edges-b))
-                          (and (= (cadr edges-a) (cadr edges-b)) ; Then compare left edges
-                               (< (car edges-a) (car edges-b))))))))))
+(defun my/get-windows ()
+  "Return a list of windows in the current frame, ordered from top to bottom, left to right."
+  (sort (window-list nil 'no-mini)
+        (lambda (w1 w2)
+          (let ((edges1 (window-edges w1))
+                (edges2 (window-edges w2)))
+            (or (< (car edges1) (car edges2)) ; Compare top edges
+                (and (= (car edges1) (car edges2)) ; If equal, compare left edges
+                     (< (cadr edges1) (cadr edges2))))))))
 
 (global-set-key (kbd "M-a") #'my/quick-window-jump)
 
