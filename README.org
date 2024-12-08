@@ -12,29 +12,96 @@
 
 Supported Platforms:
 - SUSE Linux Enterprise (SLES15)
+- SwayWM - Wayland
 - Windows 10
 
 The configuration focuses on ease of use by providing custom keybindings, basic completion support, and visual enhancements without relying on any external packages.
 
 * Key Features
 
-- *Built-in Completion*
-   - Default abbrev and file/directory name-based completion via `hippie-expand`.
-   - Vanilla modeline configuration using `fido-mode` for fast, minibuffer-based completion.
+** Built-in Completion
 
-- *Keybindings for Navigation and Files*
-   - Custom global keybindings for fast access to commonly used directories, files, and dired buffers.
-   - Shortcut keys for managing tabs and buffers efficiently.
+- Default abbreviation expansion and predictive file/directory completion are implemented via =hippie-expand=.
+  
+- Minibuffer Configuration: Vanilla configuration achieved through enabling =fido-mode= provides an intuitive, fast, and clean completion interface in the minibuffer using the built-in =icomplete= framework without requiring third-party tools.
 
-- *Window and Visual Controls*
-   - Keybindings to toggle window visual elements such as fonts, line numbers, themes, and more.
-   - Control window management, centered buffer, and theme switching.
+** Keybindings for Navigation and Files
 
-- *Custom Functions*
-   - Handcrafted Lisp functions to improve usability, such as `toggle-centered-buffer`, `my/dired-duplicate-file`, and `my/copy-buffer-to-kill-ring`. These empower work with files, navigating text, or even adjusting Emacs’s appearance.
+- Global Keybindings: Intuitive shortcut keys grant fast access to commonly used directories, files, and dired buffers. These can be configured to cater to personal file organization preferences.
+  
+- Tab and Buffer Management: Includes keybindings for:
+  - Quickly creating, killing, and cycling through buffers.
+  - Simplified navigation through tabs in Emacs (using its native tab-bar-mode or tab-line-mode).
+  - Use mnemonic key combinations to =split=, =balance=, and =move= between windows, akin to tiling window managers.
 
-- *No External Packages Required*
-   - This configuration sticks entirely to built-in Emacs features, allowing it to be portable, fast, and functional in any setup without the need for installing external ELPA or MELPA packages.
+** Window and Visual Controls
+
+- Flexibly toggle visual Emacs elements such as:
+  - Fonts (adjust point size with keyboard shortcuts).
+  - Line numbers (switch between absolute and relative numbering).
+  - Themes (light/dark mode switching via a single key).
+  - Minor display elements like fringe, scrollbars, and menu bars depending on needs.
+    
+- Window Management*
+  
+  - Handy shortcuts for splitting windows, resizing panes, and reshuffling the layout in a minimal keystroke setup.
+  - A handcrafted =toggle-centered-buffer= function focuses content by placing the active buffer in the center, hiding distractions in other windows.
+
+** Custom Functions
+
+- Handcrafted Lisp Utilities: A small collection of reusable functions that enhance workflow directly without accessing external configuration files or plugins:
+  - =toggle-centered-buffer=: Dynamically rebalances the window layout for distraction-free working.
+  - =my/dired-duplicate-file=: Quickly duplicates the currently selected file in dired mode, increasing workflow efficiency for file templating.
+  - =my/copy-buffer-to-kill-ring=: Copies the entirety of the current buffer content directly to the kill ring for seamless external clipboard usage.
+
+** No External Packages Required
+
+- No Dependency on ELPA/MELPA: This configuration deliberately avoids using 3rd-party packages, ensuring it remains lightweight and portable across systems. All enhancements and ergonomic tweaks leverage built-in Emacs capabilities and Emacs Lisp.
+- Offline-First Design: With no dependency on online repositories or external tools, this setup works out of the box even in restricted or air-gapped environments.
+
+** Additional Ergonomic Setup
+
+- Cross-Platform Key Remapping: Accompanying the Emacs configuration directory are external scripts to enforce ergonomic system-wide keybindings for more efficient Emacs usage:
+  - *Windows*: 
+    - Includes *Autohotkey (AHK)* scripts that:
+      - Map the *CapsLock* key to *Ctrl* for comfortable keyboard shortcuts like =C-s= (save) or =C-x C-f= (open file).
+      - Map the *Right Alt* key to *Ctrl* for ambidextrous modifier usage.
+      - Enable *Sticky Keys*, making modifier keys like Ctrl/Alt functional even when pressed momentarily before a second keystroke.
+      - Example AHK snippet:
+      
+        #+begin_src autohotkey
+        ; Map CapsLock to Ctrl
+        CapsLock::Ctrl
+        ; Right Alt to Ctrl
+        RAlt::Ctrl
+        ; Enable Sticky Keys
+        #InstallKeybdHook
+        #+end_src
+  
+  - *Linux (X11/Wayland)*:
+    - Includes custom *xkb* configuration files to enable similar ergonomic key remappings:
+      - CapsLock → Ctrl.
+      - Right Alt → Ctrl.
+      - Optionally toggle Sticky Keys for one-handed workflows.
+    - Instructions or a provided script to set these configurations using =setxkbmap= or editing XKB configuration files.
+
+- *Offline Configuration Backup*:
+  - The ergonomic setup complements Emacs usage perfectly and offers backup scripts to migrate these keymapping changes across systems without requiring online setups.
+
+** Portable Directory Structure
+
+- A self-contained folder structure that encapsulates all necessary files:
+  
+  #+begin_src 
+  emacs-core/
+  ├── init.el                   # Main Emacs configuration file
+  ├── scripts/                  # Shell/Autohotkey scripts for ergonomic key remapping
+  │   ├── windows.ahk
+  │   └── linux_xkb.sh
+  └── README.md                 # Setup guide
+  #+end_src
+  
+This directory can be zipped, copied, and unpacked on any machine to instantly set up a usable, ergonomic Emacs environment.
 
 * Setup
 
