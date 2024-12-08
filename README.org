@@ -132,6 +132,122 @@ OR
 
 - Optional: Customize the paths and keybindings in the **init.el** file to better fit your workflow.
 
+* TODO Features that won't be converted to core
+
+** TODO themes
+
+** TODO ox-hugo
+
+** TODO eglot
+
+Not too much I can do about this, however I could apply some =etag= replacement functionality, but it really isn't the same.
+
+* TODO Future features to convert to core
+
+** TODO selected-window-accent-mode
+
+My package of highlighting the selected window/tabs, which actually I find very useful and of course due to my familiarity I could code up a more simple version.
+
+** TODO use-package
+
+*** TODO htmlize
+
+Go through the Emacs export mechanism instead and open separate browser window, refreshing when exported each time?
+
+*** TODO embark
+
+I am not using too many aspects mainly the following:
+
+- copy command
+
+*** TODO rainbow-mode
+
+Surely I can code something simple up using overlays?, I could also kind of live without if pushed.
+
+*** TODO deadgrep
+
+Would rgrep be potentially good enough?, maybe
+
+** TODO image-dired
+
+Copy over functionality, no real external things, its just is it valuable given how little I use it? 
+
+** TODO recentf-open-files to recentf-open
+
+Given recentf-open was introduced in 29.1 it would probably be straightforward to create a general recentf passing through completing read.  Probably just copy what has been put into recentf.el
+
+** TODO find-name-dired replaced with a more flexible version
+
+Currently find file type jump key functionality for core is just find-name-dired but probably better to have a more flexible version that can still use =find-name-dired= but if ripgrep exists or even find then present those options.  This will then potentially be a more modern approach.
+
+** TODO tempel
+
+I use pretty simple, no yassnippet complexity here, so maybe I can adapt dabrev with some predefined functions for the most common completion replacements?
+
+** TODO corfu / company completion
+
+Can probably live without, as tab completion is probably fine
+
+** TODO spelling
+
+The core is using hunspell, flyspell which works generally pretty well, libreoffice will pretty much always be available or easily installable so hunspell will probably be always available.
+
+I like jinx as it is fast and efficient.
+
+powerthesaurus I don't use that often.
+
+writegood-mode is a favourite, but I could probably live without it.
+
+** TODO popper
+
+Mainly used for popping and popping out shells, I'm sure I can code up an alternative solution here if I need to.
+
+** TODO shell
+
+can I bring in cape-history into eshell/shell, the main issue is the inline fish type completion which I may be able to live without, but it is really fast and convenient!
+
+** TODO magit
+
+Replace by built-in VC
+
+** TODO capf-autosuggest - namely fish style completion in an eshell
+
+Some elisp for some simple predictive inline completion, maybe take a look at how capf-autosuggest does it.
+
+** TODO org-capture
+
+I think we can already move to core
+
+** TODO DWIM script integration
+
+** TODO org-agenda
+
+I think we can already move to core
+
+** TODO calendar / calfw
+
+** TODO kurecolor
+
+Add some elisp with the requisite regex-search and elisp colour calls, I have achieved this in the past, before I found the more convenient option of kurecolor
+
+** TODO Ada
+
+Unfortunately this may be the only elisp package that I may need to bake into this whole concept.  Current ada-mode isn't supported out of the box in Emacs, it is suggested to use the AdaCore ada-mode but that is a pain to compile (mainly due to trying to install gnatcoll), I have found the old ada mode used by Emacs for that adequate, so this may need to be separately downloaded and baked in.
+
+These is also the potential to use ada-mode-lite and leverage eglot for the rest.
+
+** TODO transients
+
+Convert all transients which rely on Emacs 28 implementation of built-in transients.  The same can be achieved comfortably with a simple menu to stdout and read key type system.
+
+*** TODO my/transient-outlining-and-folding
+
+Transient menu for outline-mode.
+
+*** TODO my/prog-folding
+
+Enable and configure outline minor mode for code folding.  This function sets up the outline minor mode tailored for programming modes based on basic space / tab indentation.
+
 * Configuration Highlights
 
 Here’s a breakdown of some key sections in the configuration:
