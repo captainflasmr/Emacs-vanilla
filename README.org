@@ -17,6 +17,23 @@ Supported Platforms:
 
 The configuration focuses on ease of use by providing custom keybindings, basic completion support, and visual enhancements without relying on any external packages.
 
+* Whats New
+
+** <2024-12-09>
+
+enhance window navigation and introduce my rainbow mode
+
+- Refactored `my/quick-window-jump` for better window labeling and overlay management:
+  - Improved window sorting logic for more accurate top-to-bottom, left-to-right navigation.
+  - Added visual overlays to display window shortcuts with labels.
+- Introduced `my/rainbow-mode`:
+  - Overlays hex color values in buffers with their respective colors for better readability.
+- Minor refactor to `my/copy-buffer-to-kill-ring` by removing redundant `save-excursion`.
+- Corrected a typo: Renamed `identation-core` to `indentation-core`.
+- Added `my/eglot-dir-locals` for ADA mode to simplify `.dir-locals.el` file creation:
+  - Supports Eglot workspace configuration based on paths from Dired.
+- Updated version control handling to consider only `SVN` and `Git` backends.
+
 * Key Features
 
 ** Built-in Completion
