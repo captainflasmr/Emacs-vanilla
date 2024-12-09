@@ -3,7 +3,7 @@
 #+date: 2024
 #+description: A stripped-down Emacs configuration that avoids external packages, perfect for lightweight usage in VMs or basic tasks.
 #+startup: content
-#+todo: TODO | DONE
+#+todo: TODO DOING | DONE
 #+property: header-args :tangle no
 
 * Introduction
@@ -149,41 +149,68 @@ OR
 
 - Optional: Customize the paths and keybindings in the **init.el** file to better fit your workflow.
 
-* TODO Features that won't be converted to core
+* Kanban
 
-** TODO themes
+Here is a kanban of the features that will be (hopefully) converted to core and visually demonstrating their current status.
 
-** TODO ox-hugo
+#+begin: kanban :layout ("..." . 50) :scope nil :range ("TODO" . "DONE") :sort "O" :depth 3 :match "roadmap" :compressed t
+| TODO                                               | DOING        | DONE |
+|----------------------------------------------------+--------------+------|
+| [[file:README.org::*selected-window-accent-mode][selected-window-accent-mode]]                        | [[file:README.org::*rainbow-mode][rainbow-mode]] |      |
+| [[file:README.org::*htmlize][htmlize]]                                            | [[file:README.org::*magit][magit]]        |      |
+| [[file:README.org::*embark][embark]]                                             |              |      |
+| [[file:README.org::*deadgrep][deadgrep]]                                           |              |      |
+| [[file:README.org::*image-dired][image-dired]]                                        |              |      |
+| [[file:README.org::*recentf-open-files to recentf-open][recentf-open-files to recentf-open]]                 |              |      |
+| [[file:README.org::*find-name-dired replaced with a more flexible version][find-name-dired replaced with a more flexible v...]] |              |      |
+| [[file:README.org::*tempel][tempel]]                                             |              |      |
+| [[file:README.org::*corfu / company completion][corfu / company completion]]                         |              |      |
+| [[file:README.org::*spelling][spelling]]                                           |              |      |
+| [[file:README.org::*popper][popper]]                                             |              |      |
+| [[file:README.org::*shell][shell]]                                              |              |      |
+| [[file:README.org::*capf-autosuggest][capf-autosuggest]]                                   |              |      |
+| [[file:README.org::*org-capture][org-capture]]                                        |              |      |
+| [[file:README.org::*DWIM script integration][DWIM script integration]]                            |              |      |
+| [[file:README.org::*org-agenda][org-agenda]]                                         |              |      |
+| [[file:README.org::*kurecolor][kurecolor]]                                          |              |      |
+| [[file:README.org::*Ada][Ada]]                                                |              |      |
+| [[file:README.org::*transients][transients]]                                         |              |      |
+| [[file:README.org::*my/transient-outlining-and-folding][my/transient-outlining-and-folding]]                 |              |      |
+| [[file:README.org::*my/prog-folding][my/prog-folding]]                                    |              |      |
+#+end:
 
-** TODO eglot
 
-Not too much I can do about this, however I could apply some =etag= replacement functionality, but it really isn't the same.
+* Roadmap                                                           :roadmap:
 
-* TODO Future features to convert to core
+Here are the features that will be (hopefully) converted to core.
+
+** DOING rainbow-mode
+
+Surely I can code something simple up using overlays?, I could also kind of live without if pushed.
+
+** DOING magit
+
+Replace by built-in VC
+
+Just need to be able to push using ssh
 
 ** TODO selected-window-accent-mode
 
 My package of highlighting the selected window/tabs, which actually I find very useful and of course due to my familiarity I could code up a more simple version.
 
-** TODO use-package
-
-*** TODO htmlize
+** TODO htmlize
 
 Go through the Emacs export mechanism instead and open separate browser window, refreshing when exported each time?
 
-*** TODO embark
+** TODO embark
 
 I am not using too many aspects mainly the following:
 
 - copy command
 
-*** TODO rainbow-mode
+** TODO deadgrep
 
-Surely I can code something simple up using overlays?, I could also kind of live without if pushed.
-
-*** TODO deadgrep
-
-Would rgrep be potentially good enough?, maybe
+Would rgrep be potentially good enough?, maybe, or maybe pull on ripgrep through a simple interface.
 
 ** TODO image-dired
 
@@ -221,13 +248,9 @@ Mainly used for popping and popping out shells, I'm sure I can code up an altern
 
 ** TODO shell
 
-can I bring in cape-history into eshell/shell, the main issue is the inline fish type completion which I may be able to live without, but it is really fast and convenient!
+Can I bring in cape-history into eshell/shell, the main issue is the inline fish type completion which I may be able to live without, but it is really fast and convenient!
 
-** TODO magit
-
-Replace by built-in VC
-
-** TODO capf-autosuggest - namely fish style completion in an eshell
+** TODO capf-autosuggest
 
 Some elisp for some simple predictive inline completion, maybe take a look at how capf-autosuggest does it.
 
@@ -237,11 +260,11 @@ I think we can already move to core
 
 ** TODO DWIM script integration
 
+Should be almost a straightforward copy, just need to consider which bash scripts I copy across, if any
+
 ** TODO org-agenda
 
 I think we can already move to core
-
-** TODO calendar / calfw
 
 ** TODO kurecolor
 
@@ -264,6 +287,18 @@ Transient menu for outline-mode.
 *** TODO my/prog-folding
 
 Enable and configure outline minor mode for code folding.  This function sets up the outline minor mode tailored for programming modes based on basic space / tab indentation.
+
+* TODO Features that won't be converted to core
+
+** TODO calendar / calfw
+
+** TODO themes
+
+** TODO ox-hugo
+
+** TODO eglot
+
+Not too much I can do about this, however I could apply some =etag= replacement functionality, but it really isn't the same.
 
 * Configuration Highlights
 
