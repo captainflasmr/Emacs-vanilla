@@ -125,7 +125,7 @@ This directory can be zipped, copied, and unpacked on any machine to instantly s
 - Clone the repository:
 
    #+begin_src bash
-   git clone https://github.com/yourusername/Emacs-core ~/.emacs.d.core
+   git clone https://github.com/captainflasmr/Emacs-core ~/.emacs.d.core
    #+end_src
 
 
