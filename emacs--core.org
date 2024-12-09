@@ -1330,8 +1330,8 @@ Curates configurations specific to Linux, making adjustments for paths, fonts, a
       (replace-match "[[\\1]]"))
     (goto-char (point-min))
     ;; Headers: Adjust '#'
-    (while (re-search-forward "^\\(#+\\)" nil t)
-      (replace-match (make-string (length (match-string 1)) ?*) nil nil))))
+    (while (re-search-forward "^\\(#+\\) " nil t)
+      (replace-match (make-string (length (match-string 1)) ?*) nil nil nil 1))))
 ;;
 (defun my/md-to-org-convert-file (input-file output-file)
   "Convert a Markdown file INPUT-FILE to an Org-mode file OUTPUT-FILE."
