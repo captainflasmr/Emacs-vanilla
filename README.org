@@ -21,15 +21,19 @@ The configuration focuses on ease of use by providing custom keybindings, basic 
 
 ** <2024-12-09>
 
-Added =my-icomplete-copy-candidate= to allow embark like copying of current candidate.
+Added =visual-fill-column-mode= replacement with a simple elisp function (see solution in roadmap)
 
 ** <2024-12-09>
 
-Added =my/recentf-open= to bypass old default recentf-open interface
+Added =my-icomplete-copy-candidate= to allow embark like copying of current candidate (see solution in roadmap)
 
 ** <2024-12-09>
 
-enhance window navigation and introduce my rainbow mode
+Added =my/recentf-open= to bypass old default recentf-open interface (see solution in roadmap)
+
+** <2024-12-09>
+
+enhance window navigation and introduce my rainbow mode (see solution in roadmap)
 
 - Refactored `my/quick-window-jump` for better window labeling and overlay management:
   - Improved window sorting logic for more accurate top-to-bottom, left-to-right navigation.
@@ -162,55 +166,173 @@ OR
 Here is a kanban of the features that will be (hopefully) converted to core and visually demonstrating their current status.
 
 #+begin: kanban :layout ("..." . 50) :scope nil :range ("TODO" . "DONE") :sort "O" :depth 3 :match "roadmap" :compressed t
-| TODO                                               | DOING        | DONE         |
-|----------------------------------------------------+--------------+--------------|
-| [[file:README.org::*selected-window-accent-mode][selected-window-accent-mode]]                        | [[file:README.org::*rainbow-mode][rainbow-mode]] | [[file:README.org::*recentf-open][recentf-open]] |
-| [[file:README.org::*htmlize][htmlize]]                                            | [[file:README.org::*magit][magit]]        |              |
-| [[file:README.org::*deadgrep][deadgrep]]                                           | [[file:README.org::*embark][embark]]       |              |
-| [[file:README.org::*image-dired][image-dired]]                                        |              |              |
-| [[file:README.org::*find-name-dired replaced with a more flexible version][find-name-dired replaced with a more flexible v...]] |              |              |
-| [[file:README.org::*tempel][tempel]]                                             |              |              |
-| [[file:README.org::*corfu / company completion][corfu / company completion]]                         |              |              |
-| [[file:README.org::*spelling][spelling]]                                           |              |              |
-| [[file:README.org::*popper][popper]]                                             |              |              |
-| [[file:README.org::*shell][shell]]                                              |              |              |
-| [[file:README.org::*capf-autosuggest][capf-autosuggest]]                                   |              |              |
-| [[file:README.org::*org-capture][org-capture]]                                        |              |              |
-| [[file:README.org::*DWIM script integration][DWIM script integration]]                            |              |              |
-| [[file:README.org::*org-agenda][org-agenda]]                                         |              |              |
-| [[file:README.org::*kurecolor][kurecolor]]                                          |              |              |
-| [[file:README.org::*Ada][Ada]]                                                |              |              |
-| [[file:README.org::*transients][transients]]                                         |              |              |
-| [[file:README.org::*my/transient-outlining-and-folding][my/transient-outlining-and-folding]]                 |              |              |
-| [[file:README.org::*my/prog-folding][my/prog-folding]]                                    |              |              |
+| TODO                                               | DOING  | DONE                    |
+|----------------------------------------------------+--------+-------------------------|
+| [[file:README.org::*selected-window-accent-mode][selected-window-accent-mode]]                        | [[file:README.org::*embark][embark]] | [[file:README.org::*ace-window][ace-window]]              |
+| [[file:README.org::*htmlize][htmlize]]                                            | [[file:README.org::*magit][magit]]  | [[file:README.org::*recentf-open][recentf-open]]            |
+| [[file:README.org::*deadgrep][deadgrep]]                                           |        | [[file:README.org::*rainbow-mode][rainbow-mode]]            |
+| [[file:README.org::*image-dired][image-dired]]                                        |        | [[file:README.org::*visual-fill-column-mode][visual-fill-column-mode]] |
+| [[file:README.org::*find-name-dired replaced with a more flexible version][find-name-dired replaced with a more flexible v...]] |        |                         |
+| [[file:README.org::*tempel][tempel]]                                             |        |                         |
+| [[file:README.org::*corfu / company completion][corfu / company completion]]                         |        |                         |
+| [[file:README.org::*spelling][spelling]]                                           |        |                         |
+| [[file:README.org::*popper][popper]]                                             |        |                         |
+| [[file:README.org::*shell][shell]]                                              |        |                         |
+| [[file:README.org::*capf-autosuggest][capf-autosuggest]]                                   |        |                         |
+| [[file:README.org::*org-capture][org-capture]]                                        |        |                         |
+| [[file:README.org::*DWIM script integration][DWIM script integration]]                            |        |                         |
+| [[file:README.org::*org-agenda][org-agenda]]                                         |        |                         |
+| [[file:README.org::*kurecolor][kurecolor]]                                          |        |                         |
+| [[file:README.org::*Ada][Ada]]                                                |        |                         |
+| [[file:README.org::*transients][transients]]                                         |        |                         |
+| [[file:README.org::*my/transient-outlining-and-folding][my/transient-outlining-and-folding]]                 |        |                         |
+| [[file:README.org::*my/prog-folding][my/prog-folding]]                                    |        |                         |
 #+end:
 
 * Roadmap                                                           :roadmap:
 
 Here are the features that will be (hopefully) converted to core.
 
+** DONE ace-window
+CLOSED: [2024-12-08 Sun 13:53]
+
+Solved with the code below:
+
+#+begin_src elisp
+(defun my/quick-window-jump ()
+  "Jump to a window by typing its assigned character label.
+Windows are labeled starting from the top-left window and proceeding top to bottom, then left to right."
+  (interactive)
+  (let* ((my/quick-window-overlays nil) ; Temporary list for overlays
+         ;; Sort windows by position (top-to-bottom, left-to-right)
+         (window-list (sort (window-list nil 'no-mini)
+                            (lambda (w1 w2)
+                              (let ((edges1 (window-edges w1))
+                                    (edges2 (window-edges w2)))
+                                (or (< (car edges1) (car edges2))
+                                    (and (= (car edges1) (car edges2))
+                                         (< (cadr edges1) (cadr edges2))))))))
+         ;; Assign key labels to windows
+         (window-keys (seq-take '("j" "k" "l" ";" "a" "s" "d" "f")
+                                (length window-list)))
+         (window-map (cl-pairlis window-keys window-list))) ; Create map of keys to windows
+    ;; Add overlays to display key labels in each window
+    (setq my/quick-window-overlays
+          (mapcar (lambda (entry)
+                    (let* ((key (car entry))
+                           (window (cdr entry))
+                           (start (window-start window)) ; Start position of window
+                           (overlay (make-overlay start start (window-buffer window)))) ; Create overlay
+                      (overlay-put overlay 'after-string  ; Add a visual label
+                                   (propertize (format "[%s]" key)
+                                               'face '(:foreground "white" 
+                                                                   :background "blue" 
+                                                                   :weight bold)))
+                      (overlay-put overlay 'window window) ; Associate overlay with window
+                      overlay))
+                  window-map))
+    ;; Read key input from user
+    (let ((key (read-key (format "Select window [%s]: " (string-join window-keys ", ")))))
+      ;; Clear overlays and reset
+      (mapc #'delete-overlay my/quick-window-overlays)
+      (setq my/quick-window-overlays nil)
+      ;; Select window based on key or show error
+      (when-let ((selected-window (cdr (assoc (char-to-string key) window-map))))
+        (select-window selected-window)))))
+#+end_src
+
 ** DONE recentf-open
 CLOSED: [2024-12-09 Mon 09:22]
 
 Given recentf-open was introduced in 29.1 it would probably be straightforward to create a general recentf passing through completing read.  Probably just copy what has been put into recentf.el
 
-** DOING rainbow-mode
+Solved with the code below:
 
-Surely I can code something simple up using overlays?, I could also kind of live without if pushed.
+#+begin_src elisp
+(defun my/recentf-open (file)
+  "Prompt for FILE in `recentf-list' and visit it.
+Enable `recentf-mode' if it isn't already."
+  (interactive
+   (list
+    (progn (unless recentf-mode (recentf-mode 1))
+           (completing-read (format-prompt "Open recent file" nil)
+                            recentf-list nil t))))
+  (when file
+    (funcall recentf-menu-action file)))
+#+end_src
 
-** DOING magit
+** DONE rainbow-mode
+CLOSED: [2024-12-09 Mon 10:50]
 
-Replace by built-in VC
+Solved with the code below:
 
-Just need to be able to push using ssh
+#+begin_src elisp
+(defun my/rainbow-mode ()
+  "Overlay colors represented as hex values in the current buffer."
+  (interactive)
+  (remove-overlays (point-min) (point-max))
+  (let ((hex-color-regex "#[0-9a-fA-F]\\{3,6\\}"))
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward hex-color-regex nil t)
+        (let* ((color (match-string 0))
+               (overlay (make-overlay (match-beginning 0) (match-end 0))))
+          (if (string-greaterp color "#888888")
+              (overlay-put overlay 'face `(:background ,color :foreground "black"))
+            (overlay-put overlay 'face `(:background ,color :foreground "white"))))))))
+;;
+(defun my/rainbow-mode-clear ()
+  "Remove all hex color overlays in the current buffer."
+  (interactive)
+  (remove-overlays (point-min) (point-max)))
+#+end_src
 
 ** DOING embark
 
 I am not using too many aspects mainly the following:
 
 - copy command - probably easy to replicate
+
+Solved with the code below:
+
+  #+begin_src elisp
+  (defun my-icomplete-copy-candidate ()
+    "Copy the current Icomplete candidate to the kill ring."
+    (interactive)
+    (let ((candidate (car completion-all-sorted-completions)))
+      (when candidate
+        (kill-new (substring-no-properties candidate))
+        (abort-recursive-edit))))
+  ;;
+  (define-key minibuffer-local-completion-map (kbd "C-c ,") 'my-icomplete-copy-candidate)
+  #+end_src
+  
 - collect
 - export
+
+** DONE visual-fill-column-mode
+CLOSED: [2024-12-09 Mon 13:50]
+
+Solved with the code below:
+
+#+begin_src elisp
+(defun toggle-centered-buffer ()
+  "Toggle center alignment of the buffer by adjusting window margins based on the fill-column."
+  (interactive)
+  (let* ((current-margins (window-margins))
+         (margin (if (or (equal current-margins '(0 . 0))
+                         (null (car (window-margins))))
+                     (/ (- (window-total-width) fill-column) 2)
+                   0)))
+    (visual-line-mode 1)
+    (set-window-margins nil margin margin)))
+#+end_src
+
+** DOING magit
+
+Replace by built-in VC
+
+Just need to be able to push using ssh
 
 ** TODO selected-window-accent-mode
 
