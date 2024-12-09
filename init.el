@@ -54,10 +54,10 @@
 (define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
 (define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "~/DCIM/content/")))
 (define-key my-jump-keymap (kbd "-") #'tab-close)
-
+;;
 (defun my/quick-window-jump ()
   "Jump to a window by typing its assigned character label.
-Windows are labeled starting from the top-left window and proceeding top to bottom, then left to right."
+   Windows are labeled starting from the top-left window and proceeding top to bottom, then left to right."
   (interactive)
   (let* ((my/quick-window-overlays nil)
          (window-list (sort (window-list nil 'no-mini)
@@ -87,7 +87,7 @@ Windows are labeled starting from the top-left window and proceeding top to bott
       (setq my/quick-window-overlays nil)
       (when-let ((selected-window (cdr (assoc (char-to-string key) window-map))))
         (select-window selected-window)))))
-
+;;
 (global-set-key (kbd "M-a") #'my/quick-window-jump)
 
 ;;
@@ -691,13 +691,15 @@ Enable `recentf-mode' if it isn't already."
   "Overlay colors represented as hex values in the current buffer."
   (interactive)
   (remove-overlays (point-min) (point-max))
-  (let ((hex-color-regex "#[0-9a-fA-F]\\{6\\}"))
+  (let ((hex-color-regex "#[0-9a-fA-F]\\{3,6\\}"))
     (save-excursion
       (goto-char (point-min))
       (while (re-search-forward hex-color-regex nil t)
         (let* ((color (match-string 0))
                (overlay (make-overlay (match-beginning 0) (match-end 0))))
-          (overlay-put overlay 'face `(:background ,color :foreground "black")))))))
+          (if (string-greaterp color "#888888")
+              (overlay-put overlay 'face `(:background ,color :foreground "black"))
+            (overlay-put overlay 'face `(:background ,color :foreground "white"))))))))
 ;;
 (defun my/rainbow-mode-clear ()
   "Remove all hex color overlays in the current buffer."
@@ -988,6 +990,95 @@ With directories under project root using find."
   (add-to-list 'default-frame-alist `(font . ,font-general)))
 
 ;;
+;; -> LLM-core
+;;
+;;
+(defun safe-add-to-load-path (dir)
+  "Add DIR to `load-path` if it exists."
+  (when (file-directory-p dir)
+    (add-to-list 'load-path dir)))
+;; Add directories to load-path only if they exist
+(safe-add-to-load-path (expand-file-name "lisp/shell-maker" user-emacs-directory))
+(safe-add-to-load-path (expand-file-name "lisp/chatgpt-shell" user-emacs-directory))
+(safe-add-to-load-path (expand-file-name "lisp/gptel" user-emacs-directory))
+;; Conditionally require and configure packages if their files exist
+(when (locate-library "gptel")
+  (require 'gptel)
+  (require 'gptel-ollama)
+  (require 'gptel-curl)
+  (gptel-make-ollama "llama3_2"
+    :host "localhost:11434"
+    :stream t
+    :models '(llama3_2:latest))
+  (setq gptel-model 'qwen2.5-coder-7b-instruct-q5_k_m:latest
+        gptel-backend (gptel-make-ollama "llama3_2"
+                        :host "localhost:11434"
+                        :stream t
+                        :models '(llama3_2:latest))))
+;;
+(when (locate-library "shell-maker")
+  (require 'shell-maker))
+;;
+(when (locate-library "chatgpt-shell")
+  (require 'chatgpt-shell)
+  (setq chatgpt-shell-models
+        '(((:provider . "Ollama")
+           (:label . "Ollama-llama")
+           (:version . "llama3_2")
+           (:short-version)
+           (:token-width . 4)
+           (:context-window . 8192)
+           (:handler . chatgpt-shell-ollama--handle-ollama-command)
+           (:filter . chatgpt-shell-ollama--extract-ollama-response)
+           (:payload . chatgpt-shell-ollama-make-payload)
+           (:url . chatgpt-shell-ollama--make-url))))
+  (with-eval-after-load 'chatgpt-shell
+    (defun chatgpt-shell-menu ()
+      "Menu for ChatGPT Shell commands."
+      (interactive)
+      (let ((key (read-key
+                  (propertize
+                   "ChatGPT Shell Commands:\n
+      e: Explain Code      d: Describe Code           l: Start Shell
+      p: Proofread Region  r: Refactor Code           t: Save Session Transcript
+      g: Write Git Commit  u: Generate Unit Test      o: Summarize Last Command Output
+      s: Send Region       a: Send and Review Region  m: Swap Model\n
+        q: Quit\n\nPress a key: " 'face 'minibuffer-prompt))))
+        (pcase key
+          (?e (call-interactively 'chatgpt-shell-explain-code))
+          (?p (call-interactively 'chatgpt-shell-proofread-region))
+          (?g (call-interactively 'chatgpt-shell-write-git-commit))
+          (?s (call-interactively 'chatgpt-shell-send-region))
+          (?d (call-interactively 'chatgpt-shell-describe-code))
+          (?r (call-interactively 'chatgpt-shell-refactor-code))
+          (?u (call-interactively 'chatgpt-shell-generate-unit-test))
+          (?a (call-interactively 'chatgpt-shell-send-and-review-region))
+          (?l (call-interactively 'chatgpt-shell))
+          (?t (call-interactively 'chatgpt-shell-save-session-transcript))
+          (?o (call-interactively 'chatgpt-shell-eshell-summarize-last-command-output))
+          (?w (call-interactively 'chatgpt-shell-eshell-whats-wrong-with-last-command))
+          (?i (call-interactively 'chatgpt-shell-describe-image))
+          (?m (call-interactively 'chatgpt-shell-swap-model))
+          (?q (message "Quit ChatGPT Shell menu."))
+          (?\C-g (message "Quit ChatGPT Shell menu."))
+          (_ (message "Invalid key: %c" key))))))
+  (global-set-key (kbd "C-c g") 'chatgpt-shell-menu))
+
+;;
+;; -> programming-core
+;;
+;;
+(defun my/eglot-dir-locals ()
+  "Create .dir-locals.el file for eglot ada-mode using the selected DIRED path."
+  (interactive)
+  (add-dir-local-variable
+   'ada-mode
+   'eglot-workspace-configuration
+   `((ada . (:projectFile ,(dired-get-filename))))))
+;;
+(setq vc-handled-backends '(SVN Git))
+
+;;
 ;; -> development-core
 ;;
 (global-set-key (kbd "C-c t") 'toggle-centered-buffer)
@@ -1030,8 +1121,8 @@ With directories under project root using find."
       (replace-match "[[\\1]]"))
     (goto-char (point-min))
     ;; Headers: Adjust '#'
-    (while (re-search-forward "^\\(#+\\)" nil t)
-      (replace-match (make-string (length (match-string 1)) ?*) nil nil))))
+    (while (re-search-forward "^\\(#+\\) " nil t)
+      (replace-match (make-string (length (match-string 1)) ?*) nil nil nil 1))))
 ;;
 (defun my/md-to-org-convert-file (input-file output-file)
   "Convert a Markdown file INPUT-FILE to an Org-mode file OUTPUT-FILE."
@@ -1061,95 +1152,39 @@ With directories under project root using find."
 ;;
 (global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
 (global-set-key (kbd "M-s u") #'my/org-promote-all-headings)
-
 ;;
-;; -> LLM-core
-;;
-;;
-(defun safe-add-to-load-path (dir)
-  "Add DIR to `load-path` if it exists."
-  (when (file-directory-p dir)
-    (add-to-list 'load-path dir)))
-
-;; Add directories to load-path only if they exist
-(safe-add-to-load-path (expand-file-name "lisp/shell-maker" user-emacs-directory))
-(safe-add-to-load-path (expand-file-name "lisp/chatgpt-shell" user-emacs-directory))
-(safe-add-to-load-path (expand-file-name "lisp/gptel" user-emacs-directory))
-
-;; Conditionally require and configure packages if their files exist
-(when (locate-library "gptel")
-  (require 'gptel)
-  (require 'gptel-ollama)
-  (require 'gptel-curl)
-  (gptel-make-ollama "llama3_2"
-    :host "localhost:11434"
-    :stream t
-    :models '(llama3_2:latest))
-  (setq gptel-model 'qwen2.5-coder-7b-instruct-q5_k_m:latest
-        gptel-backend (gptel-make-ollama "llama3_2"
-                        :host "localhost:11434"
-                        :stream t
-                        :models '(llama3_2:latest))))
-
-(when (locate-library "shell-maker")
-  (require 'shell-maker))
-
-(when (locate-library "chatgpt-shell")
-  (require 'chatgpt-shell)
-  (setq chatgpt-shell-models
-        '(((:provider . "Ollama")
-           (:label . "Ollama-llama")
-           (:version . "llama3_2")
-           (:short-version)
-           (:token-width . 4)
-           (:context-window . 8192)
-           (:handler . chatgpt-shell-ollama--handle-ollama-command)
-           (:filter . chatgpt-shell-ollama--extract-ollama-response)
-           (:payload . chatgpt-shell-ollama-make-payload)
-           (:url . chatgpt-shell-ollama--make-url))))
-  (with-eval-after-load 'chatgpt-shell
-    (defun chatgpt-shell-menu ()
-      "Menu for ChatGPT Shell commands."
-      (interactive)
-      (let ((key (read-key
-                  (propertize
-                   "ChatGPT Shell Commands:\n
-    e: Explain Code      d: Describe Code           l: Start Shell
-    p: Proofread Region  r: Refactor Code           t: Save Session Transcript
-    g: Write Git Commit  u: Generate Unit Test      o: Summarize Last Command Output
-    s: Send Region       a: Send and Review Region  m: Swap Model\n
-      q: Quit\n\nPress a key: " 'face 'minibuffer-prompt))))
-        (pcase key
-          (?e (call-interactively 'chatgpt-shell-explain-code))
-          (?p (call-interactively 'chatgpt-shell-proofread-region))
-          (?g (call-interactively 'chatgpt-shell-write-git-commit))
-          (?s (call-interactively 'chatgpt-shell-send-region))
-          (?d (call-interactively 'chatgpt-shell-describe-code))
-          (?r (call-interactively 'chatgpt-shell-refactor-code))
-          (?u (call-interactively 'chatgpt-shell-generate-unit-test))
-          (?a (call-interactively 'chatgpt-shell-send-and-review-region))
-          (?l (call-interactively 'chatgpt-shell))
-          (?t (call-interactively 'chatgpt-shell-save-session-transcript))
-          (?o (call-interactively 'chatgpt-shell-eshell-summarize-last-command-output))
-          (?w (call-interactively 'chatgpt-shell-eshell-whats-wrong-with-last-command))
-          (?i (call-interactively 'chatgpt-shell-describe-image))
-          (?m (call-interactively 'chatgpt-shell-swap-model))
-          (?q (message "Quit ChatGPT Shell menu."))
-          (?\C-g (message "Quit ChatGPT Shell menu."))
-          (_ (message "Invalid key: %c" key))))))
-  (global-set-key (kbd "C-c g") 'chatgpt-shell-menu))
-
-;;
-;; -> programming-core
-;;
-;;
-
-(defun my/eglot-dir-locals ()
-  "Create .dir-locals.el file for eglot ada-mode using the selected DIRED path."
+(defun my-icomplete-copy-candidate ()
+  "Copy the current Icomplete candidate to the kill ring."
   (interactive)
-  (add-dir-local-variable
-   'ada-mode
-   'eglot-workspace-configuration
-   `((ada . (:projectFile ,(dired-get-filename))))))
+  (let ((candidate (car completion-all-sorted-completions)))
+    (when candidate
+      (kill-new (substring-no-properties candidate))
+      (abort-recursive-edit))))
+;;
+(define-key minibuffer-local-completion-map (kbd "C-c ,") 'my-icomplete-copy-candidate)
+;;
+(defun prot/keyboard-quit-dwim ()
+  "Do-What-I-Mean behaviour for a general `keyboard-quit'.
 
-(setq vc-handled-backends '(SVN Git))
+    The generic `keyboard-quit' does not do the expected thing when
+    the minibuffer is open.  Whereas we want it to close the
+    minibuffer, even without explicitly focusing it.
+
+    The DWIM behaviour of this command is as follows:
+
+    - When the region is active, disable it.
+    - When a minibuffer is open, but not focused, close the minibuffer.
+    - When the Completions buffer is selected, close it.
+    - In every other case use the regular `keyboard-quit'."
+  (interactive)
+  (cond
+   ((region-active-p)
+    (keyboard-quit))
+   ((derived-mode-p 'completion-list-mode)
+    (delete-completion-window))
+   ((> (minibuffer-depth) 0)
+    (abort-recursive-edit))
+   (t
+    (keyboard-quit))))
+;;
+(define-key global-map (kbd "C-g") #'prot/keyboard-quit-dwim)
