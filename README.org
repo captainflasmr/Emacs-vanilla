@@ -300,6 +300,37 @@ Enable and configure outline minor mode for code folding.  This function sets up
 
 Not too much I can do about this, however I could apply some =etag= replacement functionality, but it really isn't the same.
 
+* Testing
+
+Created an =emacs-core.desktop= file containing the following:
+
+#+begin_src 
+[Desktop Entry]
+Name=Emacs Core
+GenericName=Text Editor
+Comment=Edit text
+MimeType=text/english;text/plain;text/x-makefile;text/x-c++hdr;text/x-c++src;text/x-chdr;text/x-csrc;text/x-java;text/x-moc;text/x-pascal;text/x-tcl;text/x-tex;application/x-shellscript;text/x-c;text/x-c++;
+Exec=emacs --init-directory=~/.emacs.d.core
+Icon=emacs
+Type=Application
+Terminal=false
+Categories=Development;TextEditor;
+StartupNotify=true
+StartupWMClass=Emacs
+Keywords=emacs;
+Actions=new-window;new-instance;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=emacs --init-directory=~/.emacs.d.core
+
+[Desktop Action new-instance]
+Name=New Instance
+Exec=emacs --init-directory=~/.emacs.d.core %F
+#+end_src
+
+and run the basic core Emacs config and test the new features
+
 * Configuration Highlights
 
 Here’s a breakdown of some key sections in the configuration:
