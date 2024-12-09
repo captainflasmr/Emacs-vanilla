@@ -21,6 +21,10 @@ The configuration focuses on ease of use by providing custom keybindings, basic 
 
 ** <2024-12-09>
 
+Added =my/recentf-open= to bypass old default recentf-open interface
+
+** <2024-12-09>
+
 enhance window navigation and introduce my rainbow mode
 
 - Refactored `my/quick-window-jump` for better window labeling and overlay management:
@@ -154,35 +158,39 @@ OR
 Here is a kanban of the features that will be (hopefully) converted to core and visually demonstrating their current status.
 
 #+begin: kanban :layout ("..." . 50) :scope nil :range ("TODO" . "DONE") :sort "O" :depth 3 :match "roadmap" :compressed t
-| TODO                                               | DOING        | DONE |
-|----------------------------------------------------+--------------+------|
-| [[file:README.org::*selected-window-accent-mode][selected-window-accent-mode]]                        | [[file:README.org::*rainbow-mode][rainbow-mode]] |      |
-| [[file:README.org::*htmlize][htmlize]]                                            | [[file:README.org::*magit][magit]]        |      |
-| [[file:README.org::*embark][embark]]                                             |              |      |
-| [[file:README.org::*deadgrep][deadgrep]]                                           |              |      |
-| [[file:README.org::*image-dired][image-dired]]                                        |              |      |
-| [[file:README.org::*recentf-open-files to recentf-open][recentf-open-files to recentf-open]]                 |              |      |
-| [[file:README.org::*find-name-dired replaced with a more flexible version][find-name-dired replaced with a more flexible v...]] |              |      |
-| [[file:README.org::*tempel][tempel]]                                             |              |      |
-| [[file:README.org::*corfu / company completion][corfu / company completion]]                         |              |      |
-| [[file:README.org::*spelling][spelling]]                                           |              |      |
-| [[file:README.org::*popper][popper]]                                             |              |      |
-| [[file:README.org::*shell][shell]]                                              |              |      |
-| [[file:README.org::*capf-autosuggest][capf-autosuggest]]                                   |              |      |
-| [[file:README.org::*org-capture][org-capture]]                                        |              |      |
-| [[file:README.org::*DWIM script integration][DWIM script integration]]                            |              |      |
-| [[file:README.org::*org-agenda][org-agenda]]                                         |              |      |
-| [[file:README.org::*kurecolor][kurecolor]]                                          |              |      |
-| [[file:README.org::*Ada][Ada]]                                                |              |      |
-| [[file:README.org::*transients][transients]]                                         |              |      |
-| [[file:README.org::*my/transient-outlining-and-folding][my/transient-outlining-and-folding]]                 |              |      |
-| [[file:README.org::*my/prog-folding][my/prog-folding]]                                    |              |      |
+| TODO                                               | DOING        | DONE         |
+|----------------------------------------------------+--------------+--------------|
+| [[file:README.org::*selected-window-accent-mode][selected-window-accent-mode]]                        | [[file:README.org::*rainbow-mode][rainbow-mode]] | [[file:README.org::*recentf-open][recentf-open]] |
+| [[file:README.org::*htmlize][htmlize]]                                            | [[file:README.org::*magit][magit]]        |              |
+| [[file:README.org::*embark][embark]]                                             |              |              |
+| [[file:README.org::*deadgrep][deadgrep]]                                           |              |              |
+| [[file:README.org::*image-dired][image-dired]]                                        |              |              |
+| [[file:README.org::*find-name-dired replaced with a more flexible version][find-name-dired replaced with a more flexible v...]] |              |              |
+| [[file:README.org::*tempel][tempel]]                                             |              |              |
+| [[file:README.org::*corfu / company completion][corfu / company completion]]                         |              |              |
+| [[file:README.org::*spelling][spelling]]                                           |              |              |
+| [[file:README.org::*popper][popper]]                                             |              |              |
+| [[file:README.org::*shell][shell]]                                              |              |              |
+| [[file:README.org::*capf-autosuggest][capf-autosuggest]]                                   |              |              |
+| [[file:README.org::*org-capture][org-capture]]                                        |              |              |
+| [[file:README.org::*DWIM script integration][DWIM script integration]]                            |              |              |
+| [[file:README.org::*org-agenda][org-agenda]]                                         |              |              |
+| [[file:README.org::*kurecolor][kurecolor]]                                          |              |              |
+| [[file:README.org::*Ada][Ada]]                                                |              |              |
+| [[file:README.org::*transients][transients]]                                         |              |              |
+| [[file:README.org::*my/transient-outlining-and-folding][my/transient-outlining-and-folding]]                 |              |              |
+| [[file:README.org::*my/prog-folding][my/prog-folding]]                                    |              |              |
 #+end:
 
 
 * Roadmap                                                           :roadmap:
 
 Here are the features that will be (hopefully) converted to core.
+
+** DONE recentf-open
+CLOSED: [2024-12-09 Mon 09:22]
+
+Given recentf-open was introduced in 29.1 it would probably be straightforward to create a general recentf passing through completing read.  Probably just copy what has been put into recentf.el
 
 ** DOING rainbow-mode
 
@@ -215,10 +223,6 @@ Would rgrep be potentially good enough?, maybe, or maybe pull on ripgrep through
 ** TODO image-dired
 
 Copy over functionality, no real external things, its just is it valuable given how little I use it? 
-
-** TODO recentf-open-files to recentf-open
-
-Given recentf-open was introduced in 29.1 it would probably be straightforward to create a general recentf passing through completing read.  Probably just copy what has been put into recentf.el
 
 ** TODO find-name-dired replaced with a more flexible version
 
