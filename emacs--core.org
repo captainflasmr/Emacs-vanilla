@@ -88,7 +88,7 @@ Defines custom keybindings for navigating through files and Emacs features like 
 (define-key my-jump-keymap (kbd "k")
             (lambda () (interactive)
               (find-file (concat user-emacs-directory "emacs--core.org"))))
-(define-key my-jump-keymap (kbd "l") #'recentf-open-files)
+(define-key my-jump-keymap (kbd "l") #'my/recentf-open)
 (define-key my-jump-keymap (kbd "m") #'customize-themes)
 (define-key my-jump-keymap (kbd "n") (lambda () (interactive) (find-file "~/nas")))
 (define-key my-jump-keymap (kbd "o") #'bookmark-jump)
@@ -407,7 +407,7 @@ Defines a suite of custom functions to extend Emacs's functionality tailored to 
 ;;
 (defun my/dired-duplicate-file (arg)
   "Duplicate a file from DIRED with an incremented number.
-                              If ARG is provided, it sets the counter."
+                                If ARG is provided, it sets the counter."
   (interactive "p")
   (let* ((file (dired-get-file-for-visit))
          (dir (file-name-directory file))
@@ -474,7 +474,7 @@ Defines a suite of custom functions to extend Emacs's functionality tailored to 
 ;;
 (defun my/dired-du ()
   "Run 'du -hc' and count the total number of files in the directory under
-the cursor in Dired, then display the output in a buffer named *dired-du*."
+  the cursor in Dired, then display the output in a buffer named *dired-du*."
   (interactive)
   (let ((current-dir (dired-get-file-for-visit)))
     (if (file-directory-p current-dir)
@@ -497,7 +497,7 @@ the cursor in Dired, then display the output in a buffer named *dired-du*."
 ;;
 (defun set-hl-line-darker-background ()
   "Set the hl-line background to a slightly darker shade of the default background,
-                                          preserving the original foreground colors of the current line."
+                                            preserving the original foreground colors of the current line."
   (interactive)
   (require 'hl-line)
   (unless global-hl-line-mode
@@ -518,7 +518,7 @@ the cursor in Dired, then display the output in a buffer named *dired-du*."
 ;;
 (defun my/switch-to-thing ()
   "Switch to a buffer, open a recent file, jump to a bookmark,
-                                      or change the theme from a unified interface."
+                                        or change the theme from a unified interface."
   (interactive)
   (let* ((buffers (mapcar #'buffer-name (buffer-list)))
          (recent-files recentf-list)
@@ -561,7 +561,7 @@ the cursor in Dired, then display the output in a buffer named *dired-du*."
 ;;
 (defun my/html-org-table-highlight ()
   "Open the exported HTML file, find tables with specific classes,
-                                                      and add background styles to rows containing keywords in <td> or <th> elements."
+                                                        and add background styles to rows containing keywords in <td> or <th> elements."
   (interactive)
   (let* ((org-file (buffer-file-name))
          (html-file (concat (file-name-sans-extension org-file) ".html")))
@@ -587,7 +587,7 @@ the cursor in Dired, then display the output in a buffer named *dired-du*."
 ;;
 (defun my/format-to-table (&optional match properties-to-display)
   "Format Org headings into a structured alist, optionally filtered by MATCH
-and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"))."
+  and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"))."
   (interactive)
   (let ((rows '())
         (header '("TODO" "Tags" "Title" "Comments")) ;; Start without "Properties"
@@ -696,7 +696,7 @@ and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"
 ;;
 (defun my/sync-tab-bar-to-theme ()
   "Synchronize tab-bar faces with the current theme, and set
-mode-line background color interactively using `read-color`."
+  mode-line background color interactively using `read-color`."
   (interactive)
   ;; Use `read-color` to get the mode-line background color from the user
   (let ((selected-color (read-color)))
@@ -717,6 +717,18 @@ mode-line background color interactively using `read-color`."
        `(tab-bar-tab ((t (:inherit 'highlight :background ,selected-color :foreground "#000000"))))
        `(tab-bar-tab-inactive ((t (:inherit default :background ,default-bg :foreground ,inactive-fg
                                             :box (:line-width 2 :color ,default-bg :style released-button)))))))))
+;;
+(defun my/recentf-open (file)
+  "Prompt for FILE in `recentf-list' and visit it.
+Enable `recentf-mode' if it isn't already."
+  (interactive
+   (list
+    (progn (unless recentf-mode (recentf-mode 1))
+           (completing-read (format-prompt "Open recent file" nil)
+                            recentf-list nil t))))
+  (when file
+    (funcall recentf-menu-action file)))
+
 #+end_src
 
 * window-positioning-core
