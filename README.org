@@ -176,31 +176,40 @@ enhance window navigation and introduce my rainbow mode (see solution in roadmap
 ** Additional Ergonomic Setup
 
 - Cross-Platform Key Remapping: Accompanying the Emacs configuration directory are external scripts to enforce ergonomic system-wide keybindings for more efficient Emacs usage:
-  - *Windows*: 
-    - Includes *Autohotkey (AHK)* scripts that:
-      - Map the *CapsLock* key to *Ctrl* for comfortable keyboard shortcuts like =C-s= (save) or =C-x C-f= (open file).
-      - Map the *Right Alt* key to *Ctrl* for ambidextrous modifier usage.
-      - Enable *Sticky Keys*, making modifier keys like Ctrl/Alt functional even when pressed momentarily before a second keystroke.
-      - Example AHK snippet:
-      
-        #+begin_src autohotkey
-        ; Map CapsLock to Ctrl
-        CapsLock::Ctrl
-        ; Right Alt to Ctrl
-        RAlt::Ctrl
-        ; Enable Sticky Keys
-        #InstallKeybdHook
-        #+end_src
-  
-  - *Linux (X11/Wayland)*:
-    - Includes custom *xkb* configuration files to enable similar ergonomic key remappings:
-      - CapsLock → Ctrl.
-      - Right Alt → Ctrl.
-      - Optionally toggle Sticky Keys for one-handed workflows.
-    - Instructions or a provided script to set these configurations using =setxkbmap= or editing XKB configuration files.
 
-- *Offline Configuration Backup*:
-  - The ergonomic setup complements Emacs usage perfectly and offers backup scripts to migrate these keymapping changes across systems without requiring online setups.
+*** *Windows / wowee*:
+    
+Note that this is present as a submodule leveraging https://github.com/captainflasmr/wowee which are AutoHotKey scripts that allow easy key remapping and also Emacs type key commands across Windows.
+
+The idea here is that the keys are mapped through AutoHotKey and then Sticky Keys are natively enable to give a nice ergonomic experience through Emacs.
+
+**** Remappings
+
+- CapsLock → Ctrl
+- Right Alt → Ctrl
+- Sticky Keys natively enabled
+
+**** Instructions for use
+
+1. **Install AutoHotKey**: Download and install AutoHotKey from [AutoHotKey's official website](https://www.autohotkey.com/).
+2. **Run WOWEE**: Double-click on the `wowee.ahk` script to start WOWEE. Once running, Emacs commands will be available in your Windows environment.
+3. **Quit WOWEE**: To quit WOWEE, right-click the AutoHotKey icon in the task tray and select "Exit."
+    
+*** *Linux (X11/Wayland)*:
+    
+Includes custom *xkb* configuration files to enable similar ergonomic key remappings:
+
+**** Remappings
+
+- CapsLock → Ctrl
+- Right Alt → Ctrl
+- Sticky Keys
+
+**** Instructions for use
+
+  #+begin_src bash
+  xkbcomp keymap_with_sticky_modifiers.xkb $DISPLAY
+  #+end_src
 
 ** Portable Directory Structure
 
@@ -208,11 +217,11 @@ enhance window navigation and introduce my rainbow mode (see solution in roadmap
   
   #+begin_src 
   emacs-core/
-  ├── init.el                   # Main Emacs configuration file
-  ├── scripts/                  # Shell/Autohotkey scripts for ergonomic key remapping
-  │   ├── windows.ahk
-  │   └── linux_xkb.sh
-  └── README.md                 # Setup guide
+  ├── emacs-core.org                   # Main Emacs literate configuration file
+  ├── init.el                          # Main Emacs configuration file
+  ├── keymap_with_sticky_modifiers.xkb # linux key configuration for ergonomic key remapping
+  ├── wowee/                           # Windows autohotkey scripts for ergonomic key remapping
+  └── README.org                       # Setup guide and readme
   #+end_src
   
 This directory can be zipped, copied, and unpacked on any machine to instantly set up a usable, ergonomic Emacs environment.
