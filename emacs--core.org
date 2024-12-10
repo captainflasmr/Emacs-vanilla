@@ -7,7 +7,7 @@
 #+html_head: </style>
 #+startup: content
 #+todo: TODO DOING | DONE
-#+property: header-args :tangle ~/.emacs.d.core/init.el
+#+property: header-args :tangle ~/.emacs.d/Emacs-core/init.el
 
 A simple universal emacs configuration that will work with the following VMs with version 27.1 onwards.
 
@@ -209,7 +209,7 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "C-c h") #'my/shell-create)
-(global-set-key (kbd "C-c n") #'my/repeat-window-size)
+(global-set-key (kbd "C-c j") #'my/repeat-window-size)
 (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
 (global-set-key (kbd "C-c o s") #'outline-show-all)
 (global-set-key (kbd "C-o") #'other-window)
@@ -456,20 +456,48 @@ Defines a suite of custom functions to extend Emacs's functionality tailored to 
                                 (tab-bar-history-forward)))
     (set-transient-map map t)))
 ;;
+(defun my/get-window-position ()
+  "Return the position of the current window as 'left', 'right', 'top', or 'bottom'."
+  (let* ((edges (window-edges))
+         (min-x (nth 0 edges))
+         (min-y (nth 1 edges))
+         (max-x (nth 2 edges))
+         (max-y (nth 3 edges))
+         (frame-width (frame-width))
+         (frame-height (frame-height)))
+    (cond
+     ((<= min-x 0) 'left)
+     ((>= max-x frame-width) 'right)
+     ((= min-y 0) 'top)
+     ((= max-y frame-height) 'bottom)
+     (t 'center))))
+
+(defun my/adaptive-resize (horizontal delta)
+  "Resize the current window adaptively based on its position.
+HORIZONTAL is non-nil for horizontal resizing (left/right).
+DELTA is the amount to resize (positive to grow, negative to shrink)."
+  (let ((pos (my/get-window-position)))
+    (cond
+     ((and horizontal (eq pos 'left)) (enlarge-window (- delta) t))
+     ((and horizontal (eq pos 'right)) (enlarge-window delta t))
+     ((and (not horizontal) (eq pos 'top)) (enlarge-window delta nil))
+     ((and (not horizontal) (eq pos 'bottom)) (enlarge-window (- delta) nil))
+     (t (enlarge-window delta horizontal)))))
+
 (defun my/repeat-window-size ()
-  "Sset up a sparse keymap for repeating window actions."
+  "Set up a sparse keymap for repeating window actions with adaptive resizing."
   (interactive)
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "n") (lambda () (interactive)
                                 (window-swap-states)))
     (define-key map (kbd "h") (lambda () (interactive)
-                                (enlarge-window 2 t)))
+                                (my/adaptive-resize t 2)))
     (define-key map (kbd "l") (lambda () (interactive)
-                                (enlarge-window -2 t)))
+                                (my/adaptive-resize t -2)))
     (define-key map (kbd "j") (lambda () (interactive)
-                                (enlarge-window 1 nil)))
+                                (my/adaptive-resize nil 1)))
     (define-key map (kbd "k") (lambda () (interactive)
-                                (enlarge-window -1 nil)))
+                                (my/adaptive-resize nil -1)))
     (set-transient-map map t)))
 ;;
 (defun my/dired-du ()
