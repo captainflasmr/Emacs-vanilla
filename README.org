@@ -104,6 +104,14 @@ This emacs init configuration will provide me with the following benefits.
 
 * Whats New
 
+** <2024-12-10>
+
+Added ada-mode support out of the box.
+
+Yes, ada-mode was removed from emacs and it was recommended to use the ada-mode supplied by AdaCore, however this is all but impossible to set up so including =ada-light=mode= as part of the configuration.
+
+https://github.com/sebastianpoeplau/ada-light-mode
+
 ** <2024-12-09>
 
 Added =visual-fill-column-mode= replacement with a simple elisp function (see solution in roadmap)
