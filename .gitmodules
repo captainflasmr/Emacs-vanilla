@@ -1,0 +1,3 @@
+[submodule "wowee"]
+	path = wowee
+	url = git@github.com:captainflasmr/wowee.git
