@@ -1770,32 +1770,42 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 (define-key global-map (kbd "C-g") #'prot/keyboard-quit-dwim)
 ;;
 (defun my/grep (search-term directory)
-  "Run ripgrep (rg) with SEARCH-TERM in DIRECTORY using
-a configuration file and display the results in a new buffer."
+  "Run ripgrep (rg) with SEARCH-TERM in DIRECTORY if available,
+otherwise fall back to Emacs's rgrep command."
   (interactive
    (list
     (read-string "Search for: ")
     (read-directory-name "Directory: ")))
-  (let* ((buffer-name "*my-rg-results*")
-         (home-dir (expand-file-name "~"))
-         (rg-command (format "rg --color=never --column --line-number --no-heading --smart-case -e %s %s"
-                             (shell-quote-argument search-term)
-                             directory))
-         (raw-output (shell-command-to-string rg-command))
-         (formatted-output (if (not (string-empty-p raw-output))
-                               (replace-regexp-in-string (regexp-quote home-dir) "~" raw-output)
-                             nil)))
-    (with-current-buffer (get-buffer-create buffer-name)
-      (read-only-mode -1)
-      (erase-buffer)
-      (if (not formatted-output)
-          (message "Ripgrep finished with errors or no results.")
-        (progn
-          (insert formatted-output)
-          (grep-mode)
-          (pop-to-buffer buffer-name)
-          (goto-char (point-min)))))
-    (message "Searching for '%s' in %s..." search-term directory)))
+  (let ((directory (expand-file-name directory))) ;; Expand directory to absolute path
+    (if (executable-find "rg")
+        ;; Use ripgrep if available
+        (let* ((buffer-name "*my-rg-results*")
+               (home-dir (expand-file-name "~"))
+               (rg-command (format "rg --color=never --column --line-number --no-heading --smart-case -e %s %s"
+                                   (shell-quote-argument search-term)
+                                   directory))
+               (raw-output (shell-command-to-string rg-command))
+               (formatted-output
+                (if (not (string-empty-p raw-output))
+                    ;; Replace absolute path with relative path or "./"
+                    (replace-regexp-in-string (concat "\\(^" (regexp-quote directory) "\\)") "./" raw-output)
+                  nil)))
+          ;; Kill existing buffer if it exists
+          (when (get-buffer buffer-name)
+            (kill-buffer buffer-name))
+          ;; Create the results buffer
+          (with-current-buffer (get-buffer-create buffer-name)
+            (read-only-mode -1)
+            (erase-buffer)
+            (if (not formatted-output)
+                (message "Ripgrep finished with errors or no results.")
+              (insert formatted-output)
+              (grep-mode)
+              (pop-to-buffer buffer-name)
+              (goto-char (point-min)))))
+      ;; Fall back to rgrep if ripgrep is not available
+      (let ((default-directory directory))
+        (rgrep search-term "*" directory)))))
 ;;
 (add-to-list 'display-buffer-alist
              '("\\*my-rg-results"
@@ -1806,4 +1816,3 @@ a configuration file and display the results in a new buffer."
                (inhibit-same-window . t)))
 
 #+end_src
-
