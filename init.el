@@ -121,7 +121,7 @@
 ;; -> keys-other-core
 ;;
 (global-set-key (kbd "M-s ,") #'my/mark-line)
-(global-set-key (kbd "M-s g") #'rgrep)
+(global-set-key (kbd "M-s g") #'my/grep)
 (global-set-key (kbd "M-s h") #'my/mark-block)
 (global-set-key (kbd "M-s j") #'eval-defun)
 (global-set-key (kbd "M-s l") #'eval-expression)
@@ -1106,114 +1106,6 @@ With directories under project root using find."
 (setq vc-handled-backends '(SVN Git))
 
 ;;
-;; -> development-core
-;;
-(global-set-key (kbd "C-c t") 'toggle-centered-buffer)
-;;
-(defun my/md-to-org-convert-buffer ()
-  "Convert the current buffer from Markdown to Org-mode format"
-  (interactive)
-  (save-excursion
-    ;; Lists: Translate `-`, `*`, or `+` lists to Org-mode lists
-    (goto-char (point-min))
-    (while (re-search-forward "^\\([ \t]*\\)[*-+] \\(.*\\)$" nil t)
-      (replace-match (concat (match-string 1) "- \\2")))
-    ;; Bold: `**bold**` -> `*bold*` only if directly adjacent
-    (goto-char (point-min))
-    (while (re-search-forward "\\*\\*\\([^ ]\\(.*?\\)[^ ]\\)\\*\\*" nil t)
-      (replace-match "*\\1*"))
-    ;; Italics: `_italic_` -> `/italic/`
-    (goto-char (point-min))
-    (while (re-search-forward "\\b_\\([^ ]\\(.*?\\)[^ ]\\)_\\b" nil t)
-      (replace-match "/\\1/"))
-    ;; Links: `[text](url)` -> `[[url][text]]`
-    (goto-char (point-min))
-    (while (re-search-forward "\\[\\(.*?\\)\\](\\(.*?\\))" nil t)
-      (replace-match "[[\\2][\\1]]"))
-    ;; Code blocks: Markdown ```lang ... ``` to Org #+begin_src ... #+end_src
-    (goto-char (point-min))
-    (while (re-search-forward "```\\(.*?\\)\\(?:\n\\|\\s-\\)\\(\\(?:.\\|\n\\)*?\\)```" nil t)
-      (replace-match "#+begin_src \\1\n\\2#+end_src"))
-    ;; Inline code: `code` -> =code=
-    (goto-char (point-min))
-    (while (re-search-forward "`\\(.*?\\)`" nil t)
-      (replace-match "=\\1="))
-    ;; Horizontal rules: `---` or `***` -> `-----`
-    (goto-char (point-min))
-    (while (re-search-forward "^\\(-{3,}\\|\\*{3,}\\)$" nil t)
-      (replace-match "-----"))
-    ;; Images: `![alt text](url)` -> `[[url]]`
-    (goto-char (point-min))
-    (while (re-search-forward "!\\[.*?\\](\\(.*?\\))" nil t)
-      (replace-match "[[\\1]]"))
-    (goto-char (point-min))
-    ;; Headers: Adjust '#'
-    (while (re-search-forward "^\\(#+\\) " nil t)
-      (replace-match (make-string (length (match-string 1)) ?*) nil nil nil 1))))
-;;
-(defun my/md-to-org-convert-file (input-file output-file)
-  "Convert a Markdown file INPUT-FILE to an Org-mode file OUTPUT-FILE."
-  (with-temp-buffer
-    (insert-file-contents input-file)
-    (md-to-org-convert-buffer)
-    (write-file output-file)))
-;;
-(defun my/convert-markdown-clipboard-to-org ()
-  "Convert Markdown content from clipboard to Org format and insert it at point."
-  (interactive)
-  (let ((markdown-content (current-kill 0))
-        (original-buffer (current-buffer)))
-    (with-temp-buffer
-      (insert markdown-content)
-      (my/md-to-org-convert-buffer)
-      (let ((org-content (buffer-string)))
-        (with-current-buffer original-buffer
-          (insert org-content))))))
-;;
-(defun my/org-promote-all-headings (&optional arg)
-  "Promote all headings in the current Org buffer along with their subheadings."
-  (interactive "p")
-  (org-map-entries
-   (lambda () 
-     (dotimes (_ arg) (org-promote)))))
-;;
-(global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
-(global-set-key (kbd "M-s u") #'my/org-promote-all-headings)
-;;
-(defun my-icomplete-copy-candidate ()
-  "Copy the current Icomplete candidate to the kill ring."
-  (interactive)
-  (let ((candidate (car completion-all-sorted-completions)))
-    (when candidate
-      (kill-new (substring-no-properties candidate))
-      (abort-recursive-edit))))
-;;
-(define-key minibuffer-local-completion-map (kbd "C-c ,") 'my-icomplete-copy-candidate)
-;;
-(defun prot/keyboard-quit-dwim ()
-  "Do-What-I-Mean behaviour for a general `keyboard-quit'.
-    The generic `keyboard-quit' does not do the expected thing when
-    the minibuffer is open.  Whereas we want it to close the
-    minibuffer, even without explicitly focusing it.
-    The DWIM behaviour of this command is as follows:
-    - When the region is active, disable it.
-    - When a minibuffer is open, but not focused, close the minibuffer.
-    - When the Completions buffer is selected, close it.
-    - In every other case use the regular `keyboard-quit'."
-  (interactive)
-  (cond
-   ((region-active-p)
-    (keyboard-quit))
-   ((derived-mode-p 'completion-list-mode)
-    (delete-completion-window))
-   ((> (minibuffer-depth) 0)
-    (abort-recursive-edit))
-   (t
-    (keyboard-quit))))
-;;
-(define-key global-map (kbd "C-g") #'prot/keyboard-quit-dwim)
-
-;;
 ;; -> ada-core
 ;;
 (defvar ada-light-mode-keywords
@@ -1413,3 +1305,147 @@ It doesn't define any keybindings. In comparison with `ada-mode',
   (add-hook 'eglot-managed-mode-hook #'ada-light-mode--eglot-setup))
 ;;
 (provide 'ada-light-mode)
+
+;;
+;; -> development-core
+;;
+(global-set-key (kbd "C-c t") 'toggle-centered-buffer)
+;;
+(defun my/md-to-org-convert-buffer ()
+  "Convert the current buffer from Markdown to Org-mode format"
+  (interactive)
+  (save-excursion
+    ;; Lists: Translate `-`, `*`, or `+` lists to Org-mode lists
+    (goto-char (point-min))
+    (while (re-search-forward "^\\([ \t]*\\)[*-+] \\(.*\\)$" nil t)
+      (replace-match (concat (match-string 1) "- \\2")))
+    ;; Bold: `**bold**` -> `*bold*` only if directly adjacent
+    (goto-char (point-min))
+    (while (re-search-forward "\\*\\*\\([^ ]\\(.*?\\)[^ ]\\)\\*\\*" nil t)
+      (replace-match "*\\1*"))
+    ;; Italics: `_italic_` -> `/italic/`
+    (goto-char (point-min))
+    (while (re-search-forward "\\b_\\([^ ]\\(.*?\\)[^ ]\\)_\\b" nil t)
+      (replace-match "/\\1/"))
+    ;; Links: `[text](url)` -> `[[url][text]]`
+    (goto-char (point-min))
+    (while (re-search-forward "\\[\\(.*?\\)\\](\\(.*?\\))" nil t)
+      (replace-match "[[\\2][\\1]]"))
+    ;; Code blocks: Markdown ```lang ... ``` to Org #+begin_src ... #+end_src
+    (goto-char (point-min))
+    (while (re-search-forward "```\\(.*?\\)\\(?:\n\\|\\s-\\)\\(\\(?:.\\|\n\\)*?\\)```" nil t)
+      (replace-match "#+begin_src \\1\n\\2#+end_src"))
+    ;; Inline code: `code` -> =code=
+    (goto-char (point-min))
+    (while (re-search-forward "`\\(.*?\\)`" nil t)
+      (replace-match "=\\1="))
+    ;; Horizontal rules: `---` or `***` -> `-----`
+    (goto-char (point-min))
+    (while (re-search-forward "^\\(-{3,}\\|\\*{3,}\\)$" nil t)
+      (replace-match "-----"))
+    ;; Images: `![alt text](url)` -> `[[url]]`
+    (goto-char (point-min))
+    (while (re-search-forward "!\\[.*?\\](\\(.*?\\))" nil t)
+      (replace-match "[[\\1]]"))
+    (goto-char (point-min))
+    ;; Headers: Adjust '#'
+    (while (re-search-forward "^\\(#+\\) " nil t)
+      (replace-match (make-string (length (match-string 1)) ?*) nil nil nil 1))))
+;;
+(defun my/md-to-org-convert-file (input-file output-file)
+  "Convert a Markdown file INPUT-FILE to an Org-mode file OUTPUT-FILE."
+  (with-temp-buffer
+    (insert-file-contents input-file)
+    (md-to-org-convert-buffer)
+    (write-file output-file)))
+;;
+(defun my/convert-markdown-clipboard-to-org ()
+  "Convert Markdown content from clipboard to Org format and insert it at point."
+  (interactive)
+  (let ((markdown-content (current-kill 0))
+        (original-buffer (current-buffer)))
+    (with-temp-buffer
+      (insert markdown-content)
+      (my/md-to-org-convert-buffer)
+      (let ((org-content (buffer-string)))
+        (with-current-buffer original-buffer
+          (insert org-content))))))
+;;
+(defun my/org-promote-all-headings (&optional arg)
+  "Promote all headings in the current Org buffer along with their subheadings."
+  (interactive "p")
+  (org-map-entries
+   (lambda () 
+     (dotimes (_ arg) (org-promote)))))
+;;
+(global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
+(global-set-key (kbd "M-s u") #'my/org-promote-all-headings)
+;;
+(defun my-icomplete-copy-candidate ()
+  "Copy the current Icomplete candidate to the kill ring."
+  (interactive)
+  (let ((candidate (car completion-all-sorted-completions)))
+    (when candidate
+      (kill-new (substring-no-properties candidate))
+      (abort-recursive-edit))))
+;;
+(define-key minibuffer-local-completion-map (kbd "C-c ,") 'my-icomplete-copy-candidate)
+;;
+(defun prot/keyboard-quit-dwim ()
+  "Do-What-I-Mean behaviour for a general `keyboard-quit'.
+    The generic `keyboard-quit' does not do the expected thing when
+    the minibuffer is open.  Whereas we want it to close the
+    minibuffer, even without explicitly focusing it.
+    The DWIM behaviour of this command is as follows:
+    - When the region is active, disable it.
+    - When a minibuffer is open, but not focused, close the minibuffer.
+    - When the Completions buffer is selected, close it.
+    - In every other case use the regular `keyboard-quit'."
+  (interactive)
+  (cond
+   ((region-active-p)
+    (keyboard-quit))
+   ((derived-mode-p 'completion-list-mode)
+    (delete-completion-window))
+   ((> (minibuffer-depth) 0)
+    (abort-recursive-edit))
+   (t
+    (keyboard-quit))))
+;;
+(define-key global-map (kbd "C-g") #'prot/keyboard-quit-dwim)
+;;
+(defun my/grep (search-term directory)
+  "Run ripgrep (rg) with SEARCH-TERM in DIRECTORY using
+a configuration file and display the results in a new buffer."
+  (interactive
+   (list
+    (read-string "Search for: ")
+    (read-directory-name "Directory: ")))
+  (let* ((buffer-name "*my-rg-results*")
+         (home-dir (expand-file-name "~"))
+         (rg-command (format "rg --color=never --column --line-number --no-heading --smart-case -e %s %s"
+                             (shell-quote-argument search-term)
+                             directory))
+         (raw-output (shell-command-to-string rg-command))
+         (formatted-output (if (not (string-empty-p raw-output))
+                               (replace-regexp-in-string (regexp-quote home-dir) "~" raw-output)
+                             nil)))
+    (with-current-buffer (get-buffer-create buffer-name)
+      (read-only-mode -1)
+      (erase-buffer)
+      (if (not formatted-output)
+          (message "Ripgrep finished with errors or no results.")
+        (progn
+          (insert formatted-output)
+          (grep-mode)
+          (pop-to-buffer buffer-name)
+          (goto-char (point-min)))))
+    (message "Searching for '%s' in %s..." search-term directory)))
+;;
+(add-to-list 'display-buffer-alist
+             '("\\*my-rg-results"
+               (display-buffer-reuse-window display-buffer-in-direction)
+               (direction . leftmost)
+               (dedicated . t)
+               (window-width . 0.33)
+               (inhibit-same-window . t)))
