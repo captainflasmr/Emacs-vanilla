@@ -57,36 +57,41 @@
 ;;
 (defun my/quick-window-jump ()
   "Jump to a window by typing its assigned character label.
-   Windows are labeled starting from the top-left window and proceeding top to bottom, then left to right."
+If there are only two windows, jump directly to the other window."
   (interactive)
-  (let* ((my/quick-window-overlays nil)
-         (window-list (sort (window-list nil 'no-mini)
-                            (lambda (w1 w2)
-                              (let ((edges1 (window-edges w1))
-                                    (edges2 (window-edges w2)))
-                                (or (< (car edges1) (car edges2))
-                                    (and (= (car edges1) (car edges2))
-                                         (< (cadr edges1) (cadr edges2))))))))
-         (window-keys (seq-take '("j" "k" "l" ";" "a" "s" "d" "f")
-                                (length window-list)))
-         (window-map (cl-pairlis window-keys window-list)))
-    (setq my/quick-window-overlays
-          (mapcar (lambda (entry)
-                    (let* ((key (car entry))
-                           (window (cdr entry))
-                           (start (window-start window))
-                           (overlay (make-overlay start start (window-buffer window))))
-                      (overlay-put overlay 'after-string 
-                                   (propertize (format "[%s]" key)
-                                               'face '(:foreground "white" :background "blue" :weight bold)))
-                      (overlay-put overlay 'window window)
-                      overlay))
-                  window-map))
-    (let ((key (read-key (format "Select window [%s]: " (string-join window-keys ", ")))))
-      (mapc #'delete-overlay my/quick-window-overlays)
-      (setq my/quick-window-overlays nil)
-      (when-let ((selected-window (cdr (assoc (char-to-string key) window-map))))
-        (select-window selected-window)))))
+  (let* ((window-list (window-list nil 'no-mini)))
+    (if (= (length window-list) 2)
+        ;; If there are only two windows, switch to the other one directly.
+        (select-window (other-window-for-scrolling))
+      ;; Otherwise, show the key selection interface.
+      (let* ((my/quick-window-overlays nil)
+             (sorted-windows (sort window-list
+                                   (lambda (w1 w2)
+                                     (let ((edges1 (window-edges w1))
+                                           (edges2 (window-edges w2)))
+                                       (or (< (car edges1) (car edges2))
+                                           (and (= (car edges1) (car edges2))
+                                                (< (cadr edges1) (cadr edges2))))))))
+             (window-keys (seq-take '("j" "k" "l" ";" "a" "s" "d" "f")
+                                    (length sorted-windows)))
+             (window-map (cl-pairlis window-keys sorted-windows)))
+        (setq my/quick-window-overlays
+              (mapcar (lambda (entry)
+                        (let* ((key (car entry))
+                               (window (cdr entry))
+                               (start (window-start window))
+                               (overlay (make-overlay start start (window-buffer window))))
+                          (overlay-put overlay 'after-string 
+                                       (propertize (format "[%s]" key)
+                                                   'face '(:foreground "white" :background "blue" :weight bold)))
+                          (overlay-put overlay 'window window)
+                          overlay))
+                      window-map))
+        (let ((key (read-key (format "Select window [%s]: " (string-join window-keys ", ")))))
+          (mapc #'delete-overlay my/quick-window-overlays)
+          (setq my/quick-window-overlays nil)
+          (when-let ((selected-window (cdr (assoc (char-to-string key) window-map))))
+            (select-window selected-window)))))))
 ;;
 (global-set-key (kbd "M-a") #'my/quick-window-jump)
 
@@ -146,7 +151,6 @@
 (global-set-key (kbd "C-c j") #'my/repeat-window-size)
 (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
 (global-set-key (kbd "C-c o s") #'outline-show-all)
-(global-set-key (kbd "C-o") #'other-window)
 (global-set-key (kbd "C-x ;") #'my/switch-to-thing)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (global-set-key (kbd "C-x [") #'beginning-of-buffer)
@@ -181,13 +185,8 @@
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
-(with-eval-after-load 'ibuffer
-  (define-key ibuffer-mode-map (kbd "C-o") nil)
-  (define-key ibuffer-mode-map (kbd "M-j") nil))
 (with-eval-after-load 'vc-dir
-  (define-key vc-dir-mode-map (kbd "e") #'vc-ediff)
-  (define-key vc-dir-mode-map (kbd "C-o") nil)
-  (define-key vc-dir-mode-map (kbd "M-j") nil))
+  (define-key vc-dir-mode-map (kbd "e") #'vc-ediff))
 
 ;;
 ;; -> modes-core
@@ -200,6 +199,7 @@
 (show-paren-mode t)
 (tab-bar-history-mode 1)
 (global-font-lock-mode t)
+(server-mode 1)
 
 ;;
 ;; -> bell-core
@@ -696,7 +696,6 @@ Enable `recentf-mode' if it isn't already."
 (with-eval-after-load 'dired
   (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
   (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
-  (define-key dired-mode-map (kbd "C-o") nil)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
 
 ;;
@@ -1414,20 +1413,22 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;;
 (define-key global-map (kbd "C-g") #'prot/keyboard-quit-dwim)
 ;;
-(defun my/grep (search-term directory)
-  "Run ripgrep (rg) with SEARCH-TERM in DIRECTORY if available,
-otherwise fall back to Emacs's rgrep command."
+(defun my/grep (search-term directory glob)
+  "Run ripgrep (rg) with SEARCH-TERM in DIRECTORY and GLOB if available,
+otherwise fall back to Emacs's rgrep command. Highlights SEARCH-TERM in results."
   (interactive
    (list
     (read-string "Search for: ")
-    (read-directory-name "Directory: ")))
+    (read-directory-name "Directory: ")
+    (read-string "File pattern (glob, default: *): " nil nil "*")))
   (let ((directory (expand-file-name directory))) ;; Expand directory to absolute path
     (if (executable-find "rg")
         ;; Use ripgrep if available
         (let* ((buffer-name "*my-rg-results*")
                (home-dir (expand-file-name "~"))
-               (rg-command (format "rg --color=never --column --line-number --no-heading --smart-case -e %s %s"
+               (rg-command (format "rg --color=never --column --line-number --no-heading --smart-case -e %s --glob %s %s"
                                    (shell-quote-argument search-term)
+                                   (shell-quote-argument glob)
                                    directory))
                (raw-output (shell-command-to-string rg-command))
                (formatted-output
@@ -1443,14 +1444,25 @@ otherwise fall back to Emacs's rgrep command."
             (read-only-mode -1)
             (erase-buffer)
             (if (not formatted-output)
-                (message "Ripgrep finished with errors or no results.")
+                (progn
+                  (message "Ripgrep finished with errors or no results.")
+                  (insert "No results found."))
               (insert formatted-output)
+              ;; Highlight the search term
+              (let ((case-fold-search t)) ;; Make the highlighting case insensitive
+                (goto-char (point-min))
+                (while (search-forward search-term nil t)
+                  (let ((start (match-beginning 0))
+                        (end (match-end 0)))
+                    ;; Add an overlay to highlight the match
+                    (let ((overlay (make-overlay start end)))
+                      (overlay-put overlay 'face '(:background "yellow" :foreground "black"))))))
               (grep-mode)
               (pop-to-buffer buffer-name)
               (goto-char (point-min)))))
       ;; Fall back to rgrep if ripgrep is not available
       (let ((default-directory directory))
-        (rgrep search-term "*" directory)))))
+        (rgrep search-term glob directory)))))
 ;;
 (add-to-list 'display-buffer-alist
              '("\\*my-rg-results"
