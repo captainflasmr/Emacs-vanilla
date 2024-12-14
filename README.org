@@ -15,6 +15,9 @@ Supported Platforms:
 - SwayWM - Wayland
 - Windows 10
 
+Looking to potentially support:
+- OpenSuse 11.2 (November 12, 2009)
+
 The configuration focuses on ease of use by providing custom keybindings, basic completion support, and visual enhancements without relying on any external packages.
 
 * Benefits
@@ -104,6 +107,14 @@ This emacs init configuration will provide me with the following benefits.
 
 * Whats New
 
+** <2024-12-14>
+
+Added my/find-file to be a more flexible ripgrep based finding file tool.
+
+** <2024-12-14>
+
+Added deadgrep kind of replacement called my/grep with leveraging ripgrep into a type of grep Emacs buffer.
+
 ** <2024-12-10>
 
 Added ada-mode support out of the box.
@@ -146,6 +157,27 @@ enhance window navigation and introduce my rainbow mode (see solution in roadmap
 - Default abbreviation expansion and predictive file/directory completion are implemented via =hippie-expand=.
   
 - Minibuffer Configuration: Vanilla configuration achieved through enabling =fido-mode= provides an intuitive, fast, and clean completion interface in the minibuffer using the built-in =icomplete= framework without requiring third-party tools.
+
+** Leveraging External Tools Where Possible
+
+It is often advantageous to use *external tools* that are optimized for specific tasks. Emacs offers many built-in tools, but these may not always be the fastest or most feature-rich option available. By integrating with *system-based utilities* when they exist, we can achieve both performance improvements and enhanced capabilities. However, in cases where external tools are unavailable, Emacs' built-in options serve as a reliable fallback.
+
+*** ripgrep - grepping files
+**** Functionality
+  - Searching across project files for a specific term or pattern.
+  - Faster than Emacs' built-in =grep= or =rgrep=
+  - Better default handling of ignored files (e.g., =.gitignore= rules).
+  - Offers rich pattern matching (regex or literal strings).
+**** Fallback
+  - Emacs' =grep= or =rgrep= commands provide file searching through built-in utilities like =grep=.
+  - While slower and less feature-rich, they can still handle basic directory searches.
+*** ripgrep (alternative fd) - finding files
+**** Functionality
+  - Searching for files in a directory or project.
+  - Supports advanced filtering options (e.g., searching by filename extension, ignoring gitignored files).
+**** Fallback
+  - =find-name-dired= or =project-find-file= for locating files within Emacs projects.
+  - Relatively slower on larger directories, but sufficient for small-scale tasks.
 
 ** Keybindings for Navigation and Files
 
@@ -430,6 +462,99 @@ Solved with the code below:
     (set-window-margins nil margin margin)))
 #+end_src
 
+** DOING deadgrep
+
+Would rgrep be potentially good enough?, maybe, or maybe pull on ripgrep through a simple interface.
+
+Being solved with the following code:
+
+#+begin_src elisp
+(defun my/grep (search-term directory glob)
+  "Run ripgrep (rg) with SEARCH-TERM in DIRECTORY and GLOB if available,
+otherwise fall back to Emacs's rgrep command. Highlights SEARCH-TERM in results."
+  (interactive
+   (list
+    (read-string "Search for: ")
+    (read-directory-name "Directory: ")
+    (read-string "File pattern (glob, default: *): " nil nil "*")))
+  (let ((directory (expand-file-name directory))) ;; Expand directory to absolute path
+    (if (executable-find "rg")
+        ;; Use ripgrep if available
+        (let* ((buffer-name "*my-rg-results*")
+               (home-dir (expand-file-name "~"))
+               (rg-command (format "rg --color=never --column --line-number --no-heading --smart-case -e %s --glob %s %s"
+                                   (shell-quote-argument search-term)
+                                   (shell-quote-argument glob)
+                                   directory))
+               (raw-output (shell-command-to-string rg-command))
+               (formatted-output
+                (if (not (string-empty-p raw-output))
+                    ;; Replace absolute path with relative path or "./"
+                    (replace-regexp-in-string (concat "\\(^" (regexp-quote directory) "\\)") "./" raw-output)
+                  nil)))
+          ;; Kill existing buffer if it exists
+          (when (get-buffer buffer-name)
+            (kill-buffer buffer-name))
+          ;; Create the results buffer
+          (with-current-buffer (get-buffer-create buffer-name)
+            (read-only-mode -1)
+            (erase-buffer)
+            (if (not formatted-output)
+                (progn
+                  (message "Ripgrep finished with errors or no results.")
+                  (insert "No results found."))
+              (insert formatted-output)
+              ;; Highlight the search term
+              (let ((case-fold-search t)) ;; Make the highlighting case insensitive
+                (goto-char (point-min))
+                (while (search-forward search-term nil t)
+                  (let ((start (match-beginning 0))
+                        (end (match-end 0)))
+                    ;; Add an overlay to highlight the match
+                    (let ((overlay (make-overlay start end)))
+                      (overlay-put overlay 'face '(:background "yellow" :foreground "black"))))))
+              (grep-mode)
+              (pop-to-buffer buffer-name)
+              (goto-char (point-min)))))
+      ;; Fall back to rgrep if ripgrep is not available
+      (let ((default-directory directory))
+        (rgrep search-term glob directory)))))
+#+end_src
+
+** DOING find-name-dired
+
+Currently find file type jump key functionality for core is just find-name-dired but probably better to have a more flexible version that can still use =find-name-dired= but if ripgrep exists or even find then present those options.  This will then potentially be a more modern approach.
+
+Being solved with the following code:
+
+#+begin_src elisp
+(defun my/find-file ()
+  "Find file from current directory in many different ways."
+  (interactive)
+  (let* ((find-options (delq nil
+                             (list (when (executable-find "find")
+                                     '("find -type f -printf \"$PWD/%p\\0\"" . :string))
+                                   (when (executable-find "fd")
+                                     '("fd --absolute-path --type f -0" . :string))
+                                   (when (executable-find "rg")
+                                     '("rg --follow --files --null" . :string))
+                                   (when (fboundp 'find-name-dired)
+                                     '("find-name-dired" . :command)))))
+         (selection (completing-read "Select: " find-options))
+         file-list
+         file)
+    (pcase (alist-get selection find-options nil nil #'string=)
+      (:command
+       (call-interactively (intern selection)))
+      (:string
+       (setq file-list (split-string (shell-command-to-string selection) "\0" t))
+       (setq file (completing-read
+                   (format "Find file in %s: "
+                           (abbreviate-file-name default-directory))
+                   file-list))))
+    (when file (find-file (expand-file-name file)))))
+#+end_src
+
 ** DOING magit
 
 Replace by built-in VC
@@ -444,17 +569,9 @@ My package of highlighting the selected window/tabs, which actually I find very 
 
 Go through the Emacs export mechanism instead and open separate browser window, refreshing when exported each time?
 
-** TODO deadgrep
-
-Would rgrep be potentially good enough?, maybe, or maybe pull on ripgrep through a simple interface.
-
 ** TODO image-dired
 
 Copy over functionality, no real external things, its just is it valuable given how little I use it? 
-
-** TODO find-name-dired replaced with a more flexible version
-
-Currently find file type jump key functionality for core is just find-name-dired but probably better to have a more flexible version that can still use =find-name-dired= but if ripgrep exists or even find then present those options.  This will then potentially be a more modern approach.
 
 ** TODO tempel
 
