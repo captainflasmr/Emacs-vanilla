@@ -199,7 +199,6 @@ If there are only two windows, jump directly to the other window."
 (show-paren-mode t)
 (tab-bar-history-mode 1)
 (global-font-lock-mode t)
-(server-mode 1)
 
 ;;
 ;; -> bell-core
@@ -614,12 +613,13 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
   (kill-ring-save (point-min) (point-max))
   (message (concat (buffer-file-name) " Copied")))
 ;;
-(defun my/sync-tab-bar-to-theme ()
+(defun my/sync-tab-bar-to-theme (&optional color)
   "Synchronize tab-bar faces with the current theme, and set
-  mode-line background color interactively using `read-color`."
-  (interactive)
-  ;; Use `read-color` to get the mode-line background color from the user
-  (let ((selected-color (read-color)))
+mode-line background color interactively using `read-color`
+if COLOR is not provided as an argument."
+  (interactive (list (when current-prefix-arg (read-color "Color: "))))
+  ;; Determine the color to use
+  (let ((selected-color (or color (read-color "Select mode-line background color: "))))
     (set-hl-line-darker-background)
     (set-face-attribute 'mode-line nil :height 120 :underline nil :overline nil :box nil
                         :background selected-color :foreground "#000000")
@@ -637,6 +637,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
        `(tab-bar-tab ((t (:inherit 'highlight :background ,selected-color :foreground "#000000"))))
        `(tab-bar-tab-inactive ((t (:inherit default :background ,default-bg :foreground ,inactive-fg
                                             :box (:line-width 2 :color ,default-bg :style released-button)))))))))
+(my/sync-tab-bar-to-theme "#ff4444")
 ;;
 (defun my/recentf-open (file)
   "Prompt for FILE in `recentf-list' and visit it.
@@ -644,8 +645,7 @@ Enable `recentf-mode' if it isn't already."
   (interactive
    (list
     (progn (unless recentf-mode (recentf-mode 1))
-           (completing-read (format-prompt "Open recent file" nil)
-                            recentf-list nil t))))
+           (completing-read "Open recent file: " recentf-list nil t))))
   (when file
     (funcall recentf-menu-action file)))
 
@@ -818,13 +818,18 @@ Enable `recentf-mode' if it isn't already."
 (defun my/find-file ()
   "Find file from current directory in many different ways."
   (interactive)
-  (let* ((find-options '(("find -type f -printf \"$PWD/%p\\0\"" . :string)
-                         ("fd --absolute-path --type f -0" . :string)
-                         ("rg --follow --files --null" . :string)
-                         ("find-name-dired" . :command)))
-         (selection (completing-read "Select : " find-options))
-         (file-list)
-         (file))
+  (let* ((find-options (delq nil
+                             (list (when (executable-find "find")
+                                     '("find -type f -printf \"$PWD/%p\\0\"" . :string))
+                                   (when (executable-find "fd")
+                                     '("fd --absolute-path --type f -0" . :string))
+                                   (when (executable-find "rg")
+                                     '("rg --follow --files --null" . :string))
+                                   (when (fboundp 'find-name-dired)
+                                     '("find-name-dired" . :command)))))
+         (selection (completing-read "Select: " find-options))
+         file-list
+         file)
     (pcase (alist-get selection find-options nil nil #'string=)
       (:command
        (call-interactively (intern selection)))
@@ -852,6 +857,8 @@ Enable `recentf-mode' if it isn't already."
 ;;
 (setq ispell-local-dictionary "en_GB")
 (setq ispell-program-name "hunspell")
+(define-prefix-command 'my-spell-prefix-map)
+(global-set-key (kbd "C-c s") 'my-spell-prefix-map)
 (global-set-key (kbd "C-c s l") #'(lambda()(interactive)
                                     (flyspell-buffer)
                                     (flyspell-mode)))
