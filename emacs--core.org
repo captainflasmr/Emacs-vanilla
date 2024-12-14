@@ -81,7 +81,7 @@ Defines custom keybindings for navigating through files and Emacs features like 
             (lambda ()
               (interactive)
               (find-file (expand-file-name "init.el" user-emacs-directory))))
-(define-key my-jump-keymap (kbd "f") #'find-name-dired)
+(define-key my-jump-keymap (kbd "f") #'my/find-file)
 (define-key my-jump-keymap (kbd "g") (lambda () (interactive) (find-file "~/.config")))
 (define-key my-jump-keymap (kbd "h") (lambda () (interactive) (find-file "~")))
 (define-key my-jump-keymap (kbd "j") (lambda () (interactive) (find-file "~/DCIM/content/aaa--todo.org")))
@@ -773,6 +773,13 @@ Configures rules and behaviours for display-buffer functions to control how new 
                (direction . bottommost)
                (dedicated . t)
                (window-height . 0.2)
+               (inhibit-same-window . t)))
+(add-to-list 'display-buffer-alist
+             '("\\*grep"
+               (display-buffer-reuse-window display-buffer-in-direction)
+               (direction . leftmost)
+               (dedicated . t)
+               (window-width . 0.4)
                (inhibit-same-window . t)))
 (add-to-list 'display-buffer-alist
              '("\\*Messages" display-buffer-same-window))
@@ -1775,22 +1782,26 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;;
 (define-key global-map (kbd "C-g") #'prot/keyboard-quit-dwim)
 ;;
-(defun my/grep (search-term directory glob)
-  "Run ripgrep (rg) with SEARCH-TERM in DIRECTORY and GLOB if available,
-otherwise fall back to Emacs's rgrep command. Highlights SEARCH-TERM in results."
+(defun my/grep (search-term &optional directory glob)
+  "Run ripgrep (rg) with SEARCH-TERM and optionally DIRECTORY and GLOB.
+If ripgrep is unavailable, fall back to Emacs's rgrep command. Highlights SEARCH-TERM in results.
+
+By default, only the SEARCH-TERM needs to be provided. If called with a
+universal argument, DIRECTORY and GLOB are prompted for as well."
   (interactive
-   (list
-    (read-string "Search for: ")
-    (read-directory-name "Directory: ")
-    (read-string "File pattern (glob, default: *): " nil nil "*")))
-  (let ((directory (expand-file-name directory))) ;; Expand directory to absolute path
+   (let ((univ-arg current-prefix-arg))
+     (list
+      (read-string "Search for: ")
+      (when univ-arg (read-directory-name "Directory: "))
+      (when univ-arg (read-string "File pattern (glob, default: *): " nil nil "*")))))
+  (let* ((directory (or directory default-directory)) ;; Use the provided directory or default to `default-directory`
+         (directory (expand-file-name directory))) ;; Expand directory to absolute path
     (if (executable-find "rg")
         ;; Use ripgrep if available
-        (let* ((buffer-name "*my-rg-results*")
-               (home-dir (expand-file-name "~"))
+        (let* ((buffer-name "*grep*")
                (rg-command (format "rg --color=never --column --line-number --no-heading --smart-case -e %s --glob %s %s"
                                    (shell-quote-argument search-term)
-                                   (shell-quote-argument glob)
+                                   (shell-quote-argument (or glob "*")) ;; Default glob to "*"
                                    directory))
                (raw-output (shell-command-to-string rg-command))
                (formatted-output
@@ -1824,7 +1835,7 @@ otherwise fall back to Emacs's rgrep command. Highlights SEARCH-TERM in results.
               (goto-char (point-min)))))
       ;; Fall back to rgrep if ripgrep is not available
       (let ((default-directory directory))
-        (rgrep search-term glob directory)))))
+        (rgrep search-term (or glob "*") directory)))))
 ;;
 (add-to-list 'display-buffer-alist
              '("\\*my-rg-results"
