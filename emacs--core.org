@@ -56,10 +56,6 @@ Setup for both vanilla modeline.
 ;; -> modeline-completion-core
 ;;
 (fido-mode 1)
-(defun my-icomplete-exit-minibuffer-with-input ()
-  "Exit the minibuffer with the current input, without forcing completion."
-  (interactive)
-  (exit-minibuffer))
 (define-key icomplete-minibuffer-map (kbd "M-RET") 'my-icomplete-exit-minibuffer-with-input)
 (setq icomplete-compute-delay 0)
 (setq icomplete-show-matches-on-no-input t)
@@ -95,44 +91,6 @@ Defines custom keybindings for navigating through files and Emacs features like 
 (define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
 (define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "~/DCIM/content/")))
 (define-key my-jump-keymap (kbd "-") #'tab-close)
-;;
-(defun my/quick-window-jump ()
-  "Jump to a window by typing its assigned character label.
-If there are only two windows, jump directly to the other window."
-  (interactive)
-  (let* ((window-list (window-list nil 'no-mini)))
-    (if (= (length window-list) 2)
-        ;; If there are only two windows, switch to the other one directly.
-        (select-window (other-window-for-scrolling))
-      ;; Otherwise, show the key selection interface.
-      (let* ((my/quick-window-overlays nil)
-             (sorted-windows (sort window-list
-                                   (lambda (w1 w2)
-                                     (let ((edges1 (window-edges w1))
-                                           (edges2 (window-edges w2)))
-                                       (or (< (car edges1) (car edges2))
-                                           (and (= (car edges1) (car edges2))
-                                                (< (cadr edges1) (cadr edges2))))))))
-             (window-keys (seq-take '("j" "k" "l" ";" "a" "s" "d" "f")
-                                    (length sorted-windows)))
-             (window-map (cl-pairlis window-keys sorted-windows)))
-        (setq my/quick-window-overlays
-              (mapcar (lambda (entry)
-                        (let* ((key (car entry))
-                               (window (cdr entry))
-                               (start (window-start window))
-                               (overlay (make-overlay start start (window-buffer window))))
-                          (overlay-put overlay 'after-string 
-                                       (propertize (format "[%s]" key)
-                                                   'face '(:foreground "white" :background "blue" :weight bold)))
-                          (overlay-put overlay 'window window)
-                          overlay))
-                      window-map))
-        (let ((key (read-key (format "Select window [%s]: " (string-join window-keys ", ")))))
-          (mapc #'delete-overlay my/quick-window-overlays)
-          (setq my/quick-window-overlays nil)
-          (when-let ((selected-window (cdr (assoc (char-to-string key) window-map))))
-            (select-window selected-window)))))))
 ;;
 (global-set-key (kbd "M-a") #'my/quick-window-jump)
 
@@ -704,17 +662,6 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
               (replace-match new-close-tag)))))
       (write-region (point-min) (point-max) html-file))))
 ;;
-(defun toggle-centered-buffer ()
-  "Toggle center alignment of the buffer by adjusting window margins based on the fill-column."
-  (interactive)
-  (let* ((current-margins (window-margins))
-         (margin (if (or (equal current-margins '(0 . 0))
-                         (null (car (window-margins))))
-                     (/ (- (window-total-width) fill-column) 2)
-                   0)))
-    (visual-line-mode 1)
-    (set-window-margins nil margin margin)))
-;;
 (defun my/copy-buffer-to-kill-ring ()
   "Copy the entire buffer to the kill ring without changing the point."
   (interactive)
@@ -746,17 +693,6 @@ if COLOR is not provided as an argument."
        `(tab-bar-tab-inactive ((t (:inherit default :background ,default-bg :foreground ,inactive-fg
                                             :box (:line-width 2 :color ,default-bg :style released-button)))))))))
 (my/sync-tab-bar-to-theme "#ff4444")
-;;
-(defun my/recentf-open (file)
-  "Prompt for FILE in `recentf-list' and visit it.
-Enable `recentf-mode' if it isn't already."
-  (interactive
-   (list
-    (progn (unless recentf-mode (recentf-mode 1))
-           (completing-read "Open recent file: " recentf-list nil t))))
-  (when file
-    (funcall recentf-menu-action file)))
-
 #+end_src
 
 * window-positioning-core
@@ -860,25 +796,6 @@ Configures various visual aspects of Emacs, including menu bar, toolbar, and scr
 (modify-all-frames-parameters `((internal-border-width . ,my/internal-border-width)))
 (set-fringe-mode '(20 . 20))
 ;;
-(defun my/rainbow-mode ()
-  "Overlay colors represented as hex values in the current buffer."
-  (interactive)
-  (remove-overlays (point-min) (point-max))
-  (let ((hex-color-regex "#[0-9a-fA-F]\\{3,6\\}"))
-    (save-excursion
-      (goto-char (point-min))
-      (while (re-search-forward hex-color-regex nil t)
-        (let* ((color (match-string 0))
-               (overlay (make-overlay (match-beginning 0) (match-end 0))))
-          (if (string-greaterp color "#888888")
-              (overlay-put overlay 'face `(:background ,color :foreground "black"))
-            (overlay-put overlay 'face `(:background ,color :foreground "white"))))))))
-;;
-(defun my/rainbow-mode-clear ()
-  "Remove all hex color overlays in the current buffer."
-  (interactive)
-  (remove-overlays (point-min) (point-max)))
-;;
 (add-hook 'prog-mode-hook #'my/rainbow-mode)
 (add-hook 'org-mode-hook #'my/rainbow-mode)
 (add-hook 'conf-space-mode-hook #'my/rainbow-mode)
@@ -975,41 +892,6 @@ Customizes the modeline for displaying active modes, buffer names, or other cont
       (setq-default mode-line-format nil)
       (setq frame-title-format mode-line-format)))
   (force-mode-line-update t))
-#+end_src
-
-* find-core
-
-Highlights customization for the Find and Grep tools within Emacs, including appearance, behaviour, and integration points fostering efficient content search and navigation.
-
-#+begin_src elisp
-;;
-;; -> find-core
-;;
-(defun my/find-file ()
-  "Find file from current directory in many different ways."
-  (interactive)
-  (let* ((find-options (delq nil
-                             (list (when (executable-find "find")
-                                     '("find -type f -printf \"$PWD/%p\\0\"" . :string))
-                                   (when (executable-find "fd")
-                                     '("fd --absolute-path --type f -0" . :string))
-                                   (when (executable-find "rg")
-                                     '("rg --follow --files --null" . :string))
-                                   (when (fboundp 'find-name-dired)
-                                     '("find-name-dired" . :command)))))
-         (selection (completing-read "Select: " find-options))
-         file-list
-         file)
-    (pcase (alist-get selection find-options nil nil #'string=)
-      (:command
-       (call-interactively (intern selection)))
-      (:string
-       (setq file-list (split-string (shell-command-to-string selection) "\0" t))
-       (setq file (completing-read
-                   (format "Find file in %s: "
-                           (abbreviate-file-name default-directory))
-                   file-list))))
-    (when file (find-file (expand-file-name file)))))
 #+end_src
 
 * grep-core
@@ -1782,61 +1664,6 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;;
 (define-key global-map (kbd "C-g") #'prot/keyboard-quit-dwim)
 ;;
-(defun my/grep (search-term &optional directory glob)
-  "Run ripgrep (rg) with SEARCH-TERM and optionally DIRECTORY and GLOB.
-If ripgrep is unavailable, fall back to Emacs's rgrep command. Highlights SEARCH-TERM in results.
-
-By default, only the SEARCH-TERM needs to be provided. If called with a
-universal argument, DIRECTORY and GLOB are prompted for as well."
-  (interactive
-   (let ((univ-arg current-prefix-arg))
-     (list
-      (read-string "Search for: ")
-      (when univ-arg (read-directory-name "Directory: "))
-      (when univ-arg (read-string "File pattern (glob, default: *): " nil nil "*")))))
-  (let* ((directory (or directory default-directory)) ;; Use the provided directory or default to `default-directory`
-         (directory (expand-file-name directory))) ;; Expand directory to absolute path
-    (if (executable-find "rg")
-        ;; Use ripgrep if available
-        (let* ((buffer-name "*grep*")
-               (rg-command (format "rg --color=never --column --line-number --no-heading --smart-case -e %s --glob %s %s"
-                                   (shell-quote-argument search-term)
-                                   (shell-quote-argument (or glob "*")) ;; Default glob to "*"
-                                   directory))
-               (raw-output (shell-command-to-string rg-command))
-               (formatted-output
-                (if (not (string-empty-p raw-output))
-                    ;; Replace absolute path with relative path or "./"
-                    (replace-regexp-in-string (concat "\\(^" (regexp-quote directory) "\\)") "./" raw-output)
-                  nil)))
-          ;; Kill existing buffer if it exists
-          (when (get-buffer buffer-name)
-            (kill-buffer buffer-name))
-          ;; Create the results buffer
-          (with-current-buffer (get-buffer-create buffer-name)
-            (read-only-mode -1)
-            (erase-buffer)
-            (if (not formatted-output)
-                (progn
-                  (message "Ripgrep finished with errors or no results.")
-                  (insert "No results found."))
-              (insert formatted-output)
-              ;; Highlight the search term
-              (let ((case-fold-search t)) ;; Make the highlighting case insensitive
-                (goto-char (point-min))
-                (while (search-forward search-term nil t)
-                  (let ((start (match-beginning 0))
-                        (end (match-end 0)))
-                    ;; Add an overlay to highlight the match
-                    (let ((overlay (make-overlay start end)))
-                      (overlay-put overlay 'face '(:background "yellow" :foreground "black"))))))
-              (grep-mode)
-              (pop-to-buffer buffer-name)
-              (goto-char (point-min)))))
-      ;; Fall back to rgrep if ripgrep is not available
-      (let ((default-directory directory))
-        (rgrep search-term (or glob "*") directory)))))
-;;
 (add-to-list 'display-buffer-alist
              '("\\*my-rg-results"
                (display-buffer-reuse-window display-buffer-in-direction)
@@ -1845,4 +1672,15 @@ universal argument, DIRECTORY and GLOB are prompted for as well."
                (window-width . 0.33)
                (inhibit-same-window . t)))
 
+#+end_src
+
+* emacs-enhanced
+
+The defun replacements which are loaded from the generated .el file which will be tangled separately.
+
+#+begin_src elisp
+;;
+;; -> core-configuration
+;;
+(load-file (concat user-emacs-directory "Emacs-enhanced/init.el"))
 #+end_src
