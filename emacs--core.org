@@ -1682,5 +1682,5 @@ The defun replacements which are loaded from the generated .el file which will b
 ;;
 ;; -> core-configuration
 ;;
-(load-file (concat user-emacs-directory "Emacs-enhanced/init.el"))
+(load-file "~/.emacs.d/Emacs-enhanced/init.el")
 #+end_src

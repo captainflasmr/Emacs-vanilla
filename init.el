@@ -1327,4 +1327,4 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;;
 ;; -> core-configuration
 ;;
-(load-file (concat user-emacs-directory "Emacs-enhanced/init.el"))
+(load-file "~/.emacs.d/Emacs-enhanced/init.el")
