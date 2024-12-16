@@ -645,6 +645,7 @@ if COLOR is not provided as an argument."
 (with-eval-after-load 'dired
   (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
   (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
+  (define-key dired-mode-map (kbd "C-c i") 'my/image-dired-sort)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
 
 ;;
@@ -760,13 +761,16 @@ if COLOR is not provided as an argument."
 ;;
 (setq ispell-local-dictionary "en_GB")
 (setq ispell-program-name "hunspell")
+(setq dictionary-default-dictionary "*")
+(setq dictionary-server "dict.org")
+(setq dictionary-use-single-buffer t)
 (define-prefix-command 'my-spell-prefix-map)
 (global-set-key (kbd "C-c s") 'my-spell-prefix-map)
 (global-set-key (kbd "C-c s l") #'(lambda()(interactive)
                                     (flyspell-buffer)
                                     (flyspell-mode)))
-(global-set-key (kbd "C-c s s") #'ispell-word)
-(global-set-key (kbd "C-c s j") #'ispell-word)
+(global-set-key (kbd "C-c s d") #'dictionary-lookup-definition)
+(global-set-key (kbd "C-0") #'ispell-word)
 
 ;;
 ;; -> gdb-core
@@ -1335,3 +1339,110 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;; -> core-configuration
 ;;
 (load-file "~/.emacs.d/Emacs-enhanced/init.el")
+
+;;
+;; -> image-dired
+;;
+
+(require 'image-mode)
+(require 'image-dired)
+
+(add-to-list 'display-buffer-alist
+             '("\\*image-dired\\*"
+               display-buffer-in-direction
+               (direction . left)
+               (window . root)
+               (window-width . 0.5)))
+
+(add-to-list 'display-buffer-alist
+             '("\\*image-dired-display-image\\*"
+               display-buffer-in-direction
+               (direction . right)
+               (window . root)
+               (window-width . 0.5)))
+
+(defun my/image-dired-sort (arg)
+  "Sort images in various ways given ARG."
+  (interactive "P")
+  ;; Use `let` to temporarily set `dired-actual-switches`
+  (let ((dired-actual-switches
+         (cond
+          ((equal arg nil)            ; no C-u
+           "-lGghat --ignore=*.xmp")
+          ((equal arg '(4))           ; C-u
+           "-lGgha --ignore=*.xmp")
+          ((equal arg 1)              ; C-u 1
+           "-lGgha --ignore=*.xmp"))))
+    (let ((w (selected-window)))
+      (delete-other-windows)
+      (revert-buffer)
+      (image-dired ".")
+      (let ((idw (selected-window)))
+        (select-window w)
+        (dired-unmark-all-marks)
+        (select-window idw)
+        (image-dired-display-this)
+        (image-dired-line-up-dynamic)))))
+
+(setq image-use-external-converter t)
+(setq image-dired-external-viewer "/usr/bin/gthumb")
+(setq image-dired-show-all-from-dir-max-files 999)
+(setq image-dired-thumbs-per-row 999)
+(setq image-dired-thumb-relief 0)
+(setq image-dired-thumb-margin 5)
+(setq image-dired-thumb-size 120)
+
+(defun my/image-save-as ()
+  "Save the current image buffer as a new file."
+  (interactive)
+  (let* ((file (buffer-file-name))
+         (dir (file-name-directory file))
+         (name (file-name-nondirectory file))
+         (base-name (file-name-sans-extension name))
+         (extension (file-name-extension name t))
+         (initial_mode major-mode)
+         (counter 1)
+         (new-file))
+    (while (and (setq new-file
+                      (format "%s%s_%03d%s" dir base-name counter extension))
+                (file-exists-p new-file))
+      (setq counter (1+ counter)))
+    (write-region (point-min) (point-max) new-file nil 'no-message)
+    (revert-buffer nil t nil)
+    ;; (delete-file file t)
+    (if (equal initial_mode 'image-dired-image-mode)
+        (progn
+          (image-dired ".")
+          (image-dired-display-this))
+      (find-file new-file t))))
+
+(defun my/delete-current-image-and-move-to-next ()
+  "Delete the current image file and move to the next image in the directory."
+  (interactive)
+  (let ((current-file (buffer-file-name)))
+    (when current-file
+      (image-next-file 1)
+      (delete-file current-file)
+      (message "Deleted %s" current-file))))
+
+(defun my/delete-current-image-thumbnails ()
+  "Delete the current image file and move to the next image in the directory."
+  (interactive)
+  (let ((file-name (image-dired-original-file-name)))
+    (delete-file file-name)
+    (image-dired-delete-char)
+    (image-dired-display-this)))
+
+(eval-after-load 'image-mode
+  '(progn
+     (define-key image-mode-map (kbd "C-d") 'my/delete-current-image-and-move-to-next)
+     (define-key image-mode-map (kbd "C-x C-s") 'my/image-save-as)))
+
+(eval-after-load 'image-dired
+  '(progn
+     (define-key image-dired-thumbnail-mode-map (kbd "C-d") 'my/delete-current-image-thumbnails)
+     (define-key image-dired-thumbnail-mode-map (kbd "n")
+                 (lambda ()(interactive)(image-dired-forward-image)(image-dired-display-this)))
+     (define-key image-dired-thumbnail-mode-map (kbd "p")
+                 (lambda ()(interactive)(image-dired-backward-image)(image-dired-display-this)))
+     ))
