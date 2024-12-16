@@ -143,6 +143,7 @@
 (global-set-key (kbd "M-l") #'split-window-horizontally)
 (global-set-key (kbd "M-m") #'split-window-vertically)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
+(global-set-key (kbd "C-c ,") 'find-file-at-point)
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
@@ -611,6 +612,8 @@ if COLOR is not provided as an argument."
 ;;
 ;; -> org-core
 ;;
+(setq org-src-preserve-indentation t)
+(setq org-edit-src-content-indentation 0)
 (setq org-startup-indented t)
 (setq org-use-speed-commands t)
 (setq org-hide-leading-stars t)
@@ -659,6 +662,8 @@ if COLOR is not provided as an argument."
 (defvar my/internal-border-width 0 "Default internal border width for toggling.")
 (modify-all-frames-parameters `((internal-border-width . ,my/internal-border-width)))
 (set-fringe-mode '(20 . 20))
+(setq bookmark-set-fringe-mark nil)
+(setq bookmark-fringe-mark nil)
 ;;
 (add-hook 'prog-mode-hook #'my/rainbow-mode)
 (add-hook 'org-mode-hook #'my/rainbow-mode)
@@ -917,6 +922,7 @@ With directories under project root using find."
    '(variable-pitch ((t (:family "DejaVu Sans" :height 120 :weight normal))))
    '(fixed-pitch ((t ( :family "Source Code Pro" :height 110)))))
   (setq font-general "Source Code Pro 12")
+  (setq font-general "Courier 12")
   (set-frame-font font-general nil t)
   (add-to-list 'default-frame-alist `(font . ,font-general)))
 
