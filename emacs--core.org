@@ -9,6 +9,10 @@
 #+todo: TODO DOING | DONE
 #+property: header-args :tangle ~/.emacs.d/Emacs-core/init.el
 
+#+begin_src emacs-lisp
+;; -*- lexical-binding: t; -*-
+#+end_src
+
 A simple universal emacs configuration that will work with the following VMs with version 27.1 onwards.
 
 - SLES15
