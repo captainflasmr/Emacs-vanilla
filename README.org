@@ -20,6 +20,72 @@ Looking to potentially support:
 
 The configuration focuses on ease of use by providing custom keybindings, basic completion support, and visual enhancements without relying on any external packages.
 
+* Whats New
+
+** <2024-12-16>
+
+feat(emacs): Enhance =dired= and =image-dired= configurations
+
+- *=dired=*:
+  - Added a new keybinding (=C-c i=) for =my/image-dired-sort=.
+  - Improved file management capabilities within Dired interface.
+
+- *Spell-checking*:
+  - Integrated =dictionary.el= for on-the-fly word definitions.
+  - Added =C-c s d= for dictionary lookup.
+  - Introduced =C-0= as dedicated keybinding for =ispell-word=.
+
+- *=image-dired=*:
+  - Introduced custom behavior for image manipulation:
+    - Added =my/image-dired-sort= for better image sorting in Dired.
+    - Defined keybindings to streamline navigation and editing in =image-dired=.
+  - Configured a split-buffer layout for enhanced productivity.
+  - Added helper functions (=my/image-save-as=, =my/delete-current-image-and-move-to-next=, etc.) for managing images programmatically.
+  - Enabled external image viewing via =gthumb=.
+
+** <2024-12-14>
+
+Added my/find-file to be a more flexible ripgrep based finding file tool.
+
+** <2024-12-14>
+
+Added deadgrep kind of replacement called my/grep with leveraging ripgrep into a type of grep Emacs buffer.
+
+** <2024-12-10>
+
+Added ada-mode support out of the box.
+
+Yes, ada-mode was removed from emacs and it was recommended to use the ada-mode supplied by AdaCore, however this is all but impossible to set up so including =ada-light=mode= as part of the configuration.
+
+https://github.com/sebastianpoeplau/ada-light-mode
+
+** <2024-12-09>
+
+Added =visual-fill-column-mode= replacement with a simple elisp function (see solution in roadmap)
+
+** <2024-12-09>
+
+Added =my-icomplete-copy-candidate= to allow embark like copying of current candidate (see solution in roadmap)
+
+** <2024-12-09>
+
+Added =my/recentf-open= to bypass old default recentf-open interface (see solution in roadmap)
+
+** <2024-12-09>
+
+enhance window navigation and introduce my rainbow mode (see solution in roadmap)
+
+- Refactored `my/quick-window-jump` for better window labeling and overlay management:
+  - Improved window sorting logic for more accurate top-to-bottom, left-to-right navigation.
+  - Added visual overlays to display window shortcuts with labels.
+- Introduced `my/rainbow-mode`:
+  - Overlays hex color values in buffers with their respective colors for better readability.
+- Minor refactor to `my/copy-buffer-to-kill-ring` by removing redundant `save-excursion`.
+- Corrected a typo: Renamed `identation-core` to `indentation-core`.
+- Added `my/eglot-dir-locals` for ADA mode to simplify `.dir-locals.el` file creation:
+  - Supports Eglot workspace configuration based on paths from Dired.
+- Updated version control handling to consider only `SVN` and `Git` backends.
+
 * Benefits
 
 This emacs init configuration will provide me with the following benefits.
@@ -104,51 +170,6 @@ This emacs init configuration will provide me with the following benefits.
 - *Always-ready portable editor:* Use it on systems where you're temporarily working without worrying about recreating your primary configuration.
 - *Distraction-free writing:* Suited for scenarios where you want a fast, clean, and functional interface without additional bells and whistles.
 - *VMs for testing or experimentation:* Perfect for virtual machines or containers where you need a low-maintenance Emacs that can be spun up quickly.
-
-* Whats New
-
-** <2024-12-14>
-
-Added my/find-file to be a more flexible ripgrep based finding file tool.
-
-** <2024-12-14>
-
-Added deadgrep kind of replacement called my/grep with leveraging ripgrep into a type of grep Emacs buffer.
-
-** <2024-12-10>
-
-Added ada-mode support out of the box.
-
-Yes, ada-mode was removed from emacs and it was recommended to use the ada-mode supplied by AdaCore, however this is all but impossible to set up so including =ada-light=mode= as part of the configuration.
-
-https://github.com/sebastianpoeplau/ada-light-mode
-
-** <2024-12-09>
-
-Added =visual-fill-column-mode= replacement with a simple elisp function (see solution in roadmap)
-
-** <2024-12-09>
-
-Added =my-icomplete-copy-candidate= to allow embark like copying of current candidate (see solution in roadmap)
-
-** <2024-12-09>
-
-Added =my/recentf-open= to bypass old default recentf-open interface (see solution in roadmap)
-
-** <2024-12-09>
-
-enhance window navigation and introduce my rainbow mode (see solution in roadmap)
-
-- Refactored `my/quick-window-jump` for better window labeling and overlay management:
-  - Improved window sorting logic for more accurate top-to-bottom, left-to-right navigation.
-  - Added visual overlays to display window shortcuts with labels.
-- Introduced `my/rainbow-mode`:
-  - Overlays hex color values in buffers with their respective colors for better readability.
-- Minor refactor to `my/copy-buffer-to-kill-ring` by removing redundant `save-excursion`.
-- Corrected a typo: Renamed `identation-core` to `indentation-core`.
-- Added `my/eglot-dir-locals` for ADA mode to simplify `.dir-locals.el` file creation:
-  - Supports Eglot workspace configuration based on paths from Dired.
-- Updated version control handling to consider only `SVN` and `Git` backends.
 
 * Key Features
 
