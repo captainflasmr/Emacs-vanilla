@@ -18,6 +18,11 @@
         try-expand-all-abbrevs try-expand-dabbrev
         try-expand-dabbrev-all-buffers try-expand-dabbrev-from-kill
         try-complete-lisp-symbol-partially try-complete-lisp-symbol))
+;; TAB cycle if there are only few candidates
+(setq completion-cycle-threshold 3)
+;; Enable indentation+completion using the TAB key.
+;; `completion-at-point' is often bound to M-TAB.
+(setq tab-always-indent 'complete)
 
 ;;
 ;; -> modeline-completion-core
@@ -47,7 +52,6 @@
               (find-file (concat user-emacs-directory "emacs--core.org"))))
 (define-key my-jump-keymap (kbd "l") #'my/recentf-open)
 (define-key my-jump-keymap (kbd "m") #'customize-themes)
-(define-key my-jump-keymap (kbd "n") (lambda () (interactive) (find-file "~/nas")))
 (define-key my-jump-keymap (kbd "o") #'bookmark-jump)
 (define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
 (define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "~/DCIM/content/")))
@@ -104,9 +108,11 @@
 ;;
 ;; -> keybinding-core
 ;;
-(global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
 (global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
+(global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
+(global-set-key (kbd "C-c ,") 'find-file-at-point)
 (global-set-key (kbd "C-c a") #'org-agenda)
+(global-set-key (kbd "C-c c") #'org-capture)
 (global-set-key (kbd "C-c h") #'my/shell-create)
 (global-set-key (kbd "C-c j") #'my/repeat-window-size)
 (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
@@ -123,9 +129,7 @@
 (global-set-key (kbd "C-x v e") 'vc-ediff)
 (global-set-key (kbd "C-x x g") #'revert-buffer)
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
-(global-set-key (kbd "M-z") #'my/comment-or-uncomment)
 (global-set-key (kbd "C-z") #'my/comment-or-uncomment)
-(global-set-key (kbd "M-c") #'delete-other-windows)
 (global-set-key (kbd "M-'") #'set-mark-command)
 (global-set-key (kbd "M-0") 'delete-window)
 (global-set-key (kbd "M-1") #'delete-other-windows)
@@ -135,6 +139,7 @@
 (global-set-key (kbd "M-;") 'delete-other-windows)
 (global-set-key (kbd "M-[") #'yank)
 (global-set-key (kbd "M-]") #'yank-pop)
+(global-set-key (kbd "M-c") #'delete-other-windows)
 (global-set-key (kbd "M-e") #'dired-jump)
 (global-set-key (kbd "M-g i") 'imenu)
 (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
@@ -143,7 +148,7 @@
 (global-set-key (kbd "M-l") #'split-window-horizontally)
 (global-set-key (kbd "M-m") #'split-window-vertically)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
-(global-set-key (kbd "C-c ,") 'find-file-at-point)
+(global-set-key (kbd "M-z") #'my/comment-or-uncomment)
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
@@ -588,6 +593,25 @@ if COLOR is not provided as an argument."
        `(tab-bar-tab-inactive ((t (:inherit default :background ,default-bg :foreground ,inactive-fg
                                             :box (:line-width 2 :color ,default-bg :style released-button)))))))))
 (my/sync-tab-bar-to-theme "#ff4444")
+;;
+(defun my/dired-file-to-org-link ()
+  "Transform the file path under the cursor in Dired to an Org mode
+  link and copy to kill ring.
+  This function transforms the current file path in Dired mode into
+  an Org link with attributes for both org-mode and HTML width
+  settings. The generated link is then copied to the kill ring for
+  easy pasting."
+  (interactive)
+  (let ((file-path (dired-get-file-for-visit)))
+    (if file-path
+        (let* ((relative-path (file-relative-name file-path
+                                                  (project-root-safe)))
+               (org-link (concat "#+attr_org: :width 300px\n"
+                                 "#+attr_html: :width 100%\n"
+                                 "[[file:" relative-path "]]\n")))
+          (kill-new org-link)
+          (message "Copied to kill ring: %s" org-link))
+      (message "No file under the cursor"))))
 
 ;;
 ;; -> window-positioning-core
@@ -606,6 +630,19 @@ if COLOR is not provided as an argument."
                (dedicated . t)
                (window-width . 0.4)
                (inhibit-same-window . t)))
+(add-to-list 'display-buffer-alist
+             '("\\*compilation"
+               (display-buffer-reuse-window display-buffer-in-direction)
+               (direction . leftmost)
+               (dedicated . t)
+               (window-width . 0.3)
+               (inhibit-same-window . t)))
+(add-to-list 'display-buffer-alist
+             '("\\*Help\\*"
+               (display-buffer-reuse-window display-buffer-same-window)))
+(add-to-list 'display-buffer-alist
+             '("\\*Async" display-buffer-no-window
+               (allow-no-window . t)))
 (add-to-list 'display-buffer-alist
              '("\\*Messages" display-buffer-same-window))
 
@@ -646,6 +683,16 @@ if COLOR is not provided as an argument."
   (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
   (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
   (define-key dired-mode-map (kbd "C-c i") 'my/image-dired-sort)
+  (define-key dired-mode-map (kbd "W") 'dired-do-async-shell-command)
+  (define-key dired-mode-map (kbd "b") 'my/dired-file-to-org-link)
+  (setq dired-guess-shell-alist-user
+        '(("\\.\\(jpg\\|jpeg\\|png\\|gif\\|bmp\\)$" "gthumb")
+          ("\\.\\(mp4\\|mkv\\|avi\\|mov\\|wmv\\|flv\\|mpg\\)$" "mpv")
+          ("\\.\\(mp3\\|wav\\|ogg\\|\\)$" "mpv")
+          ("\\.\\(kra\\)$" "org.kde.krita")
+          ("\\.\\(odt\\|ods\\)$" "libreoffice")
+          ("\\.\\(html\\|htm\\)$" "firefox")
+          ("\\.\\(pdf\\|epub\\)$" "xournalpp")))
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
 
 ;;
@@ -803,12 +850,22 @@ if COLOR is not provided as an argument."
 ;;
 ;; -> project-core
 ;;
+(defun project-root-safe ()
+  "Return the project root or nil if unavailable."
+  (if (fboundp 'project-root)
+      ;; Use project-root if available (Emacs 29+)
+      (when-let ((project (project-current)))
+        (project-root project))
+    ;; Compatibility for Emacs < 29
+    (when-let ((project (project-current)))
+      (cdr (project-roots project)))))
+;;
 (defun my/project-create-compilation-search-path ()
   "Populate the 'compilation-search-path' variable.
 With directories under project root using find."
   (interactive)
   (let ((find-command
-         (concat "find " (project-root (project-current t))
+         (concat "find " (project-root-safe)
                  " \\( -path \\*/.local -o -path \\*/.config -o
  -path \\*/.svn -o -path \\*/.git -o -path \\*/nas \\) -prune -o
  -type d -print")))
@@ -1334,6 +1391,10 @@ It doesn't define any keybindings. In comparison with `ada-mode',
                (dedicated . t)
                (window-width . 0.33)
                (inhibit-same-window . t)))
+;;
+(defun without-gc (&rest args)
+  (let ((gc-cons-threshold most-positive-fixnum))
+    (apply args)))
 
 ;;
 ;; -> core-configuration
