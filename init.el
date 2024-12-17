@@ -813,7 +813,7 @@ if COLOR is not provided as an argument."
 (setq dictionary-use-single-buffer t)
 (define-prefix-command 'my-spell-prefix-map)
 (global-set-key (kbd "C-c s") 'my-spell-prefix-map)
-(global-set-key (kbd "C-c s l") #'(lambda()(interactive)
+(global-set-key (kbd "C-c s s") #'(lambda()(interactive)
                                     (flyspell-buffer)
                                     (flyspell-mode)))
 (global-set-key (kbd "C-c s d") #'dictionary-lookup-definition)
