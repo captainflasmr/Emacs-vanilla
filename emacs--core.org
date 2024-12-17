@@ -983,7 +983,7 @@ Configures spell checking tools and dictionaries, integrating external tools lik
 (setq dictionary-use-single-buffer t)
 (define-prefix-command 'my-spell-prefix-map)
 (global-set-key (kbd "C-c s") 'my-spell-prefix-map)
-(global-set-key (kbd "C-c s l") #'(lambda()(interactive)
+(global-set-key (kbd "C-c s s") #'(lambda()(interactive)
                                     (flyspell-buffer)
                                     (flyspell-mode)))
 (global-set-key (kbd "C-c s d") #'dictionary-lookup-definition)
