@@ -816,7 +816,7 @@ if COLOR is not provided as an argument."
 (global-set-key (kbd "C-c s") 'my-spell-prefix-map)
 (global-set-key (kbd "C-c s s") #'(lambda()(interactive)
                                     (flyspell-buffer)
-                                    (flyspell-mode)))
+                                    (call-interactively 'flyspell-mode)))
 (global-set-key (kbd "C-c s d") #'dictionary-lookup-definition)
 (global-set-key (kbd "C-0") #'ispell-word)
 
