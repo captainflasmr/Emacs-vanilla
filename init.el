@@ -664,6 +664,39 @@ if COLOR is not provided as an argument."
         ("CANCELLED" . "#426b3e")))
 
 ;;
+;; -> org-agenda-core
+;;
+(with-eval-after-load 'org-agenda
+  (setq org-agenda-include-diary nil)
+  (setq org-agenda-show-all-dates t)
+  (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
+  (setq org-agenda-custom-commands
+        '(("m" "Month View" agenda ""
+           ((org-agenda-start-day "today")
+            (org-agenda-span 30)
+            (org-agenda-time-grid nil)))
+          ("0" "Year View (2020)" agenda ""
+           ((org-agenda-start-day "2020-01-01")
+            (org-agenda-span 'year)
+            (org-agenda-time-grid nil)))
+          ("1" "Year View (2021)" agenda ""
+           ((org-agenda-start-day "2021-01-01")
+            (org-agenda-span 'year)
+            (org-agenda-time-grid nil)))
+          ("2" "Year View (2022)" agenda ""
+           ((org-agenda-start-day "2022-01-01")
+            (org-agenda-span 'year)
+            (org-agenda-time-grid nil)))
+          ("3" "Year View (2023)" agenda ""
+           ((org-agenda-start-day "2023-01-01")
+            (org-agenda-span 'year)
+            (org-agenda-time-grid nil)))
+          ("4" "Year View (2024)" agenda ""
+           ((org-agenda-start-day "2024-01-01")
+            (org-agenda-span 'year)
+            (org-agenda-time-grid nil))))))
+
+;;
 ;; -> scroll-core
 ;;
 (setq scroll-margin 10)
