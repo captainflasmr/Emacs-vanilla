@@ -1405,24 +1405,23 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;;
 ;; -> image-dired
 ;;
-
 (require 'image-mode)
 (require 'image-dired)
-
+;;
 (add-to-list 'display-buffer-alist
              '("\\*image-dired\\*"
                display-buffer-in-direction
                (direction . left)
                (window . root)
                (window-width . 0.5)))
-
+;;
 (add-to-list 'display-buffer-alist
              '("\\*image-dired-display-image\\*"
                display-buffer-in-direction
                (direction . right)
                (window . root)
                (window-width . 0.5)))
-
+;;
 (defun my/image-dired-sort (arg)
   "Sort images in various ways given ARG."
   (interactive "P")
@@ -1445,7 +1444,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
         (select-window idw)
         (image-dired-display-this)
         (image-dired-line-up-dynamic)))))
-
+;;
 (setq image-use-external-converter t)
 (setq image-dired-external-viewer "/usr/bin/gthumb")
 (setq image-dired-show-all-from-dir-max-files 999)
@@ -1453,7 +1452,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 (setq image-dired-thumb-relief 0)
 (setq image-dired-thumb-margin 5)
 (setq image-dired-thumb-size 120)
-
+;;
 (defun my/image-save-as ()
   "Save the current image buffer as a new file."
   (interactive)
@@ -1477,7 +1476,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
           (image-dired ".")
           (image-dired-display-this))
       (find-file new-file t))))
-
+;;
 (defun my/delete-current-image-and-move-to-next ()
   "Delete the current image file and move to the next image in the directory."
   (interactive)
@@ -1486,7 +1485,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
       (image-next-file 1)
       (delete-file current-file)
       (message "Deleted %s" current-file))))
-
+;;
 (defun my/delete-current-image-thumbnails ()
   "Delete the current image file and move to the next image in the directory."
   (interactive)
@@ -1494,12 +1493,12 @@ It doesn't define any keybindings. In comparison with `ada-mode',
     (delete-file file-name)
     (image-dired-delete-char)
     (image-dired-display-this)))
-
+;;
 (eval-after-load 'image-mode
   '(progn
      (define-key image-mode-map (kbd "C-d") 'my/delete-current-image-and-move-to-next)
      (define-key image-mode-map (kbd "C-x C-s") 'my/image-save-as)))
-
+;;
 (eval-after-load 'image-dired
   '(progn
      (define-key image-dired-thumbnail-mode-map (kbd "C-d") 'my/delete-current-image-thumbnails)

@@ -1,4 +1,5 @@
 #+title: Emacs-core - A Lightweight Emacs Configuration
+#+options: toc:nil author:t title:t
 #+author: James Dyer
 #+date: 2024
 #+description: A stripped-down Emacs configuration that avoids external packages, perfect for lightweight usage in VMs or basic tasks.
@@ -34,34 +35,34 @@ Replaced tempel with abbrev, will have to write a blog post about this but repla
 
 #+begin_src fundamental :tangle no
 fundamental-mode ;; Available everywhere
-
+;;
 (ja (format-time-string "<%Y-%m-%d>"))
 (jT (format-time-string "%Y%m%d%H%M%S"))
 (jt (format-time-string "%Y%m%d"))
 (ji "(interactive)")
 (jl "(lambda ()")
-
+;;
 org-mode
-
+;;
 (jm "#+hugo: more")
 (jg "#+attr_org: :width 300px" n "#+attr_html: :width 100%")
 (je "#+attr_org: :width 300px" n "#+attr_html: :class emacs-img")
 (jo "---" n "#+TOC: headlines 1 local" n "---")
 (jk "#+begin: kanban :layout (\"...\" . 40) :scope nil :range (\"TODO\" . \"DONE\") :sort \"O\" :depth 2 :compressed t" n "#+end:")
 (jp "~--APT--~ ")
-
+;;
 sh-mode
 (jd n "echo \"poop: " p "\"" n)
-
+;;
 emacs-lisp-mode
 (jd n "(message \"poop: " p "\"\)" n)
-
+;;
 ada-mode
 (jd n> "Ada.Text_Io.Put_Line \( \"poop: " p "\"\);" n)
-
+;;
 c++-mode
 (jd n> "std::cout << \"poop: " p "\" << std::endl;" n)
-
+;;
 c-mode
 (jd n> "fprintf(stderr, \"poop: " p "\"\);" n)
 #+end_src
@@ -74,22 +75,18 @@ with the following abbrev =abbrev_defs=:
   '(
     ("jd" "Ada.Text_Io.Put_Line (\"poop: \");" nil :count 0)
    ))
-
 (define-abbrev-table 'c++-mode-abbrev-table
   '(
     ("jd" "std::cout << \"poop: \" << std::endl;" nil :count 0)
    ))
-
 (define-abbrev-table 'c-mode-abbrev-table
   '(
     ("jd" "printf(stderr, \"poop: \");" nil :count 0)
    ))
-
 (define-abbrev-table 'emacs-lisp-mode-abbrev-table
   '(
     ("jd" "(message \"poop: \")" nil :count 0)
    ))
-
 (define-abbrev-table 'global-abbrev-table
   '(
     ("jT" "" (lambda nil (interactive) (insert (format-time-string "%Y%m%d%H%M%S"))) :count 0)
@@ -98,7 +95,6 @@ with the following abbrev =abbrev_defs=:
     ("jl" "(lambda ()" nil :count 0)
     ("jt" "" (lambda nil (interactive) (insert (format-time-string "%Y%m%d"))) :count 0)
    ))
-
 (define-abbrev-table 'org-mode-abbrev-table
   '(
     ("je" "#+attr_org: :width 300px
@@ -113,7 +109,6 @@ with the following abbrev =abbrev_defs=:
 ---" nil :count 0)
     ("jp" "~--APT--~" nil :count 0)
    ))
-
 (define-abbrev-table 'sh-mode-abbrev-table
   '(
     ("jd" "echo \"poop: \"" nil :count 0)
@@ -2196,24 +2191,23 @@ Customizes the behaviour and appearance of Image-Dired, the image management ext
 ;;
 ;; -> image-dired
 ;;
-
 (require 'image-mode)
 (require 'image-dired)
-
+;;
 (add-to-list 'display-buffer-alist
              '("\\*image-dired\\*"
                display-buffer-in-direction
                (direction . left)
                (window . root)
                (window-width . 0.5)))
-
+;;
 (add-to-list 'display-buffer-alist
              '("\\*image-dired-display-image\\*"
                display-buffer-in-direction
                (direction . right)
                (window . root)
                (window-width . 0.5)))
-
+;;
 (defun my/image-dired-sort (arg)
   "Sort images in various ways given ARG."
   (interactive "P")
@@ -2236,7 +2230,7 @@ Customizes the behaviour and appearance of Image-Dired, the image management ext
         (select-window idw)
         (image-dired-display-this)
         (image-dired-line-up-dynamic)))))
-
+;;
 (setq image-use-external-converter t)
 (setq image-dired-external-viewer "/usr/bin/gthumb")
 (setq image-dired-show-all-from-dir-max-files 999)
@@ -2244,7 +2238,7 @@ Customizes the behaviour and appearance of Image-Dired, the image management ext
 (setq image-dired-thumb-relief 0)
 (setq image-dired-thumb-margin 5)
 (setq image-dired-thumb-size 120)
-
+;;
 (defun my/image-save-as ()
   "Save the current image buffer as a new file."
   (interactive)
@@ -2268,7 +2262,7 @@ Customizes the behaviour and appearance of Image-Dired, the image management ext
           (image-dired ".")
           (image-dired-display-this))
       (find-file new-file t))))
-
+;;
 (defun my/delete-current-image-and-move-to-next ()
   "Delete the current image file and move to the next image in the directory."
   (interactive)
@@ -2277,7 +2271,7 @@ Customizes the behaviour and appearance of Image-Dired, the image management ext
       (image-next-file 1)
       (delete-file current-file)
       (message "Deleted %s" current-file))))
-
+;;
 (defun my/delete-current-image-thumbnails ()
   "Delete the current image file and move to the next image in the directory."
   (interactive)
@@ -2285,12 +2279,12 @@ Customizes the behaviour and appearance of Image-Dired, the image management ext
     (delete-file file-name)
     (image-dired-delete-char)
     (image-dired-display-this)))
-
+;;
 (eval-after-load 'image-mode
   '(progn
      (define-key image-mode-map (kbd "C-d") 'my/delete-current-image-and-move-to-next)
      (define-key image-mode-map (kbd "C-x C-s") 'my/image-save-as)))
-
+;;
 (eval-after-load 'image-dired
   '(progn
      (define-key image-dired-thumbnail-mode-map (kbd "C-d") 'my/delete-current-image-thumbnails)
@@ -2299,7 +2293,6 @@ Customizes the behaviour and appearance of Image-Dired, the image management ext
      (define-key image-dired-thumbnail-mode-map (kbd "p")
                  (lambda ()(interactive)(image-dired-backward-image)(image-dired-display-this)))
      ))
-
 #+end_src
 
 * Notes
