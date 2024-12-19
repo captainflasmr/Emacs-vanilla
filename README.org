@@ -277,20 +277,20 @@ It is often advantageous to use *external tools* that are optimized for specific
 
 *** ripgrep - grepping files
 **** Functionality
-  - Searching across project files for a specific term or pattern.
-  - Faster than Emacs' built-in =grep= or =rgrep=
-  - Better default handling of ignored files (e.g., =.gitignore= rules).
-  - Offers rich pattern matching (regex or literal strings).
+- Searching across project files for a specific term or pattern.
+- Faster than Emacs' built-in =grep= or =rgrep=
+- Better default handling of ignored files (e.g., =.gitignore= rules).
+- Offers rich pattern matching (regex or literal strings).
 **** Fallback
-  - Emacs' =grep= or =rgrep= commands provide file searching through built-in utilities like =grep=.
-  - While slower and less feature-rich, they can still handle basic directory searches.
+- Emacs' =grep= or =rgrep= commands provide file searching through built-in utilities like =grep=.
+- While slower and less feature-rich, they can still handle basic directory searches.
 *** ripgrep (alternative fd) - finding files
 **** Functionality
-  - Searching for files in a directory or project.
-  - Supports advanced filtering options (e.g., searching by filename extension, ignoring gitignored files).
+- Searching for files in a directory or project.
+- Supports advanced filtering options (e.g., searching by filename extension, ignoring gitignored files).
 **** Fallback
-  - =find-name-dired= or =project-find-file= for locating files within Emacs projects.
-  - Relatively slower on larger directories, but sufficient for small-scale tasks.
+- =find-name-dired= or =project-find-file= for locating files within Emacs projects.
+- Relatively slower on larger directories, but sufficient for small-scale tasks.
 
 ** Keybindings for Navigation and Files
 
@@ -360,21 +360,21 @@ Includes custom *xkb* configuration files to enable similar ergonomic key remapp
 
 **** Instructions for use
 
-  #+begin_src bash :tangle no
-  xkbcomp keymap_with_sticky_modifiers.xkb $DISPLAY
-  #+end_src
+#+begin_src bash :tangle no
+xkbcomp keymap_with_sticky_modifiers.xkb $DISPLAY
+#+end_src
 
 ** Portable Directory Structure
 
 - A self-contained folder structure that encapsulates all necessary files:
   
   #+begin_src bash :tangle no 
-  emacs-core/
-  ├── emacs-core.org                   # Main Emacs literate configuration file
-  ├── init.el                          # Main Emacs configuration file
-  ├── keymap_with_sticky_modifiers.xkb # linux key configuration for ergonomic key remapping
-  ├── wowee/                           # Windows autohotkey scripts for ergonomic key remapping
-  └── README.org                       # Setup guide and readme
+emacs-core/
+├── emacs-core.org                   # Main Emacs literate configuration file
+├── init.el                          # Main Emacs configuration file
+├── keymap_with_sticky_modifiers.xkb # linux key configuration for ergonomic key remapping
+├── wowee/                           # Windows autohotkey scripts for ergonomic key remapping
+└── README.org                       # Setup guide and readme
   #+end_src
   
 This directory can be zipped, copied, and unpacked on any machine to instantly set up a usable, ergonomic Emacs environment.
@@ -383,28 +383,28 @@ This directory can be zipped, copied, and unpacked on any machine to instantly s
 
 - Clone the repository:
 
-   #+begin_src bash :tangle no
-   git clone https://github.com/captainflasmr/Emacs-core ~/.emacs.d.core
-   #+end_src
+  #+begin_src bash :tangle no
+git clone https://github.com/captainflasmr/Emacs-core ~/.emacs.d.core
+  #+end_src
 
 
 - Symlink the init file:
 
-   #+begin_src bash :tangle no
-   ln -s ~/.emacs.d.core/init.el ~/.emacs.d/init.el
-   #+end_src
+  #+begin_src bash :tangle no
+ln -s ~/.emacs.d.core/init.el ~/.emacs.d/init.el
+  #+end_src
 
 OR
 
 - Define startup directory
 
-   emacs --init-directory=~/.emacs.d.core
+  emacs --init-directory=~/.emacs.d.core
 
 - Launch Emacs:
 
-   #+begin_src bash :tangle no
-   emacs
-   #+end_src
+  #+begin_src bash :tangle no
+emacs
+  #+end_src
 
 - Optional: Customize the paths and keybindings in the **init.el** file to better fit your workflow.
 
@@ -1838,7 +1838,134 @@ Curates configurations specific to Linux, making adjustments for paths, fonts, a
    `((ada . (:projectFile ,(dired-get-filename))))))
 ;;
 (setq vc-handled-backends '(SVN Git))
-
+;;
+;; all-purpose build menu
+;;
+(defvar cmake-preset
+  "build/linux/debug"
+  "cmake-preset")
+;;
+(defun change-directory-and-run (dir command bufname)
+  "Change to DIR and run the COMMAND."
+  (let ((default-directory dir))
+    (async-shell-command command bufname)
+    (message "Running command: %s:%s" dir command)))
+;;
+(defun run-exe-command (dir exe bufname)
+  "Run EXE from a specified DIR."
+  (message "run-exe-command: %s:%s:%s" dir exe bufname)
+  (change-directory-and-run dir exe bufname))
+;;
+(defun run-cmake-command (command)
+  "Run COMMAND from the top level of the project."
+  (message command)
+  (change-directory-and-run (project-root (project-current t)) command "*cmake*"))
+;;
+(defun run-cmake-compile-command (command)
+  "Run compile COMMAND from the top level of the project."
+  (message command)
+  (let ((default-directory (project-root (project-current t))))
+    (compile command)
+    (message "Running command: %s:%s" dir command)))
+;;
+(defun kill-async-buffer (buffer-name)
+  "Kill the async buffer with BUFFER-NAME."
+  (let ((buffer (get-buffer buffer-name)))
+    (when buffer
+      (kill-buffer buffer)
+      (message "Killed buffer: %s" buffer-name))))
+;;
+(defun list-cmake-presets ()
+  "List available CMake presets using `cmake --list-presets=configure`."
+  (let ((output (shell-command-to-string "cmake --list-presets=configure")))
+    (delq nil
+          (mapcar (lambda (line)
+                    (if (string-match "^\\s-+\"\\([^\"]+\\)\"\\s-*$" line)
+                        (match-string 1 line)))
+                  (split-string output "\n")))))
+;;
+(defun transient-select-cmake-preset ()
+  "Function to select a CMake preset."
+  (interactive)
+  (let* ((presets (list-cmake-presets))
+         (preset (completing-read "Select CMake preset: " presets nil t)))
+    (setq cmake-preset preset)
+    (message "Selected CMake preset: %s" preset)))
+;;
+(defun build-menu ()
+  "Menu for Build and Diagnostic commands (Horizontal Layout)."
+  (interactive)
+  (let ((key (read-key
+              (propertize
+               (concat
+                "Build and Diagnostic Commands:\n"
+                "\n"
+                "CMake: [p: Set Preset] [c: Configure] [RET: Build] [i: Install] [g: Refresh] [x: Clean] [s: List Presets]\n"
+                "Actions: [f: Toggle Flycheck] [d: Show Diagnostics]\n"
+                "Coding: [e: Eglot & Flymake] [u: Undo Eglot & Flymake] [h: Stop Eglot]\n"
+                "Run: [r: All] [1: CigiDummyIG] [2: CigiMiniHost] [3: CigiMiniHostCSharp]\n"
+                "Kill: [5: Kill CigiDummyIG] [6: Kill CigiMiniHost] [7: Kill CigiMiniHostCSharp] [k: Kill All]\n"
+                "\n"
+                "Press 'q' to Quit\n\n"
+                "Press a key: ")
+               'face 'minibuffer-prompt))))
+    (pcase key
+      ;; CMake Commands
+      (?p (call-interactively 'transient-select-cmake-preset))
+      (?c (run-cmake-command (format "cmake --preset %s" cmake-preset)))
+      (?\r (run-cmake-compile-command (format "cmake --build --preset %s" cmake-preset)))
+      (?i (run-cmake-command (format "cmake --install %s" cmake-preset)))
+      (?g (run-cmake-command (format "cmake --preset %s --fresh" cmake-preset)))
+      (?x (when (y-or-n-p "Are you sure you want to proceed? ")
+            (run-cmake-command "rm -rf build")))
+      (?s (run-cmake-command "cmake --list-presets=configure"))
+      ;; Actions
+      (?f (flymake-mode))
+      (?d (flymake-show-buffer-diagnostics))
+      ;; Coding
+      (?e (progn (call-interactively 'eglot) (flymake-mode 1)))
+      (?u (progn (eglot-shutdown-all) (flymake-mode -1)))
+      (?h (eglot-shutdown-all))
+      ;; Run Commands
+      (?r (progn
+            (run-exe-command
+             (concat (project-root (project-current t))
+                     "build/windows/debug/bin/Debug")
+             "CigiDummyIG.exe" "*Running CigiDummyIG.exe*")
+            (run-exe-command
+             (concat (project-root (project-current t))
+                     "build/windows/debug/bin/Debug")
+             "CigiMiniHostCSharp.exe" "*Running CigiMiniHostCSharp.exe*")))
+      (?1 (run-exe-command
+           (concat (project-root (project-current t))
+                   "build/windows/debug/bin/Debug")
+           "CigiDummyIG.exe"
+           "*Running CigiDummyIG.exe*"))
+      (?2 (run-exe-command
+           (concat (project-root (project-current t))
+                   "build/windows/debug/bin/Debug")
+           "CigiMiniHost.exe"
+           "*Running CigiMiniHost.exe*"))
+      (?3 (run-exe-command
+           (concat (project-root (project-current t))
+                   "build/windows/debug/bin/Debug")
+           "CigiMiniHostCSharp.exe"
+           "*Running CigiMiniHostCSharp.exe*"))
+      ;; Kill Commands
+      (?5 (kill-async-buffer "*Running CigiDummyIG.exe*"))
+      (?6 (kill-async-buffer "*Running CigiMiniHost.exe*"))
+      (?7 (kill-async-buffer "*Running CigiMiniHostCSharp.exe*"))
+      (?k (progn
+            (kill-async-buffer "*Running CigiDummyIG.exe*")
+            (kill-async-buffer "*Running CigiMiniHost.exe*")
+            (kill-async-buffer "*Running CigiMiniHostCSharp.exe*")))
+      ;; Quit
+      (?q (message "Quit Build menu."))
+      (?\C-g (message "Quit Build menu."))
+      ;; Default Invalid Key
+      (_ (message "Invalid key: %c" key)))))
+;;
+(global-set-key (kbd "M-RET") #'build-menu)
 #+end_src
 
 * ada-core
