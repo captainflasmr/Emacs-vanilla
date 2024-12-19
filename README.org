@@ -28,6 +28,16 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+<2024-12-19>
+
+- Added new settings and sections:
+  - `org-agenda-core`: Customized Org Agenda views with yearly and monthly displays.
+  - `dwim`: Enhanced "Do What I Mean" functionalities for common operations like file conversion and tagging.
+- Introduced a comprehensive build menu (`build-menu`) with CMake integration, custom commands, and keybindings.
+- Updated `image-dired` configuration for streamlined image navigation, thumbnails, and management.
+- Added new utilities for project and build management (e.g., `change-directory-and-run`, `list-cmake-presets`).
+- Refined custom abbrev definitions across multiple modes.
+
 ** <2024-12-18>
 
 Replaced tempel with abbrev, will have to write a blog post about this but replacing the following tempel template :
