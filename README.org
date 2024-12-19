@@ -1197,6 +1197,7 @@ Extends and customizes Org mode for document structuring, note-taking, and proje
 ;;
 (setq org-src-preserve-indentation t)
 (setq org-edit-src-content-indentation 0)
+(setq org-tags-sort-function 'org-string-collate-greaterp)
 (setq org-startup-indented t)
 (setq org-use-speed-commands t)
 (setq org-hide-leading-stars t)
