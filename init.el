@@ -652,6 +652,7 @@ if COLOR is not provided as an argument."
 ;;
 (setq org-src-preserve-indentation t)
 (setq org-edit-src-content-indentation 0)
+(setq org-tags-sort-function 'org-string-collate-greaterp)
 (setq org-startup-indented t)
 (setq org-use-speed-commands t)
 (setq org-hide-leading-stars t)
@@ -1108,6 +1109,134 @@ With directories under project root using find."
    `((ada . (:projectFile ,(dired-get-filename))))))
 ;;
 (setq vc-handled-backends '(SVN Git))
+;;
+;; all-purpose build menu
+;;
+(defvar cmake-preset
+  "build/linux/debug"
+  "cmake-preset")
+;;
+(defun change-directory-and-run (dir command bufname)
+  "Change to DIR and run the COMMAND."
+  (let ((default-directory dir))
+    (async-shell-command command bufname)
+    (message "Running command: %s:%s" dir command)))
+;;
+(defun run-exe-command (dir exe bufname)
+  "Run EXE from a specified DIR."
+  (message "run-exe-command: %s:%s:%s" dir exe bufname)
+  (change-directory-and-run dir exe bufname))
+;;
+(defun run-cmake-command (command)
+  "Run COMMAND from the top level of the project."
+  (message command)
+  (change-directory-and-run (project-root (project-current t)) command "*cmake*"))
+;;
+(defun run-cmake-compile-command (command)
+  "Run compile COMMAND from the top level of the project."
+  (message command)
+  (let ((default-directory (project-root (project-current t))))
+    (compile command)
+    (message "Running command: %s:%s" dir command)))
+;;
+(defun kill-async-buffer (buffer-name)
+  "Kill the async buffer with BUFFER-NAME."
+  (let ((buffer (get-buffer buffer-name)))
+    (when buffer
+      (kill-buffer buffer)
+      (message "Killed buffer: %s" buffer-name))))
+;;
+(defun list-cmake-presets ()
+  "List available CMake presets using `cmake --list-presets=configure`."
+  (let ((output (shell-command-to-string "cmake --list-presets=configure")))
+    (delq nil
+          (mapcar (lambda (line)
+                    (if (string-match "^\\s-+\"\\([^\"]+\\)\"\\s-*$" line)
+                        (match-string 1 line)))
+                  (split-string output "\n")))))
+;;
+(defun transient-select-cmake-preset ()
+  "Function to select a CMake preset."
+  (interactive)
+  (let* ((presets (list-cmake-presets))
+         (preset (completing-read "Select CMake preset: " presets nil t)))
+    (setq cmake-preset preset)
+    (message "Selected CMake preset: %s" preset)))
+;;
+(defun build-menu ()
+  "Menu for Build and Diagnostic commands (Horizontal Layout)."
+  (interactive)
+  (let ((key (read-key
+              (propertize
+               (concat
+                "Build and Diagnostic Commands:\n"
+                "\n"
+                "CMake: [p: Set Preset] [c: Configure] [RET: Build] [i: Install] [g: Refresh] [x: Clean] [s: List Presets]\n"
+                "Actions: [f: Toggle Flycheck] [d: Show Diagnostics]\n"
+                "Coding: [e: Eglot & Flymake] [u: Undo Eglot & Flymake] [h: Stop Eglot]\n"
+                "Run: [r: All] [1: CigiDummyIG] [2: CigiMiniHost] [3: CigiMiniHostCSharp]\n"
+                "Kill: [5: Kill CigiDummyIG] [6: Kill CigiMiniHost] [7: Kill CigiMiniHostCSharp] [k: Kill All]\n"
+                "\n"
+                "Press 'q' to Quit\n\n"
+                "Press a key: ")
+               'face 'minibuffer-prompt))))
+    (pcase key
+      ;; CMake Commands
+      (?p (call-interactively 'transient-select-cmake-preset))
+      (?c (run-cmake-command (format "cmake --preset %s" cmake-preset)))
+      (?\r (run-cmake-compile-command (format "cmake --build --preset %s" cmake-preset)))
+      (?i (run-cmake-command (format "cmake --install %s" cmake-preset)))
+      (?g (run-cmake-command (format "cmake --preset %s --fresh" cmake-preset)))
+      (?x (when (y-or-n-p "Are you sure you want to proceed? ")
+            (run-cmake-command "rm -rf build")))
+      (?s (run-cmake-command "cmake --list-presets=configure"))
+      ;; Actions
+      (?f (flymake-mode))
+      (?d (flymake-show-buffer-diagnostics))
+      ;; Coding
+      (?e (progn (call-interactively 'eglot) (flymake-mode 1)))
+      (?u (progn (eglot-shutdown-all) (flymake-mode -1)))
+      (?h (eglot-shutdown-all))
+      ;; Run Commands
+      (?r (progn
+            (run-exe-command
+             (concat (project-root (project-current t))
+                     "build/windows/debug/bin/Debug")
+             "CigiDummyIG.exe" "*Running CigiDummyIG.exe*")
+            (run-exe-command
+             (concat (project-root (project-current t))
+                     "build/windows/debug/bin/Debug")
+             "CigiMiniHostCSharp.exe" "*Running CigiMiniHostCSharp.exe*")))
+      (?1 (run-exe-command
+           (concat (project-root (project-current t))
+                   "build/windows/debug/bin/Debug")
+           "CigiDummyIG.exe"
+           "*Running CigiDummyIG.exe*"))
+      (?2 (run-exe-command
+           (concat (project-root (project-current t))
+                   "build/windows/debug/bin/Debug")
+           "CigiMiniHost.exe"
+           "*Running CigiMiniHost.exe*"))
+      (?3 (run-exe-command
+           (concat (project-root (project-current t))
+                   "build/windows/debug/bin/Debug")
+           "CigiMiniHostCSharp.exe"
+           "*Running CigiMiniHostCSharp.exe*"))
+      ;; Kill Commands
+      (?5 (kill-async-buffer "*Running CigiDummyIG.exe*"))
+      (?6 (kill-async-buffer "*Running CigiMiniHost.exe*"))
+      (?7 (kill-async-buffer "*Running CigiMiniHostCSharp.exe*"))
+      (?k (progn
+            (kill-async-buffer "*Running CigiDummyIG.exe*")
+            (kill-async-buffer "*Running CigiMiniHost.exe*")
+            (kill-async-buffer "*Running CigiMiniHostCSharp.exe*")))
+      ;; Quit
+      (?q (message "Quit Build menu."))
+      (?\C-g (message "Quit Build menu."))
+      ;; Default Invalid Key
+      (_ (message "Invalid key: %c" key)))))
+;;
+(global-set-key (kbd "M-RET") #'build-menu)
 
 ;;
 ;; -> ada-core
@@ -1540,3 +1669,57 @@ It doesn't define any keybindings. In comparison with `ada-mode',
      (define-key image-dired-thumbnail-mode-map (kbd "p")
                  (lambda ()(interactive)(image-dired-backward-image)(image-dired-display-this)))
      ))
+
+;;
+;; -> dwim
+;;
+
+(when (file-exists-p "/home/jdyer/bin/category-list-uniq.txt")
+  (progn
+    (defvar my/dwim-convert-commands
+      '("ConvertNoSpace" "AudioConvert" "AudioInfo" "AudioNormalise"
+        "AudioTrimSilence" "PictureAutoColour" "PictureConvert"
+        "PictureCrush" "PictureFrompdf" "PictureInfo" "PictureMontage"
+        "PictureOrganise" "PictureCrop" "PictureRotateFlip" "PictureEmail"
+        "PictureUpdateFromCreateDate"
+        "PictureRotateLeft" "PictureRotateRight" "PictureScale"
+        "PictureUpscale" "PictureGetText" "PictureOrientation"
+        "PictureUpdateToCreateDate" "VideoConcat" "VideoConvert" "VideoConvertToGif"
+        "VideoCut" "VideoDouble" "VideoExtractAudio" "VideoExtractFrames"
+        "VideoFilter" "VideoFromFrames" "VideoInfo" "VideoRemoveAudio"
+        "VideoReplaceVideoAudio" "VideoRescale" "VideoReverse"
+        "VideoRotate" "VideoRotateLeft" "VideoRotateRight" "VideoShrink"
+        "VideoSlowDown" "VideoSpeedUp" "VideoZoom" "WhatsAppConvert"
+        "PictureCorrect" "Picture2pdf" "PictureTag" "PictureTagRename"
+        "OtherTagDate" "VideoRemoveFlips")
+      "List of commands for dwim-convert.")
+
+    (defun my/read-lines (file-path)
+      "Return a list of lines of a file at FILE-PATH."
+      (with-temp-buffer
+        (insert-file-contents file-path)
+        (split-string (buffer-string) "\n" t)))
+
+    (defun my/dwim-convert-generic (command)
+      "Execute a dwim-shell-command-on-marked-files with the given COMMAND."
+      (let* ((unique-text-file "~/bin/category-list-uniq.txt")
+             (user-selection nil)
+             (files (dired-get-marked-files nil current-prefix-arg))
+             (command-and-files (concat command " " (mapconcat 'identity files " "))))
+        (when (string= command "PictureTag")
+          (setq user-selection (completing-read "Choose an option: "
+                                                (my/read-lines unique-text-file)
+                                                nil t)))
+        (async-shell-command (if user-selection
+                                 (concat command " " user-selection " " (mapconcat 'identity files " "))
+                               (concat command " " (mapconcat 'identity files " ")))
+                             "*convert*")))
+
+    (defun my/dwim-convert-with-selection ()
+      "Prompt user to choose command and execute dwim-shell-command-on-marked-files."
+      (interactive)
+      (let ((chosen-command (completing-read "Choose command: "
+                                             my/dwim-convert-commands)))
+        (my/dwim-convert-generic chosen-command)))
+
+    (global-set-key (kbd "C-c v") 'my/dwim-convert-with-selection)))
