@@ -2469,7 +2469,6 @@ Demonstrates "Do What I Mean" functionalities custom to Emacs, streamlining oper
 ;;
 ;; -> dwim
 ;;
-
 (when (file-exists-p "/home/jdyer/bin/category-list-uniq.txt")
   (progn
     (defvar my/dwim-convert-commands
@@ -2489,13 +2488,13 @@ Demonstrates "Do What I Mean" functionalities custom to Emacs, streamlining oper
         "PictureCorrect" "Picture2pdf" "PictureTag" "PictureTagRename"
         "OtherTagDate" "VideoRemoveFlips")
       "List of commands for dwim-convert.")
-
+    ;;
     (defun my/read-lines (file-path)
       "Return a list of lines of a file at FILE-PATH."
       (with-temp-buffer
         (insert-file-contents file-path)
         (split-string (buffer-string) "\n" t)))
-
+    ;;
     (defun my/dwim-convert-generic (command)
       "Execute a dwim-shell-command-on-marked-files with the given COMMAND."
       (let* ((unique-text-file "~/bin/category-list-uniq.txt")
@@ -2510,14 +2509,14 @@ Demonstrates "Do What I Mean" functionalities custom to Emacs, streamlining oper
                                  (concat command " " user-selection " " (mapconcat 'identity files " "))
                                (concat command " " (mapconcat 'identity files " ")))
                              "*convert*")))
-
+    ;;
     (defun my/dwim-convert-with-selection ()
       "Prompt user to choose command and execute dwim-shell-command-on-marked-files."
       (interactive)
       (let ((chosen-command (completing-read "Choose command: "
                                              my/dwim-convert-commands)))
         (my/dwim-convert-generic chosen-command)))
-
+    ;;
     (global-set-key (kbd "C-c v") 'my/dwim-convert-with-selection)))
 
 #+end_src
