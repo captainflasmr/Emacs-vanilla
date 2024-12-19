@@ -177,7 +177,7 @@ Added =my/recentf-open= to bypass old default recentf-open interface (see soluti
 
 enhance window navigation and introduce my rainbow mode (see solution in roadmap)
 
-- Refactored `my/quick-window-jump` for better window labeling and overlay management:
+- Refactored `my/quick-window-jump` for better window labelling and overlay management:
   - Improved window sorting logic for more accurate top-to-bottom, left-to-right navigation.
   - Added visual overlays to display window shortcuts with labels.
 - Introduced `my/rainbow-mode`:
@@ -317,17 +317,17 @@ It is often advantageous to use *external tools* that are optimized for specific
   - Fonts (adjust point size with keyboard shortcuts).
   - Line numbers (switch between absolute and relative numbering).
   - Themes (light/dark mode switching via a single key).
-  - Minor display elements like fringe, scrollbars, and menu bars depending on needs.
+  - Minor display elements like fringe, scroll bars, and menu bars depending on needs.
     
 - Window Management*
   
   - Handy shortcuts for splitting windows, resizing panes, and reshuffling the layout in a minimal keystroke setup.
-  - A handcrafted =toggle-centered-buffer= function focuses content by placing the active buffer in the center, hiding distractions in other windows.
+  - A handcrafted =toggle-centered-buffer= function focuses content by placing the active buffer in the centre, hiding distractions in other windows.
 
 ** Custom Functions
 
 - Handcrafted Lisp Utilities: A small collection of reusable functions that enhance workflow directly without accessing external configuration files or plugins:
-  - =toggle-centered-buffer=: Dynamically rebalances the window layout for distraction-free working.
+  - =toggle-centered-buffer=: Dynamically rebalanced the window layout for distraction-free working.
   - =my/dired-duplicate-file=: Quickly duplicates the currently selected file in dired mode, increasing workflow efficiency for file templating.
   - =my/copy-buffer-to-kill-ring=: Copies the entirety of the current buffer content directly to the kill ring for seamless external clipboard usage.
 
@@ -689,7 +689,7 @@ Suppresses the auditory bell function in Emacs and opts for a visible bell or co
 
 * setqs-core
 
-This broad category includes a wide range of `setq` configurations that modify the behaviour of Emacs's core features — from file handling to search behaviours, reinforcing the customizability of Emacs.
+This broad category includes a wide range of `setq` configurations that modify the behaviour of Emacs's core features — from file handling to search behaviours, reinforcing the customization of Emacs.
 
 #+begin_src elisp
 ;;
