@@ -1,8 +1,7 @@
-#+title: Emacs-core - A Lightweight Emacs Configuration
-#+options: toc:nil author:t title:t
+-*- mode: org; fill-column: 80; eval: (display-fill-column-indicator-mode -1); -*-
+#+title: Emacs Core
 #+author: James Dyer
-#+date: 2024
-#+description: A stripped-down Emacs configuration that avoids external packages, perfect for lightweight usage in VMs or basic tasks.
+#+options: toc:nil author:t title:t
 #+startup: showall
 #+todo: TODO DOING | DONE
 #+property: header-args :tangle ~/.emacs.d/Emacs-core/init.el
