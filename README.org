@@ -2461,6 +2461,67 @@ Customizes the behaviour and appearance of Image-Dired, the image management ext
      ))
 #+end_src
 
+* dwim
+
+Demonstrates "Do What I Mean" functionalities custom to Emacs, streamlining operations like conversion, searching, and executing context-aware actions.
+
+#+begin_src elisp
+;;
+;; -> dwim
+;;
+
+(when (file-exists-p "/home/jdyer/bin/category-list-uniq.txt")
+  (progn
+    (defvar my/dwim-convert-commands
+      '("ConvertNoSpace" "AudioConvert" "AudioInfo" "AudioNormalise"
+        "AudioTrimSilence" "PictureAutoColour" "PictureConvert"
+        "PictureCrush" "PictureFrompdf" "PictureInfo" "PictureMontage"
+        "PictureOrganise" "PictureCrop" "PictureRotateFlip" "PictureEmail"
+        "PictureUpdateFromCreateDate"
+        "PictureRotateLeft" "PictureRotateRight" "PictureScale"
+        "PictureUpscale" "PictureGetText" "PictureOrientation"
+        "PictureUpdateToCreateDate" "VideoConcat" "VideoConvert" "VideoConvertToGif"
+        "VideoCut" "VideoDouble" "VideoExtractAudio" "VideoExtractFrames"
+        "VideoFilter" "VideoFromFrames" "VideoInfo" "VideoRemoveAudio"
+        "VideoReplaceVideoAudio" "VideoRescale" "VideoReverse"
+        "VideoRotate" "VideoRotateLeft" "VideoRotateRight" "VideoShrink"
+        "VideoSlowDown" "VideoSpeedUp" "VideoZoom" "WhatsAppConvert"
+        "PictureCorrect" "Picture2pdf" "PictureTag" "PictureTagRename"
+        "OtherTagDate" "VideoRemoveFlips")
+      "List of commands for dwim-convert.")
+
+    (defun my/read-lines (file-path)
+      "Return a list of lines of a file at FILE-PATH."
+      (with-temp-buffer
+        (insert-file-contents file-path)
+        (split-string (buffer-string) "\n" t)))
+
+    (defun my/dwim-convert-generic (command)
+      "Execute a dwim-shell-command-on-marked-files with the given COMMAND."
+      (let* ((unique-text-file "~/bin/category-list-uniq.txt")
+             (user-selection nil)
+             (files (dired-get-marked-files nil current-prefix-arg))
+             (command-and-files (concat command " " (mapconcat 'identity files " "))))
+        (when (string= command "PictureTag")
+          (setq user-selection (completing-read "Choose an option: "
+                                                (my/read-lines unique-text-file)
+                                                nil t)))
+        (async-shell-command (if user-selection
+                                 (concat command " " user-selection " " (mapconcat 'identity files " "))
+                               (concat command " " (mapconcat 'identity files " ")))
+                             "*convert*")))
+
+    (defun my/dwim-convert-with-selection ()
+      "Prompt user to choose command and execute dwim-shell-command-on-marked-files."
+      (interactive)
+      (let ((chosen-command (completing-read "Choose command: "
+                                             my/dwim-convert-commands)))
+        (my/dwim-convert-generic chosen-command)))
+
+    (global-set-key (kbd "C-c v") 'my/dwim-convert-with-selection)))
+
+#+end_src
+
 * Notes
 
 - This configuration intentionally avoids external Emacs packages like `use-package` or `straight.el` to maintain simplicity and remove the requirement for package management.
