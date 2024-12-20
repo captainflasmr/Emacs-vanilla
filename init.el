@@ -570,30 +570,6 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
   (kill-ring-save (point-min) (point-max))
   (message (concat (buffer-file-name) " Copied")))
 ;;
-(defun my/sync-tab-bar-to-theme (&optional color)
-  "Synchronize tab-bar faces with the current theme, and set
-mode-line background color interactively using `read-color`
-if COLOR is not provided as an argument."
-  (interactive (list (when current-prefix-arg (read-color "Color: "))))
-  ;; Determine the color to use
-  (let ((selected-color (or color (read-color "Select mode-line background color: "))))
-    (set-hl-line-darker-background)
-    (set-face-attribute 'mode-line nil :height 120 :underline nil :overline nil :box nil
-                        :background selected-color :foreground "#000000")
-    (set-face-attribute 'mode-line-inactive nil :height 120 :underline nil :overline nil
-                        :background "#000000" :foreground "#aaaaaa")
-    (let ((default-bg (face-background 'default))
-          (default-fg (face-foreground 'default))
-          (default-hl (face-background 'highlight))
-          (inactive-fg (face-foreground 'mode-line-inactive)))
-      (custom-set-faces
-       `(vertical-border ((t (:foreground ,(darken-color default-fg 60)))))
-       `(window-divider ((t (:foreground ,(darken-color default-fg 60)))))
-       `(fringe ((t (:foreground ,default-bg :background ,default-bg))))
-       `(tab-bar ((t (:inherit default :background ,default-bg :foreground ,default-fg))))
-       `(tab-bar-tab ((t (:inherit 'highlight :background ,selected-color :foreground "#000000"))))
-       `(tab-bar-tab-inactive ((t (:inherit default :background ,default-bg :foreground ,inactive-fg
-                                            :box (:line-width 2 :color ,default-bg :style released-button)))))))))
 (my/sync-tab-bar-to-theme "#ff4444")
 ;;
 (defun my/dired-file-to-org-link ()
@@ -651,7 +627,16 @@ if COLOR is not provided as an argument."
 ;;
 ;; -> org-core
 ;;
+(setq org-src-tab-acts-natively t)
+(setq org-log-done t)
+(setq org-export-with-sub-superscripts nil)
+(setq org-deadline-warning-days 365)
+(setq org-image-actual-width (list 50))
+(setq org-return-follows-link t)
+(setq org-use-fast-todo-selection 'expert)
+(setq org-reverse-note-order t)
 (setq org-src-preserve-indentation t)
+(setq org-cycle-separator-lines 0)
 (setq org-edit-src-content-indentation 0)
 (setq org-tags-sort-function 'org-string-collate-greaterp)
 (setq org-startup-indented t)
@@ -838,22 +823,6 @@ if COLOR is not provided as an argument."
      (dolist (file '(".cache" "*cache*" "*.iso" "*.xmp" "*.jpg" "*.mp4"))
        (push file grep-find-ignored-files))
      ))
-
-;;
-;; -> spelling-core
-;;
-(setq ispell-local-dictionary "en_GB")
-(setq ispell-program-name "hunspell")
-(setq dictionary-default-dictionary "*")
-(setq dictionary-server "dict.org")
-(setq dictionary-use-single-buffer t)
-(define-prefix-command 'my-spell-prefix-map)
-(global-set-key (kbd "C-c s") 'my-spell-prefix-map)
-(global-set-key (kbd "C-c s s") #'(lambda()(interactive)
-                                    (flyspell-buffer)
-                                    (call-interactively 'flyspell-mode)))
-(global-set-key (kbd "C-c s d") #'dictionary-lookup-definition)
-(global-set-key (kbd "C-0") #'ispell-word)
 
 ;;
 ;; -> gdb-core
