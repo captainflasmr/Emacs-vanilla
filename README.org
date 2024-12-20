@@ -614,6 +614,7 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
 (global-set-key (kbd "C-c ,") 'find-file-at-point)
 (global-set-key (kbd "C-c a") #'org-agenda)
+(global-set-key (kbd "C-c b") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
 (global-set-key (kbd "C-c h") #'my/shell-create)
 (global-set-key (kbd "C-c j") #'my/repeat-window-size)
@@ -1681,6 +1682,12 @@ Demonstrates customizations for shell integration within Emacs, optimizing setti
   (eshell 'new)
   (let ((new-buffer-name (concat "*eshell-" name "*")))
     (rename-buffer new-buffer-name t)))
+;;
+(setq eshell-scroll-to-bottom-on-input t)
+(setq-local tab-always-indent 'complete)
+(setq eshell-history-size 10000) ;; Adjust size as needed
+(setq eshell-save-history-on-exit t) ;; Enable history saving on exit
+(setq eshell-hist-ignoredups t) ;; Ignore duplicates
 #+end_src
 
 * tab-bar-core

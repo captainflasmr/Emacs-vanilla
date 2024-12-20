@@ -113,6 +113,7 @@
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
 (global-set-key (kbd "C-c ,") 'find-file-at-point)
 (global-set-key (kbd "C-c a") #'org-agenda)
+(global-set-key (kbd "C-c b") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
 (global-set-key (kbd "C-c h") #'my/shell-create)
 (global-set-key (kbd "C-c j") #'my/repeat-window-size)
@@ -970,6 +971,12 @@ With directories under project root using find."
   (eshell 'new)
   (let ((new-buffer-name (concat "*eshell-" name "*")))
     (rename-buffer new-buffer-name t)))
+;;
+(setq eshell-scroll-to-bottom-on-input t)
+(setq-local tab-always-indent 'complete)
+(setq eshell-history-size 10000) ;; Adjust size as needed
+(setq eshell-save-history-on-exit t) ;; Enable history saving on exit
+(setq eshell-hist-ignoredups t) ;; Ignore duplicates
 
 ;;
 ;; -> tab-bar-core
@@ -1673,7 +1680,6 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;;
 ;; -> dwim
 ;;
-
 (when (file-exists-p "/home/jdyer/bin/category-list-uniq.txt")
   (progn
     (defvar my/dwim-convert-commands
@@ -1693,13 +1699,13 @@ It doesn't define any keybindings. In comparison with `ada-mode',
         "PictureCorrect" "Picture2pdf" "PictureTag" "PictureTagRename"
         "OtherTagDate" "VideoRemoveFlips")
       "List of commands for dwim-convert.")
-
+    ;;
     (defun my/read-lines (file-path)
       "Return a list of lines of a file at FILE-PATH."
       (with-temp-buffer
         (insert-file-contents file-path)
         (split-string (buffer-string) "\n" t)))
-
+    ;;
     (defun my/dwim-convert-generic (command)
       "Execute a dwim-shell-command-on-marked-files with the given COMMAND."
       (let* ((unique-text-file "~/bin/category-list-uniq.txt")
@@ -1714,12 +1720,12 @@ It doesn't define any keybindings. In comparison with `ada-mode',
                                  (concat command " " user-selection " " (mapconcat 'identity files " "))
                                (concat command " " (mapconcat 'identity files " ")))
                              "*convert*")))
-
+    ;;
     (defun my/dwim-convert-with-selection ()
       "Prompt user to choose command and execute dwim-shell-command-on-marked-files."
       (interactive)
       (let ((chosen-command (completing-read "Choose command: "
                                              my/dwim-convert-commands)))
         (my/dwim-convert-generic chosen-command)))
-
+    ;;
     (global-set-key (kbd "C-c v") 'my/dwim-convert-with-selection)))
