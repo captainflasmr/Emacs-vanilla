@@ -570,8 +570,6 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
   (kill-ring-save (point-min) (point-max))
   (message (concat (buffer-file-name) " Copied")))
 ;;
-(my/sync-tab-bar-to-theme "#ff4444")
-;;
 (defun my/dired-file-to-org-link ()
   "Transform the file path under the cursor in Dired to an Org mode
   link and copy to kill ring.
@@ -1698,3 +1696,9 @@ It doesn't define any keybindings. In comparison with `ada-mode',
         (my/dwim-convert-generic chosen-command)))
     ;;
     (global-set-key (kbd "C-c v") 'my/dwim-convert-with-selection)))
+
+;;
+;; -> dwim
+;;
+;;
+(my/sync-tab-bar-to-theme "#ff4444")

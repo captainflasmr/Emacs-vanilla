@@ -1122,8 +1122,6 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
   (kill-ring-save (point-min) (point-max))
   (message (concat (buffer-file-name) " Copied")))
 ;;
-(my/sync-tab-bar-to-theme "#ff4444")
-;;
 (defun my/dired-file-to-org-link ()
   "Transform the file path under the cursor in Dired to an Org mode
   link and copy to kill ring.
@@ -2508,6 +2506,18 @@ Demonstrates "Do What I Mean" functionalities custom to Emacs, streamlining oper
     ;;
     (global-set-key (kbd "C-c v") 'my/dwim-convert-with-selection)))
 
+#+end_src
+
+* startup
+
+Functions to run
+
+#+begin_src elisp
+;;
+;; -> dwim
+;;
+;;
+(my/sync-tab-bar-to-theme "#ff4444")
 #+end_src
 
 * Notes
