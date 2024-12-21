@@ -174,7 +174,6 @@
 ;;
 ;; -> setqs-core
 ;;
-(setq completion-styles '(basic partial-completion emacs22))
 (setq custom-safe-themes t)
 (setq delete-selection-mode nil)
 (setq enable-local-variables :all)
