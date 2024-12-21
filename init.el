@@ -20,9 +20,6 @@
         try-complete-lisp-symbol-partially try-complete-lisp-symbol))
 ;; TAB cycle if there are only few candidates
 (setq completion-cycle-threshold 3)
-;; Enable indentation+completion using the TAB key.
-;; `completion-at-point' is often bound to M-TAB.
-(setq tab-always-indent 'complete)
 
 ;;
 ;; -> modeline-completion-core
