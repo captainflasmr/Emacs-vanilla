@@ -1957,6 +1957,8 @@ Taken originally from :
 
 https://github.com/sebastianpoeplau/ada-light-mode
 
+Unfortunately this may be the only elisp package that I may need to bake into this whole concept.  Current ada-mode isn't supported out of the box in Emacs, it is suggested to use the AdaCore ada-mode but that is a pain to compile (mainly due to trying to install gnatcoll), I have found the old ada mode used by Emacs for that adequate, so this may need to be separately downloaded and baked in.
+
 ** A lightweight Ada mode for Emacs
 
 =ada-light-mode= is a very light alternative to [[https://www.nongnu.org/ada-mode/][=ada-mode=]]. It depends only on the =compat= library for compatibility with older Emacs versions, and it aims to be easy to set up, fast, and reliable.

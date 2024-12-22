@@ -302,7 +302,7 @@
   (setq mark-active t))
 ;;
 (defun my/repeat-history ()
-  ""
+  "Set up a transient keymap for navigating tab bar history."
   (interactive)
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "j") (lambda () (interactive)
