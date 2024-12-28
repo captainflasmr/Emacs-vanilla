@@ -140,7 +140,8 @@
 (global-set-key (kbd "M-]") #'yank-pop)
 (global-set-key (kbd "M-c") #'delete-other-windows)
 (global-set-key (kbd "M-e") #'dired-jump)
-(global-set-key (kbd "M-g i") 'imenu)
+(global-set-key (kbd "M-g i") #'imenu)
+(global-set-key (kbd "M-g o") #'org-goto)
 (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
@@ -643,6 +644,8 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
         ("DOING" . "#5577aa")
         ("DONE" . "#77aa66")
         ("CANCELLED" . "#426b3e")))
+(setq org-goto-interface 'outline-path-completionp)
+(setq org-outline-path-complete-in-steps nil)
 
 ;;
 ;; -> org-agenda-core

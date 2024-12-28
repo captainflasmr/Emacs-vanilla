@@ -28,6 +28,16 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2024-12-28>
+
+Add new Org navigation keybinding and improve Org mode settings
+
+- Added `M-g o` keybinding for `org-goto`, enabling quick navigation within Org files.
+- Changed `M-g i` keybinding from using a quoted symbol ('imenu) to a proper function reference (#'imenu).
+- Configured Org mode with:
+  - `org-goto-interface` set to `outline-path-completionp` for enhanced navigation.
+  - `org-outline-path-complete-in-steps` set to `nil` for smoother interface behavior.
+
 ** <2024-12-20>
 
 Refactor README.org: Streamline sections and cleanup
@@ -650,7 +660,8 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-set-key (kbd "M-]") #'yank-pop)
 (global-set-key (kbd "M-c") #'delete-other-windows)
 (global-set-key (kbd "M-e") #'dired-jump)
-(global-set-key (kbd "M-g i") 'imenu)
+(global-set-key (kbd "M-g i") #'imenu)
+(global-set-key (kbd "M-g o") #'org-goto)
 (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
@@ -1207,6 +1218,8 @@ Extends and customizes Org mode for document structuring, note-taking, and proje
         ("DOING" . "#5577aa")
         ("DONE" . "#77aa66")
         ("CANCELLED" . "#426b3e")))
+(setq org-goto-interface 'outline-path-completionp)
+(setq org-outline-path-complete-in-steps nil)
 #+end_src
 
 * org-agenda-core
