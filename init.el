@@ -585,6 +585,29 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
           (kill-new org-link)
           (message "Copied to kill ring: %s" org-link))
       (message "No file under the cursor"))))
+;;
+(defun my/collate-issues-into-table ()
+  "Insert all Org headings in the current buffer into the Org file."
+  (interactive)
+  (let ((rows '())
+        (header '("TODO" "Title" "Parent Title")) ;; Table header
+        (issue-tag "issues")) ;; The tag to filter for
+    (save-excursion
+      (goto-char (point-max)) ;; Ensure we append the results at the end
+      (org-map-entries
+       (lambda ()
+         (let* ((todo (org-get-todo-state))
+                (title (org-get-heading t t t t))
+                (parent))
+           (save-excursion
+             (when (org-up-heading-safe) ;; Move to parent heading if it exists
+               (setq parent (org-get-heading t t t t))))
+           (when (member issue-tag (org-get-tags))
+             (setq rows (append rows (list (list (or todo "") title (or parent ""))))))))
+       nil 'file))
+    (setq rows (reverse rows))
+    (push 'hline rows)
+    (cons header rows)))
 
 ;;
 ;; -> window-positioning-core
