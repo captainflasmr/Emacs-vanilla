@@ -116,7 +116,6 @@
 (global-set-key (kbd "C-c j") #'my/repeat-window-size)
 (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
 (global-set-key (kbd "C-c o s") #'outline-show-all)
-(global-set-key (kbd "C-x ;") #'my/switch-to-thing)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (global-set-key (kbd "C-x [") #'beginning-of-buffer)
 (global-set-key (kbd "C-x ]") #'end-of-buffer)
@@ -129,23 +128,20 @@
 (global-set-key (kbd "C-x x g") #'revert-buffer)
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "C-z") #'my/comment-or-uncomment)
-(global-set-key (kbd "M-'") #'set-mark-command)
 (global-set-key (kbd "M-0") 'delete-window)
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-2") #'split-window-vertically)
 (global-set-key (kbd "M-3") #'split-window-horizontally)
 (global-set-key (kbd "M-9") #'hippie-expand)
-(global-set-key (kbd "M-;") 'delete-other-windows)
 (global-set-key (kbd "M-[") #'yank)
 (global-set-key (kbd "M-]") #'yank-pop)
-(global-set-key (kbd "M-c") #'delete-other-windows)
 (global-set-key (kbd "M-e") #'dired-jump)
 (global-set-key (kbd "M-g i") #'imenu)
 (global-set-key (kbd "M-g o") #'org-goto)
 (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
-(global-set-key (kbd "M-l") #'split-window-horizontally)
+(global-set-key (kbd "M-l") #'bookmark-jump)
 (global-set-key (kbd "M-m") #'split-window-vertically)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (global-set-key (kbd "M-z") #'my/comment-or-uncomment)
@@ -153,6 +149,8 @@
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
   (define-key vc-dir-mode-map (kbd "e") #'vc-ediff))
+(define-key diff-mode-map (kbd "M-j") #'nil)
+(define-key diff-mode-map (kbd "M-k") #'nil)
 
 ;;
 ;; -> modes-core
@@ -1028,21 +1026,6 @@ With directories under project root using find."
 ;; Add directories to load-path only if they exist
 (safe-add-to-load-path (expand-file-name "lisp/shell-maker" user-emacs-directory))
 (safe-add-to-load-path (expand-file-name "lisp/chatgpt-shell" user-emacs-directory))
-(safe-add-to-load-path (expand-file-name "lisp/gptel" user-emacs-directory))
-;; Conditionally require and configure packages if their files exist
-(when (locate-library "gptel")
-  (require 'gptel)
-  (require 'gptel-ollama)
-  (require 'gptel-curl)
-  (gptel-make-ollama "llama3_2"
-    :host "localhost:11434"
-    :stream t
-    :models '(llama3_2:latest))
-  (setq gptel-model 'qwen2.5-coder-7b-instruct-q5_k_m:latest
-        gptel-backend (gptel-make-ollama "llama3_2"
-                        :host "localhost:11434"
-                        :stream t
-                        :models '(llama3_2:latest))))
 ;;
 (when (locate-library "shell-maker")
   (require 'shell-maker))
@@ -1081,7 +1064,7 @@ With directories under project root using find."
           (?r (call-interactively 'chatgpt-shell-refactor-code))
           (?u (call-interactively 'chatgpt-shell-generate-unit-test))
           (?a (call-interactively 'chatgpt-shell-send-and-review-region))
-          (?l (call-interactively 'chatgpt-shell))
+          (?j (call-interactively 'chatgpt-shell))
           (?t (call-interactively 'chatgpt-shell-save-session-transcript))
           (?o (call-interactively 'chatgpt-shell-eshell-summarize-last-command-output))
           (?w (call-interactively 'chatgpt-shell-eshell-whats-wrong-with-last-command))

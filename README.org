@@ -34,6 +34,22 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2024-12-31>
+
+Refactor and update keybindings, configuration, and package setup
+
+- Removed unused or redundant global keybindings, such as:
+  - `C-x ;` (my/switch-to-thing)
+  - `M-'` (set-mark-command)
+  - `M-;` and `M-c` (delete-other-windows)
+  - Others redundant to existing functionality or cleanup.
+- Updated `M-l` keybinding to `bookmark-jump` from `split-window-horizontally`.
+- Unset keybindings in `diff-mode-map` for `M-j` and `M-k`.
+
+- Adjusted package configurations:
+  - Removed `gptel`-related setup as it is no longer needed.
+  - Updated `chatgpt-shell` quick access command binding from `?l` to `?j`.
+
 ** <2024-12-29>
 
 Add "Issues" section and link TODOs to project features in README
@@ -68,156 +84,6 @@ Refactor README.org: Streamline sections and cleanup
 - Updated `image-dired` configuration for streamlined image navigation, thumbnails, and management.
 - Added new utilities for project and build management (e.g., `change-directory-and-run`, `list-cmake-presets`).
 - Refined custom abbrev definitions across multiple modes.
-
-** <2024-12-18>
-
-Replaced tempel with abbrev, will have to write a blog post about this but replacing the following tempel template :
-
-#+begin_src fundamental :tangle no
-fundamental-mode ;; Available everywhere
-;;
-(ja (format-time-string "<%Y-%m-%d>"))
-(jT (format-time-string "%Y%m%d%H%M%S"))
-(jt (format-time-string "%Y%m%d"))
-(ji "(interactive)")
-(jl "(lambda ()")
-;;
-org-mode
-;;
-(jm "#+hugo: more")
-(jg "#+attr_org: :width 300px" n "#+attr_html: :width 100%")
-(je "#+attr_org: :width 300px" n "#+attr_html: :class emacs-img")
-(jo "---" n "#+TOC: headlines 1 local" n "---")
-(jk "#+begin: kanban :layout (\"...\" . 40) :scope nil :range (\"TODO\" . \"DONE\") :sort \"O\" :depth 2 :compressed t" n "#+end:")
-(jp "~--APT--~ ")
-;;
-sh-mode
-(jd n "echo \"poop: " p "\"" n)
-;;
-emacs-lisp-mode
-(jd n "(message \"poop: " p "\"\)" n)
-;;
-ada-mode
-(jd n> "Ada.Text_Io.Put_Line \( \"poop: " p "\"\);" n)
-;;
-c++-mode
-(jd n> "std::cout << \"poop: " p "\" << std::endl;" n)
-;;
-c-mode
-(jd n> "fprintf(stderr, \"poop: " p "\"\);" n)
-#+end_src
-
-with the following abbrev =abbrev_defs=:
-
-#+begin_src fundamental-mode :tangle no
-;;-*-coding: utf-8;-*-
-(define-abbrev-table 'ada-mode-abbrev-table
-  '(
-    ("jd" "Ada.Text_Io.Put_Line (\"poop: \");" nil :count 0)
-   ))
-(define-abbrev-table 'c++-mode-abbrev-table
-  '(
-    ("jd" "std::cout << \"poop: \" << std::endl;" nil :count 0)
-   ))
-(define-abbrev-table 'c-mode-abbrev-table
-  '(
-    ("jd" "printf(stderr, \"poop: \");" nil :count 0)
-   ))
-(define-abbrev-table 'emacs-lisp-mode-abbrev-table
-  '(
-    ("jd" "(message \"poop: \")" nil :count 0)
-   ))
-(define-abbrev-table 'global-abbrev-table
-  '(
-    ("jT" "" (lambda nil (interactive) (insert (format-time-string "%Y%m%d%H%M%S"))) :count 0)
-    ("ja" "" (lambda nil (interactive) (insert (format-time-string "<%Y-%m-%d>"))) :count 1)
-    ("ji" "(interactive)" nil :count 1)
-    ("jl" "(lambda ()" nil :count 0)
-    ("jt" "" (lambda nil (interactive) (insert (format-time-string "%Y%m%d"))) :count 0)
-   ))
-(define-abbrev-table 'org-mode-abbrev-table
-  '(
-    ("je" "#+attr_org: :width 300px
-,#+attr_html: :class emacs-img" nil :count 0)
-    ("jg" "#+attr_org: :width 300px
-,#+attr_html: :width 100%" nil :count 0)
-    ("jk" "#+begin: kanban :layout (\"...\") :scope nil :range (\"TODO\" . \"DONE\") :sort \"O\" :depth 2 :compressed t
-,#+end:" nil :count 0)
-    ("jm" "#+hugo: more" nil :count 0)
-    ("jo" "---
-,#+TOC: headlines 1 local
----" nil :count 0)
-    ("jp" "~--APT--~" nil :count 0)
-   ))
-(define-abbrev-table 'sh-mode-abbrev-table
-  '(
-    ("jd" "echo \"poop: \"" nil :count 0)
-   ))
-#+end_src
-
-** <2024-12-16>
-
-feat(emacs): Enhance =dired= and =image-dired= configurations
-
-- *=dired=*:
-  - Added a new keybinding (=C-c i=) for =my/image-dired-sort=.
-  - Improved file management capabilities within Dired interface.
-
-- *Spell-checking*:
-  - Integrated =dictionary.el= for on-the-fly word definitions.
-  - Added =C-c s d= for dictionary lookup.
-  - Introduced =C-0= as dedicated keybinding for =ispell-word=.
-
-- *=image-dired=*:
-  - Introduced custom behavior for image manipulation:
-    - Added =my/image-dired-sort= for better image sorting in Dired.
-    - Defined keybindings to streamline navigation and editing in =image-dired=.
-  - Configured a split-buffer layout for enhanced productivity.
-  - Added helper functions (=my/image-save-as=, =my/delete-current-image-and-move-to-next=, etc.) for managing images programmatically.
-  - Enabled external image viewing via =gthumb=.
-
-** <2024-12-14>
-
-Added my/find-file to be a more flexible ripgrep based finding file tool.
-
-** <2024-12-14>
-
-Added deadgrep kind of replacement called my/grep with leveraging ripgrep into a type of grep Emacs buffer.
-
-** <2024-12-10>
-
-Added ada-mode support out of the box.
-
-Yes, ada-mode was removed from emacs and it was recommended to use the ada-mode supplied by AdaCore, however this is all but impossible to set up so including =ada-light=mode= as part of the configuration.
-
-https://github.com/sebastianpoeplau/ada-light-mode
-
-** <2024-12-09>
-
-Added =visual-fill-column-mode= replacement with a simple elisp function (see solution in roadmap)
-
-** <2024-12-09>
-
-Added =my-icomplete-copy-candidate= to allow embark like copying of current candidate (see solution in roadmap)
-
-** <2024-12-09>
-
-Added =my/recentf-open= to bypass old default recentf-open interface (see solution in roadmap)
-
-** <2024-12-09>
-
-enhance window navigation and introduce my rainbow mode (see solution in roadmap)
-
-- Refactored `my/quick-window-jump` for better window labelling and overlay management:
-  - Improved window sorting logic for more accurate top-to-bottom, left-to-right navigation.
-  - Added visual overlays to display window shortcuts with labels.
-- Introduced `my/rainbow-mode`:
-  - Overlays hex color values in buffers with their respective colors for better readability.
-- Minor refactor to `my/copy-buffer-to-kill-ring` by removing redundant `save-excursion`.
-- Corrected a typo: Renamed `identation-core` to `indentation-core`.
-- Added `my/eglot-dir-locals` for ADA mode to simplify `.dir-locals.el` file creation:
-  - Supports Eglot workspace configuration based on paths from Dired.
-- Updated version control handling to consider only `SVN` and `Git` backends.
 
 * Benefits
 
@@ -649,7 +515,6 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-set-key (kbd "C-c j") #'my/repeat-window-size)
 (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
 (global-set-key (kbd "C-c o s") #'outline-show-all)
-(global-set-key (kbd "C-x ;") #'my/switch-to-thing)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (global-set-key (kbd "C-x [") #'beginning-of-buffer)
 (global-set-key (kbd "C-x ]") #'end-of-buffer)
@@ -662,23 +527,20 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-set-key (kbd "C-x x g") #'revert-buffer)
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "C-z") #'my/comment-or-uncomment)
-(global-set-key (kbd "M-'") #'set-mark-command)
 (global-set-key (kbd "M-0") 'delete-window)
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-2") #'split-window-vertically)
 (global-set-key (kbd "M-3") #'split-window-horizontally)
 (global-set-key (kbd "M-9") #'hippie-expand)
-(global-set-key (kbd "M-;") 'delete-other-windows)
 (global-set-key (kbd "M-[") #'yank)
 (global-set-key (kbd "M-]") #'yank-pop)
-(global-set-key (kbd "M-c") #'delete-other-windows)
 (global-set-key (kbd "M-e") #'dired-jump)
 (global-set-key (kbd "M-g i") #'imenu)
 (global-set-key (kbd "M-g o") #'org-goto)
 (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
-(global-set-key (kbd "M-l") #'split-window-horizontally)
+(global-set-key (kbd "M-l") #'bookmark-jump)
 (global-set-key (kbd "M-m") #'split-window-vertically)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (global-set-key (kbd "M-z") #'my/comment-or-uncomment)
@@ -686,6 +548,8 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
   (define-key vc-dir-mode-map (kbd "e") #'vc-ediff))
+(define-key diff-mode-map (kbd "M-j") #'nil)
+(define-key diff-mode-map (kbd "M-k") #'nil)
 #+end_src
 
 * modes-core
@@ -1788,21 +1652,6 @@ Curates configurations specific to Linux, making adjustments for paths, fonts, a
 ;; Add directories to load-path only if they exist
 (safe-add-to-load-path (expand-file-name "lisp/shell-maker" user-emacs-directory))
 (safe-add-to-load-path (expand-file-name "lisp/chatgpt-shell" user-emacs-directory))
-(safe-add-to-load-path (expand-file-name "lisp/gptel" user-emacs-directory))
-;; Conditionally require and configure packages if their files exist
-(when (locate-library "gptel")
-  (require 'gptel)
-  (require 'gptel-ollama)
-  (require 'gptel-curl)
-  (gptel-make-ollama "llama3_2"
-    :host "localhost:11434"
-    :stream t
-    :models '(llama3_2:latest))
-  (setq gptel-model 'qwen2.5-coder-7b-instruct-q5_k_m:latest
-        gptel-backend (gptel-make-ollama "llama3_2"
-                        :host "localhost:11434"
-                        :stream t
-                        :models '(llama3_2:latest))))
 ;;
 (when (locate-library "shell-maker")
   (require 'shell-maker))
@@ -1841,7 +1690,7 @@ Curates configurations specific to Linux, making adjustments for paths, fonts, a
           (?r (call-interactively 'chatgpt-shell-refactor-code))
           (?u (call-interactively 'chatgpt-shell-generate-unit-test))
           (?a (call-interactively 'chatgpt-shell-send-and-review-region))
-          (?l (call-interactively 'chatgpt-shell))
+          (?j (call-interactively 'chatgpt-shell))
           (?t (call-interactively 'chatgpt-shell-save-session-transcript))
           (?o (call-interactively 'chatgpt-shell-eshell-summarize-last-command-output))
           (?w (call-interactively 'chatgpt-shell-eshell-whats-wrong-with-last-command))
