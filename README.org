@@ -66,88 +66,49 @@ Refactor and update keybindings, configuration, and package setup
 
 * Benefits
 
-This emacs init configuration will provide me with the following benefits.
+This Emacs init configuration provides the following advantages:
 
-** Portability and Compatibility
+** *Portability and Compatibility*
+- *Universal usability*: Works on any system with Emacs (v27.1+) installed, even without internet or additional dependencies.
+- *Repository-free operation*: Ideal for air-gapped or restricted environments without access to *MELPA* or *ELPA*.  
+- *Cross-platform adaptability*:
+  - *Linux*: Avoids fragile GUI dependencies.
+  - *Windows*: Resolves common issues like slow startups.
+  - *macOS*: Compatible with Emacs's pre-installed versions.
+- *Version-agnostic*: Leverages stable vanilla features, ensuring compatibility across Emacs 27.1+ without relying on bleeding-edge updates.
 
-- *Minimal setup across diverse platforms:*
-  
-  - Works seamlessly on almost any system where Emacs (v27.1+) is pre-installed or can be installed, without requiring internet access or additional dependencies.
-  - Compatible with systems where external repositories like *MELPA* or *ELPA* are inaccessible (e.g., air-gapped systems, high-security environments, or restricted corporate setups).
-  - Handles differences across disparate systems, such as:
-    - *Linux (X11/Wayland):* Avoids reliance on GUI-based packages that may fail due to configuration mismatches.
-    - *Windows:* Eliminates common issues like managing package archives, slow startup, or connectivity problems.
-    - *macOS:* Works well even with the default version of Emacs shipped with macOS, many of which are compiled without key extensions.
-- *Cross-version compatibility:*
-  - Designed with vanilla Emacs features, ensuring it works across older and newer Emacs versions (limited to Emacs 27.1+ but avoiding bleeding-edge features of newer versions).
+** *Performance*
+- *Optimized startup*: No external package initialization or network delays.
+- *Lightweight*: No dependency bloat—ideal for resource-limited systems like VMs.
 
-** Performance
+** *Simplicity and Stability*
+- Eliminates external package managers (*MELPA*, *ELPA*, etc.), reducing update-related breakages.
+- Leverages core, well-tested Emacs functionality, ensuring stability.
 
-- *Optimized for speed:*
-  - Faster startup times due to the absence of external package initialization, byte-compilation of third-party libraries, or network lookup delays.
-  - Fewer external dependencies mean less time spent on managing or resolving dependency-related issues.
-- *Lightweight and resource-efficient:*
-  - Avoids third-party packages that sometimes introduce memory bloat or unnecessary configuration overhead.
-  - Perfect for virtual machines, resource-constrained systems, or environments requiring efficiency.
+** *Usability*
+- *Beginner-friendly*: Introduces users to Emacs's native capabilities without third-party distractions.
+- *Low maintenance*: Perfect for temporary setups, Docker containers, or ephemeral environments.
 
-** Simplicity and Stability
+** *Practicality*
+- *Offline-ready*: Works in isolated, air-gapped networks.
+- *Easy distribution*: A single self-contained file requiring no external dependencies.
 
-- *Eliminates external dependencies:*
-  - No need to depend on external package managers like MELPA, ELPA, or =straight.el=, making your setup resilient to upstream disruptions.
-  - Reduces the risk of breakages introduced by updates to third-party packages.
-- *Focuses on native capabilities:*
-  - Encourages leveraging in-built Emacs functionality over bloated extensions, helping users master Emacs's native power.
-  - Built-in features are generally well-tested and stable across versions, reducing the likelihood of incompatibilities or crashes.
+** *Security and Privacy*
+- *Self-contained*: Avoids risks related to external downloads or unverified code.
+- *Privacy-conscious*: No external queries, ensuring safe usage in sensitive environments.
 
-** Usability
+** *Learning and Mastery*
+- Promotes deeper understanding of Emacs's native functionality and workflows.
+- Provides a foundation for further customization without dependency on third-party tools.
 
-- *Beginner-friendly ethos:*
-  - A simpler, package-free setup is ideal for teaching beginner users about Emacs, showing them how to rely on core features without the overwhelming complexity of third-party tools.
-  - It introduces users to the elegance and power of vanilla Emacs, bypassing distractions from unnecessary packages.
-- *Minimal maintenance:*
-  - Excellent for situations where you need a reliable, pre-configured Emacs experience for short-term use (e.g., disposable environments, Docker containers, or ephemeral VMs).
+** *Flexibility for Advanced Users*
+- Functions as a reliable core config for incremental builds or as an emergency fallback.
+- Endures across versions, prioritizing timeless Emacs workflows.
 
-** Practicality
-
-- *Air-gapped and offline systems:*
-  - Perfect for isolated networks where external package repositories are inaccessible for policy or security reasons.
-  - Allows Emacs to remain functional for note-taking, scripting, or other tasks even in environments with no internet access.
-- *Ease of distribution:*
-  - Since the configuration doesn’t require external dependencies, it can easily be shared or replicated across multiple machines.
-  - Can be stored in a single file without the need for a long list of additional package installation instructions.
-- *Ideal for DevOps and CI/CD pipelines:*
-  - Useful in virtualized or containerized environments (e.g., Docker, CI runners) where you need a fast, reliable Emacs setup without pulling third-party tools.
-
-** Security and Privacy
-
-- *Better control over code and configuration:*
-  - No automatic downloads or updates from external repositories, reducing the risk of introducing compromised or vulnerable code.
-  - A completely self-contained configuration ensures no unexpected behaviour from unverified third-party plugins or libraries.
-- *Privacy-friendly:*
-  - No metadata is queried, and no connections are made to package repositories, ensuring greater privacy when using Emacs in sensitive environments.
-
-** Encourages Learning and Mastery
-
-- By restricting yourself to core Emacs functionality, you develop a deeper understanding of:
-  - Efficient workflows based on what's built into Emacs.
-  - How to solve problems creatively using only the default, extensible tools.
-- Provides a solid foundation for customizing Emacs further once needed, without becoming overly dependent on external tools.
-
-** Flexibility for Advanced Users
-
-- *Base for users who prefer to build incrementally:*
-  - Acts as a reliable "core" configuration, allowing users to selectively add new features as needed while minimizing risk and clutter.
-  - Encourages selective evaluation of any third-party package for inclusion rather than indiscriminately combining external libraries.
-- *Emphasis on timeless workflows:*
-  - Built on enduring Emacs features that have been consistent for decades, ensuring compatibility even with older systems.
-  - Can serve as an emergency fallback configuration for experienced users who rely on Emacs in more complex setups.
-
-** Examples of Real-World Use Cases
-
-- *Diagnostics tool:* You can use *Emacs-core* to debug whether an issue is related to third-party packages or stems from Emacs itself by testing the minimal configuration.
-- *Always-ready portable editor:* Use it on systems where you're temporarily working without worrying about recreating your primary configuration.
-- *Distraction-free writing:* Suited for scenarios where you want a fast, clean, and functional interface without additional bells and whistles.
-- *VMs for testing or experimentation:* Perfect for virtual machines or containers where you need a low-maintenance Emacs that can be spun up quickly.
+** *Use Cases*
+- Debug issues by isolating third-party conflicts.
+- Portable, distraction-free editor for temporary systems.
+- Reliable setup for VMs or testing environments.
 
 * Key Features
 
@@ -162,18 +123,23 @@ This emacs init configuration will provide me with the following benefits.
 It is often advantageous to use *external tools* that are optimized for specific tasks. Emacs offers many built-in tools, but these may not always be the fastest or most feature-rich option available. By integrating with *system-based utilities* when they exist, we can achieve both performance improvements and enhanced capabilities. However, in cases where external tools are unavailable, Emacs' built-in options serve as a reliable fallback.
 
 *** ripgrep - grepping files
+
 **** Functionality
 - Searching across project files for a specific term or pattern.
 - Faster than Emacs' built-in =grep= or =rgrep=
 - Better default handling of ignored files (e.g., =.gitignore= rules).
 - Offers rich pattern matching (regex or literal strings).
+  
 **** Fallback
 - Emacs' =grep= or =rgrep= commands provide file searching through built-in utilities like =grep=.
 - While slower and less feature-rich, they can still handle basic directory searches.
+  
 *** ripgrep (alternative fd) - finding files
+
 **** Functionality
 - Searching for files in a directory or project.
 - Supports advanced filtering options (e.g., searching by filename extension, ignoring gitignored files).
+  
 **** Fallback
 - =find-name-dired= or =project-find-file= for locating files within Emacs projects.
 - Relatively slower on larger directories, but sufficient for small-scale tasks.
@@ -294,10 +260,6 @@ emacs
   #+end_src
 
 - Optional: Customize the paths and keybindings in the **init.el** file to better fit your workflow.
-
-* Roadmap                                                           :roadmap:
-
-For features that will be (hopefully) converted to core see https://github.com/captainflasmr/Emacs-enhanced
 
 * Testing
 
