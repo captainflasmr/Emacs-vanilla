@@ -110,7 +110,7 @@
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
 (global-set-key (kbd "C-c ,") 'find-file-at-point)
 (global-set-key (kbd "C-c a") #'org-agenda)
-(global-set-key (kbd "C-c b") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
+(global-set-key (kbd "<f12>") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
 (global-set-key (kbd "C-c h") #'my/shell-create)
 (global-set-key (kbd "C-c j") #'my/repeat-window-size)
@@ -149,8 +149,9 @@
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
   (define-key vc-dir-mode-map (kbd "e") #'vc-ediff))
-(define-key diff-mode-map (kbd "M-j") #'nil)
-(define-key diff-mode-map (kbd "M-k") #'nil)
+(with-eval-after-load 'diff-mode
+  (define-key diff-mode-map (kbd "M-j") #'nil)
+  (define-key diff-mode-map (kbd "M-k") #'nil))
 
 ;;
 ;; -> modes-core

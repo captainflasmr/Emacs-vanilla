@@ -34,6 +34,17 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2025-01-01>
+
+Update keybindings and improve deferred loading for =diff-mode=
+
+- Changed backup keybinding from =C-c b= to =<f12>= to align with function key usage 
+  for global/system actions.
+- Updated =diff-mode= keybinding adjustments to use =with-eval-after-load=:
+  - Ensures =M-j= and =M-k= bindings are unset only after =diff-mode= is loaded.
+  - Prevents potential issues with uninitialized =diff-mode-map=.
+- No changes to functionality; these updates improve keybinding management and load behavior.
+
 ** <2024-12-31>
 
 Refactor and update keybindings, configuration, and package setup
@@ -509,7 +520,7 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
 (global-set-key (kbd "C-c ,") 'find-file-at-point)
 (global-set-key (kbd "C-c a") #'org-agenda)
-(global-set-key (kbd "C-c b") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
+(global-set-key (kbd "<f12>") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
 (global-set-key (kbd "C-c h") #'my/shell-create)
 (global-set-key (kbd "C-c j") #'my/repeat-window-size)
@@ -548,8 +559,9 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
   (define-key vc-dir-mode-map (kbd "e") #'vc-ediff))
-(define-key diff-mode-map (kbd "M-j") #'nil)
-(define-key diff-mode-map (kbd "M-k") #'nil)
+(with-eval-after-load 'diff-mode
+  (define-key diff-mode-map (kbd "M-j") #'nil)
+  (define-key diff-mode-map (kbd "M-k") #'nil))
 #+end_src
 
 * modes-core

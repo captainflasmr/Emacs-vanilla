@@ -10,6 +10,17 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2025-01-01>
+
+Update keybindings and improve deferred loading for =diff-mode=
+
+- Changed backup keybinding from =C-c b= to =<f12>= to align with function key usage 
+  for global/system actions.
+- Updated =diff-mode= keybinding adjustments to use =with-eval-after-load=:
+  - Ensures =M-j= and =M-k= bindings are unset only after =diff-mode= is loaded.
+  - Prevents potential issues with uninitialized =diff-mode-map=.
+- No changes to functionality; these updates improve keybinding management and load behavior.
+
 ** <2024-12-31>
 
 Refactor and update keybindings, configuration, and package setup
