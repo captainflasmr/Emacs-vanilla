@@ -1,4 +1,3 @@
--*- mode: org; fill-column: 80; eval: (display-fill-column-indicator-mode -1); -*-
 #+title: Emacs Core
 #+author: James Dyer
 #+options: toc:nil author:t title:t
@@ -6,7 +5,7 @@
 #+todo: TODO DOING | DONE
 #+property: header-args :tangle ~/.emacs.d/Emacs-core/init.el
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :exports none
 ;; -*- lexical-binding: t; -*-
 #+end_src
 
@@ -25,12 +24,6 @@ Looking to potentially support:
 The configuration focuses on ease of use by providing custom keybindings, basic completion support, and visual enhancements without relying on any external packages.
 
 Note that this package works in combination with https://github.com/captainflasmr/Emacs-enhanced which is a conversion of major Emacs packages / functions, especially ones that I rely on to single defuns.
-
-* Issues
-
-#+begin_src emacs-lisp :results table :exports results :tangle no
-  (my/collate-issues-into-table)
-#+end_src
 
 * Whats New
 
@@ -95,6 +88,16 @@ Refactor README.org: Streamline sections and cleanup
 - Updated `image-dired` configuration for streamlined image navigation, thumbnails, and management.
 - Added new utilities for project and build management (e.g., `change-directory-and-run`, `list-cmake-presets`).
 - Refined custom abbrev definitions across multiple modes.
+
+* Issues
+
+#+begin_src emacs-lisp :results table :exports results :tangle no
+  (my/collate-issues-into-table)
+#+end_src
+
+#+RESULTS:
+| TODO | Title | Parent Title |
+|------+-------+--------------|
 
 * Benefits
 
