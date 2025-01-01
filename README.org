@@ -54,41 +54,6 @@ Refactor and update keybindings, configuration, and package setup
   - Removed `gptel`-related setup as it is no longer needed.
   - Updated `chatgpt-shell` quick access command binding from `?l` to `?j`.
 
-** <2024-12-29>
-
-Add "Issues" section and link TODOs to project features in README
-
-- Added a new "Issues" section with TODOs, each linked to related project features.
-- Supplemented the section with Emacs Lisp code to auto-generate issue tables.
-
-** <2024-12-28>
-
-Add new Org navigation keybinding and improve Org mode settings
-
-- Added `M-g o` keybinding for `org-goto`, enabling quick navigation within Org files.
-- Changed `M-g i` keybinding from using a quoted symbol ('imenu) to a proper function reference (#'imenu).
-- Configured Org mode with:
-  - `org-goto-interface` set to `outline-path-completionp` for enhanced navigation.
-  - `org-outline-path-complete-in-steps` set to `nil` for smoother interface behavior.
-
-** <2024-12-20>
-
-Refactor README.org: Streamline sections and cleanup
-
-- *Cleanup of Redundant Code*:
-  - Removed the `my/sync-tab-bar-to-theme` function, which is no longer relevant to the core configuration.
-  - Removed the `spelling-core` section, simplifying the configuration by relying on minimal spell-checking features and eliminating auxiliary tools like `hunspell`.
-
-** <2024-12-19>
-
-- Added new settings and sections:
-  - `org-agenda-core`: Customized Org Agenda views with yearly and monthly displays.
-  - `dwim`: Enhanced "Do What I Mean" functionalities for common operations like file conversion and tagging.
-- Introduced a comprehensive build menu (`build-menu`) with CMake integration, custom commands, and keybindings.
-- Updated `image-dired` configuration for streamlined image navigation, thumbnails, and management.
-- Added new utilities for project and build management (e.g., `change-directory-and-run`, `list-cmake-presets`).
-- Refined custom abbrev definitions across multiple modes.
-
 * Issues
 
 #+begin_src emacs-lisp :results table :exports results :tangle no
