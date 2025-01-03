@@ -132,7 +132,6 @@
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-2") #'split-window-vertically)
 (global-set-key (kbd "M-3") #'split-window-horizontally)
-(global-set-key (kbd "M-9") #'hippie-expand)
 (global-set-key (kbd "M-[") #'yank)
 (global-set-key (kbd "M-]") #'yank-pop)
 (global-set-key (kbd "M-e") #'dired-jump)
@@ -965,6 +964,10 @@ With directories under project root using find."
 (setq eshell-history-size 10000) ;; Adjust size as needed
 (setq eshell-save-history-on-exit t) ;; Enable history saving on exit
 (setq eshell-hist-ignoredups t) ;; Ignore duplicates
+
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((shell . t)))
 
 ;;
 ;; -> tab-bar-core
