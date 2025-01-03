@@ -1053,12 +1053,12 @@ With directories under project root using find."
       (interactive)
       (let ((key (read-key
                   (propertize
-                   "ChatGPT Shell Commands:\n
-      e: Explain Code      d: Describe Code           l: Start Shell
-      p: Proofread Region  r: Refactor Code           t: Save Session Transcript
-      g: Write Git Commit  u: Generate Unit Test      o: Summarize Last Command Output
-      s: Send Region       a: Send and Review Region  m: Swap Model\n
-        q: Quit\n\nPress a key: " 'face 'minibuffer-prompt))))
+                   "ChatGPT Shell Commands [q] Quit:\n
+Code:   [g] Write Git Commit [e] Explain Code [d] Describe Code [u] Generate Unit Test
+Check:  [p] Proofread Region [r] Refactor Code
+Send:   [s] Send Region [a] Send & Review Region
+Other:  [j] Start Shell [t] Save Transcript"
+ 'face 'minibuffer-prompt))))
         (pcase key
           (?e (call-interactively 'chatgpt-shell-explain-code))
           (?p (call-interactively 'chatgpt-shell-proofread-region))
@@ -1070,7 +1070,6 @@ With directories under project root using find."
           (?a (call-interactively 'chatgpt-shell-send-and-review-region))
           (?j (call-interactively 'chatgpt-shell))
           (?t (call-interactively 'chatgpt-shell-save-session-transcript))
-          (?o (call-interactively 'chatgpt-shell-eshell-summarize-last-command-output))
           (?w (call-interactively 'chatgpt-shell-eshell-whats-wrong-with-last-command))
           (?i (call-interactively 'chatgpt-shell-describe-image))
           (?m (call-interactively 'chatgpt-shell-swap-model))
@@ -1151,18 +1150,13 @@ With directories under project root using find."
   (interactive)
   (let ((key (read-key
               (propertize
-               (concat
-                "Build and Diagnostic Commands:\n"
-                "\n"
-                "CMake: [p: Set Preset] [c: Configure] [RET: Build] [i: Install] [g: Refresh] [x: Clean] [s: List Presets]\n"
-                "Actions: [f: Toggle Flycheck] [d: Show Diagnostics]\n"
-                "Coding: [e: Eglot & Flymake] [u: Undo Eglot & Flymake] [h: Stop Eglot]\n"
-                "Run: [r: All] [1: CigiDummyIG] [2: CigiMiniHost] [3: CigiMiniHostCSharp]\n"
-                "Kill: [5: Kill CigiDummyIG] [6: Kill CigiMiniHost] [7: Kill CigiMiniHostCSharp] [k: Kill All]\n"
-                "\n"
-                "Press 'q' to Quit\n\n"
-                "Press a key: ")
-               'face 'minibuffer-prompt))))
+                "Build and Diagnostic Commands [q] Quit:\n
+CMake:   [p] Set Preset [c] Configure [RET] Build [i] Install [g] Refresh [x] Clean [s] List Presets
+Actions: [f] Toggle Flycheck [d] Show Diagnostics
+Coding:  [e] Eglot & Flymake [u] Undo Eglot & Flymake [h] Stop Eglot
+Run:     [r] All [1] CigiDummyIG [2] CigiMiniHost [3] CigiMiniHostCSharp
+Kill:    [5] Kill CigiDummyIG [6] Kill CigiMiniHost [7] Kill CigiMiniHostCSharp [k] Kill All"
+                'face 'minibuffer-prompt))))
     (pcase key
       ;; CMake Commands
       (?p (call-interactively 'transient-select-cmake-preset))
