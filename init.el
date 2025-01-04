@@ -611,12 +611,10 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
 ;; -> window-positioning-core
 ;;
 (add-to-list 'display-buffer-alist
-             '("\\*.*shell"
-               (display-buffer-reuse-window display-buffer-in-direction)
-               (direction . bottommost)
-               (dedicated . t)
-               (window-height . 0.2)
-               (inhibit-same-window . t)))
+             '("\\*\\(.*shell\\|eldoc.*\\*\\|Flymake.*\\)"
+               (display-buffer-reuse-window display-buffer-at-bottom)
+               (inhibit-same-window . t)
+               (window-height . 0.3)))
 (add-to-list 'display-buffer-alist
              '("\\*grep"
                (display-buffer-reuse-window display-buffer-in-direction)
