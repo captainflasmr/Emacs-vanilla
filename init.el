@@ -1056,7 +1056,7 @@ With directories under project root using find."
 Code:   [g] Write Git Commit [e] Explain Code [d] Describe Code [u] Generate Unit Test
 Check:  [p] Proofread Region [r] Refactor Code
 Send:   [s] Send Region [a] Send & Review Region
-Other:  [j] Start Shell [t] Save Transcript"
+Other:  [j] Start Shell"
  'face 'minibuffer-prompt))))
         (pcase key
           (?e (call-interactively 'chatgpt-shell-explain-code))
@@ -1068,7 +1068,6 @@ Other:  [j] Start Shell [t] Save Transcript"
           (?u (call-interactively 'chatgpt-shell-generate-unit-test))
           (?a (call-interactively 'chatgpt-shell-send-and-review-region))
           (?j (call-interactively 'chatgpt-shell))
-          (?t (call-interactively 'chatgpt-shell-save-session-transcript))
           (?w (call-interactively 'chatgpt-shell-eshell-whats-wrong-with-last-command))
           (?i (call-interactively 'chatgpt-shell-describe-image))
           (?m (call-interactively 'chatgpt-shell-swap-model))
