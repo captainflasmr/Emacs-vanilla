@@ -616,6 +616,11 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
                (inhibit-same-window . t)
                (window-height . 0.3)))
 (add-to-list 'display-buffer-alist
+             '("\\*\\(Completions.*\\)"
+               (display-buffer-reuse-window display-buffer-at-bottom)
+               (inhibit-same-window . t)
+               (window-height . 0.2)))
+(add-to-list 'display-buffer-alist
              '("\\*grep"
                (display-buffer-reuse-window display-buffer-in-direction)
                (direction . leftmost)
