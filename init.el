@@ -114,6 +114,7 @@
 (global-set-key (kbd "C-c c") #'org-capture)
 (global-set-key (kbd "C-c h") #'my/shell-create)
 (global-set-key (kbd "C-c j") #'my/repeat-window-size)
+(global-set-key (kbd "M-c") #'my/repeat-window-size)
 (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
 (global-set-key (kbd "C-c o s") #'outline-show-all)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
@@ -1642,4 +1643,4 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;; -> dwim
 ;;
 ;;
-(my/sync-tab-bar-to-theme "#ff4444")
+(my/sync-tab-bar-to-theme "#355369")
