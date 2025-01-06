@@ -10,6 +10,14 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2025-01-06>
+
+Add keybinding and enhance Org mode TODO workflow
+
+- Added `C-;` keybinding for `my/comment-or-uncomment`.
+- Extended `org-todo-keywords` with new states: `ORDR` and `SENT`.
+- Updated `org-todo-keyword-faces` to include styling for `ORDR` and `SENT`.
+
 ** <2025-01-01>
 
 Update keybindings and improve deferred loading for =diff-mode=

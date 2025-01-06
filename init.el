@@ -128,6 +128,7 @@
 (global-set-key (kbd "C-x x g") #'revert-buffer)
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "C-z") #'my/comment-or-uncomment)
+(global-set-key (kbd "C-;") #'my/comment-or-uncomment)
 (global-set-key (kbd "M-0") 'delete-window)
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-2") #'split-window-vertically)
@@ -662,10 +663,12 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
 (setq org-use-speed-commands t)
 (setq org-hide-leading-stars t)
 (setq org-todo-keywords
-      '((sequence "TODO" "DOING" "|" "DONE" "CANCELLED"))
-      org-todo-keyword-faces
+      '((sequence "TODO" "DOING" "ORDR" "SENT" "|" "DONE" "CANCELLED")))
+(setq org-todo-keyword-faces
       '(("TODO" . "#ee5566")
         ("DOING" . "#5577aa")
+        ("ORDR" . "#bb44ee")
+        ("SENT" . "#bb44ee")
         ("DONE" . "#77aa66")
         ("CANCELLED" . "#426b3e")))
 (setq org-goto-interface 'outline-path-completionp)
