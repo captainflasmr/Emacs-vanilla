@@ -423,6 +423,14 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 ;;
 ;; -> keybinding-core
 ;;
+(global-set-key (kbd "C-M-l") (lambda () (interactive)
+                                (my/adaptive-resize t -2)))
+(global-set-key (kbd "C-M-h") (lambda () (interactive)
+                                (my/adaptive-resize t 2)))
+(global-set-key (kbd "C-M-j") (lambda () (interactive)
+                                (my/adaptive-resize nil 1)))
+(global-set-key (kbd "C-M-k") (lambda () (interactive)
+                                (my/adaptive-resize nil -1)))
 (global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
 (global-set-key (kbd "C-c ,") 'find-file-at-point)
@@ -430,8 +438,6 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-set-key (kbd "<f12>") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
 (global-set-key (kbd "C-c h") #'my/shell-create)
-(global-set-key (kbd "C-c j") #'my/repeat-window-size)
-(global-set-key (kbd "M-c") #'my/repeat-window-size)
 (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
 (global-set-key (kbd "C-c o s") #'outline-show-all)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
@@ -698,22 +704,6 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
      ((and (not horizontal) (eq pos 'top)) (enlarge-window delta nil))
      ((and (not horizontal) (eq pos 'bottom)) (enlarge-window (- delta) nil))
      (t (enlarge-window delta horizontal)))))
-;;
-(defun my/repeat-window-size ()
-  "Set up a sparse keymap for repeating window actions with adaptive resizing."
-  (interactive)
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "n") (lambda () (interactive)
-                                (window-swap-states)))
-    (define-key map (kbd "h") (lambda () (interactive)
-                                (my/adaptive-resize t 2)))
-    (define-key map (kbd "l") (lambda () (interactive)
-                                (my/adaptive-resize t -2)))
-    (define-key map (kbd "j") (lambda () (interactive)
-                                (my/adaptive-resize nil 1)))
-    (define-key map (kbd "k") (lambda () (interactive)
-                                (my/adaptive-resize nil -1)))
-    (set-transient-map map t)))
 ;;
 (defun my/dired-du ()
   "Run 'du -hc' and count the total number of files in the directory under
