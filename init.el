@@ -892,50 +892,6 @@ With directories under project root using find."
 (setq-default tab-width 4)
 
 ;;
-;; -> etags-core
-;;
-;;
-(defun my/etags-load ()
-  "Load TAGS file from the first it can find up the directory stack."
-  (interactive)
-  (let ((my-tags-file (locate-dominating-file default-directory "TAGS")))
-    (when my-tags-file
-      (message "Loading tags file: %s" my-tags-file)
-      (visit-tags-table my-tags-file))))
-;;
-(when (executable-find "my-generate-etags.sh")
-  (defun my/etags-update ()
-    "Call external bash script to generate new etags for all languages it can find."
-    (interactive)
-    (async-shell-command "my-generate-etags.sh" "*etags*")))
-;;
-(defun predicate-exclusion-p (dir)
-  "exclusion of directories"
-  (not
-   (or
-    (string-match "/home/jdyer/examples/CPPrograms/nil" dir)
-    )))
-;;
-(defun my/generate-etags ()
-  "Generate TAGS file for various source files in `default-directory` and its subdirectories."
-  (interactive)
-  (message "Getting file list...")
-  (let ((all-files
-         (append
-          (directory-files-recursively default-directory "\\(?:\\.cpp$\\|\\.c$\\|\\.h$\\)" nil 'predicate-exclusion-p)
-          (directory-files-recursively default-directory "\\(?:\\.cs$\\|\\.cs$\\)" nil 'predicate-exclusion-p)
-          (directory-files-recursively default-directory "\\(?:\\.ads$\\|\\.adb$\\)" nil 'predicate-exclusion-p)))
-        (tags-file-path (expand-file-name (concat default-directory "TAGS"))))
-    (unless (file-directory-p default-directory)
-      (error "Default directory does not exist: %s" default-directory))
-    ;; Generate TAGS file
-    (dolist (file all-files)
-      (message file)
-      (shell-command (format "etags --append \%s -o %s" file tags-file-path)))))
-;; (global-set-key (kbd "C-x p l") 'my/etags-load)
-;; (global-set-key (kbd "C-x p u") 'my/etags-update)
-
-;;
 ;; -> shell-core
 ;;
 (defun my/shell-create (name)
