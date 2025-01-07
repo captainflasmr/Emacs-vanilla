@@ -682,31 +682,19 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
   (setq org-agenda-include-diary nil)
   (setq org-agenda-show-all-dates t)
   (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
-  (setq org-agenda-custom-commands
-        '(("m" "Month View" agenda ""
-           ((org-agenda-start-day "today")
-            (org-agenda-span 30)
-            (org-agenda-time-grid nil)))
-          ("0" "Year View (2020)" agenda ""
-           ((org-agenda-start-day "2020-01-01")
-            (org-agenda-span 'year)
-            (org-agenda-time-grid nil)))
-          ("1" "Year View (2021)" agenda ""
-           ((org-agenda-start-day "2021-01-01")
-            (org-agenda-span 'year)
-            (org-agenda-time-grid nil)))
-          ("2" "Year View (2022)" agenda ""
-           ((org-agenda-start-day "2022-01-01")
-            (org-agenda-span 'year)
-            (org-agenda-time-grid nil)))
-          ("3" "Year View (2023)" agenda ""
-           ((org-agenda-start-day "2023-01-01")
-            (org-agenda-span 'year)
-            (org-agenda-time-grid nil)))
-          ("4" "Year View (2024)" agenda ""
-           ((org-agenda-start-day "2024-01-01")
-            (org-agenda-span 'year)
-            (org-agenda-time-grid nil))))))
+  (defun display-year-agenda (&optional year)
+    "Display an agenda entry for a whole year."
+    (interactive (list (read-string "Enter the year: "
+                                    (format-time-string "%Y" (current-time)))))
+    (setq year (string-to-number year))
+    (org-agenda-list)
+    (org-agenda-year-view year)
+    (setq this-year (string-to-number (format-time-string "%Y" (current-time))))
+    (when (= year this-year)
+      (org-agenda-goto-today)
+      (recenter-top-bottom 10))))
+;;
+(global-set-key (kbd "C-c y") 'display-year-agenda)
 
 ;;
 ;; -> scroll-core
