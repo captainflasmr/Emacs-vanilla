@@ -88,6 +88,7 @@
 ;;
 (global-set-key (kbd "M-s ,") #'my/mark-line)
 (global-set-key (kbd "M-s =") #'ediff-buffers)
+(global-set-key (kbd "M-s +") #'ediff-regions-linewise)
 (global-set-key (kbd "M-s g") #'my/grep)
 (global-set-key (kbd "M-s h") #'my/mark-block)
 (global-set-key (kbd "M-s j") #'eval-defun)
