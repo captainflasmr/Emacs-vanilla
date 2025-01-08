@@ -116,7 +116,6 @@
                                 (my/adaptive-resize nil -1)))
 (global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
-(global-set-key (kbd "C-c ,") 'find-file-at-point)
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "<f12>") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
@@ -129,7 +128,6 @@
 (global-set-key (kbd "C-x j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
 (global-set-key (kbd "C-x k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
 (global-set-key (kbd "C-x l") #'scroll-lock-mode)
-(global-set-key (kbd "C-x m") #'my/switch-to-thing)
 (global-set-key (kbd "C-x s") #'save-buffer)
 (global-set-key (kbd "C-x v e") 'vc-ediff)
 (global-set-key (kbd "C-x x g") #'revert-buffer)
@@ -182,7 +180,6 @@
 ;; -> setqs-core
 ;;
 (setq custom-safe-themes t)
-(setq delete-selection-mode nil)
 (setq enable-local-variables :all)
 (setq frame-title-format "%f")
 (setq kill-whole-line t)
@@ -233,7 +230,7 @@
  '(indent-guide-face ((t (:background "#282828" :foreground "#666666"))))
  '(widget-button ((t (:inherit fixed-pitch :weight regular))))
  '(window-divider ((t (:foreground "black"))))
- '(org-tag ((t (:height 0.99))))
+ '(org-tag ((t (:height 0.9))))
  '(vertical-border ((t (:foreground "#000000")))))
 ;;
 (custom-set-variables
@@ -389,20 +386,6 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
     (dolist (item custom-enabled-themes)
       (disable-theme item))
     (load-theme (intern theme) t)))
-;;
-(defun my/switch-to-thing ()
-  "Switch to a buffer, open a recent file, jump to a bookmark,
-                                        or change the theme from a unified interface."
-  (interactive)
-  (let* ((buffers (mapcar #'buffer-name (buffer-list)))
-         (recent-files recentf-list)
-         (bookmarks (bookmark-all-names))
-         (all-options (append buffers recent-files bookmarks))
-         (selection (completing-read "Switch to: " all-options)))
-    (pcase selection
-      ((pred (lambda (sel) (member sel buffers))) (switch-to-buffer selection))
-      ((pred (lambda (sel) (member sel bookmarks))) (bookmark-jump selection))
-      (_ (find-file selection)))))
 ;;
 (defvar highlight-rules
   '((th . (("TODO" . "#999")))
@@ -707,17 +690,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
   (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
   (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
   (define-key dired-mode-map (kbd "C-c i") 'my/image-dired-sort)
-  (define-key dired-mode-map (kbd "W") 'dired-do-async-shell-command)
   (define-key dired-mode-map (kbd "b") 'my/dired-file-to-org-link)
-  (setq dired-guess-shell-alist-user
-        '(("\\.\\(jpg\\|jpeg\\|png\\|gif\\|bmp\\)$" "gthumb")
-          ("\\.\\(mp4\\|mkv\\|avi\\|mov\\|wmv\\|flv\\|mpg\\)$" "mpv")
-          ("\\.\\(mp3\\|wav\\|ogg\\|\\)$" "mpv")
-          ("\\.\\(kra\\)$" "org.kde.krita")
-          ("\\.\\(xcf\\)$" "gimp")
-          ("\\.\\(odt\\|ods\\|doc\\|docx\\)$" "libreoffice")
-          ("\\.\\(html\\|htm\\)$" "firefox")
-          ("\\.\\(pdf\\|epub\\)$" "xournalpp")))
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
 
 ;;
@@ -859,6 +832,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
 ;;
 ;; -> project-core
 ;;
+(require 'project)
 (defun project-root-safe ()
   "Return the project root or nil if unavailable."
   (if (fboundp 'project-root)
