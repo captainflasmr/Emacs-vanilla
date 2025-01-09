@@ -656,6 +656,11 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
   (setq org-agenda-include-diary nil)
   (setq org-agenda-show-all-dates t)
   (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
+  (setq org-agenda-custom-commands
+        '(("m" "Month View" agenda ""
+           ((org-agenda-start-day "today")
+            (org-agenda-span 30)
+            (org-agenda-time-grid nil)))))
   (defun display-year-agenda (&optional year)
     "Display an agenda entry for a whole year."
     (interactive (list (read-string "Enter the year: "
