@@ -1341,7 +1341,10 @@ Demonstrates customizations for shell integration within Emacs, optimizing setti
 (setq eshell-history-size 10000) ;; Adjust size as needed
 (setq eshell-save-history-on-exit t) ;; Enable history saving on exit
 (setq eshell-hist-ignoredups t) ;; Ignore duplicates
-
+;; Activate M-s keybindings
+(with-eval-after-load 'em-hist
+  (define-key eshell-hist-mode-map (kbd "M-s") nil))
+;;
 (org-babel-do-load-languages
  'org-babel-load-languages
  '((shell . t)))
