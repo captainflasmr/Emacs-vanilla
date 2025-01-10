@@ -286,11 +286,16 @@
     (dired-revert)))
 ;;
 (defun my/mark-line ()
-  "Mark whole line."
+  "Mark the current line, handling Eshell prompt if in Eshell."
   (interactive)
-  (beginning-of-line)
-  (push-mark (point) nil t)
-  (end-of-line))
+  (if (derived-mode-p 'eshell-mode)
+      (let ((prompt-end (marker-position eshell-last-output-end)))
+        (goto-char prompt-end)
+        (push-mark (point) nil t)
+        (end-of-line))
+    (beginning-of-line)
+    (push-mark (point) nil t)
+    (end-of-line)))
 ;;
 (defun my/mark-block ()
   "Marking a block of text surrounded by a newline."
