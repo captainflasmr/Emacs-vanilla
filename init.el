@@ -979,24 +979,22 @@ With directories under project root using find."
       (let ((key (read-key
                   (propertize
                    "ChatGPT Shell Commands [q] Quit:\n
+Model:  [m] Start Shell [l] Swap Model
 Code:   [g] Write Git Commit [e] Explain Code [d] Describe Code [u] Generate Unit Test
 Check:  [p] Proofread Region [r] Refactor Code
-Send:   [s] Send Region [a] Send & Review Region
-Other:  [j] Start Shell"
+Send:   [s] Send Region [a] Send & Review Region"
  'face 'minibuffer-prompt))))
         (pcase key
-          (?e (call-interactively 'chatgpt-shell-explain-code))
-          (?p (call-interactively 'chatgpt-shell-proofread-region))
+          (?m (call-interactively 'chatgpt-shell))
+          (?l (call-interactively 'chatgpt-shell-swap-model))
           (?g (call-interactively 'chatgpt-shell-write-git-commit))
-          (?s (call-interactively 'chatgpt-shell-send-region))
+          (?e (call-interactively 'chatgpt-shell-explain-code))
           (?d (call-interactively 'chatgpt-shell-describe-code))
-          (?r (call-interactively 'chatgpt-shell-refactor-code))
           (?u (call-interactively 'chatgpt-shell-generate-unit-test))
+          (?p (call-interactively 'chatgpt-shell-proofread-region))
+          (?r (call-interactively 'chatgpt-shell-refactor-code))
+          (?s (call-interactively 'chatgpt-shell-send-region))
           (?a (call-interactively 'chatgpt-shell-send-and-review-region))
-          (?j (call-interactively 'chatgpt-shell))
-          (?w (call-interactively 'chatgpt-shell-eshell-whats-wrong-with-last-command))
-          (?i (call-interactively 'chatgpt-shell-describe-image))
-          (?m (call-interactively 'chatgpt-shell-swap-model))
           (?q (message "Quit ChatGPT Shell menu."))
           (?\C-g (message "Quit ChatGPT Shell menu."))
           (_ (message "Invalid key: %c" key))))))
