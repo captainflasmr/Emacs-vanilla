@@ -887,30 +887,10 @@ With directories under project root using find."
   (let ((new-buffer-name (concat "*eshell-" name "*")))
     (rename-buffer new-buffer-name t)))
 ;;
-(let ((bash-history-file "~/.bash_history")
-      (eshell-history-file (expand-file-name "eshell/history" user-emacs-directory)))
-  (when (file-exists-p bash-history-file)
-    (with-temp-buffer
-      (insert-file-contents bash-history-file)
-      (append-to-file (buffer-string) nil eshell-history-file))))
-;;
-(defun my/eshell-history-completing-read ()
-  "Search eshell history using completing-read"
-  (interactive)
-  (insert
-   (completing-read "Eshell history: "
-                   (delete-dups
-                    (ring-elements eshell-history-ring)))))
-;;
 (setq eshell-scroll-to-bottom-on-input t)
 (setq-local tab-always-indent 'complete)
-(setq eshell-history-size 10000)
-(setq eshell-save-history-on-exit t)
-(setq eshell-hist-ignoredups t)
-;;
 (with-eval-after-load 'em-hist
-  (define-key eshell-hist-mode-map (kbd "M-s") nil)
-  (define-key eshell-hist-mode-map (kbd "M-r") #'my/eshell-history-completing-read))
+  (define-key eshell-hist-mode-map (kbd "M-s") nil))
 ;;
 (org-babel-do-load-languages
  'org-babel-load-languages
