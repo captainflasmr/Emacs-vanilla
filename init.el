@@ -33,7 +33,7 @@
 ;; -> keys-navigation-core
 ;;
 (defvar my-jump-keymap (make-sparse-keymap))
-(global-set-key (kbd "M-o") my-jump-keymap)
+(global-set-key (kbd "M-l") my-jump-keymap)
 (define-key my-jump-keymap (kbd "=") #'tab-bar-new-tab)
 (define-key my-jump-keymap (kbd "b") (lambda () (interactive) (find-file "~/bin")))
 (define-key my-jump-keymap (kbd "e")
@@ -66,6 +66,7 @@
 ;;
 (defvar my-win-keymap (make-sparse-keymap))
 (global-set-key (kbd "C-q") my-win-keymap)
+(define-key my-win-keymap (kbd "b") #'(lambda () (interactive)(tab-bar-mode 'toggle)))
 (define-key my-win-keymap (kbd "c") #'display-fill-column-indicator-mode)
 (define-key my-win-keymap (kbd "d") #'window-divider-mode)
 (define-key my-win-keymap (kbd "e") #'whitespace-mode)
@@ -78,10 +79,10 @@
 (define-key my-win-keymap (kbd "o") #'toggle-centered-buffer)
 (define-key my-win-keymap (kbd "p") #'variable-pitch-mode)
 (define-key my-win-keymap (kbd "q") #'toggle-menu-bar-mode-from-frame)
+(define-key my-win-keymap (kbd "r") #'my/rainbow-mode)
 (define-key my-win-keymap (kbd "s") #'my/toggle-internal-border-width)
 (define-key my-win-keymap (kbd "u") #'set-cursor-color)
 (define-key my-win-keymap (kbd "v") #'visual-line-mode)
-(define-key my-win-keymap (kbd "b") #'(lambda () (interactive)(tab-bar-mode 'toggle)))
 
 ;;
 ;; -> keys-other-core
@@ -147,7 +148,7 @@
 (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
-(global-set-key (kbd "M-l") #'bookmark-jump)
+(global-set-key (kbd "M-o") #'bookmark-jump)
 (global-set-key (kbd "M-m") #'split-window-vertically)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (global-set-key (kbd "M-z") #'my/comment-or-uncomment)
@@ -645,10 +646,10 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
 (setq org-todo-keywords
       '((sequence "TODO" "DOING" "ORDR" "SENT" "|" "DONE" "CANCELLED")))
 (setq org-todo-keyword-faces
-      '(("TODO" . "#ee5566")
-        ("DOING" . "#5577aa")
-        ("ORDR" . "#bb44ee")
-        ("SENT" . "#bb44ee")
+      '(("TODO" . "#ee6273")
+        ("DOING" . "#6e8baa")
+        ("ORDR" . "#c96eee")
+        ("SENT" . "#c86bee")
         ("DONE" . "#77aa66")
         ("CANCELLED" . "#426b3e")))
 (setq org-goto-interface 'outline-path-completionp)
@@ -886,14 +887,30 @@ With directories under project root using find."
   (let ((new-buffer-name (concat "*eshell-" name "*")))
     (rename-buffer new-buffer-name t)))
 ;;
+(let ((bash-history-file "~/.bash_history")
+      (eshell-history-file (expand-file-name "eshell/history" user-emacs-directory)))
+  (when (file-exists-p bash-history-file)
+    (with-temp-buffer
+      (insert-file-contents bash-history-file)
+      (append-to-file (buffer-string) nil eshell-history-file))))
+;;
+(defun my/eshell-history-completing-read ()
+  "Search eshell history using completing-read"
+  (interactive)
+  (insert
+   (completing-read "Eshell history: "
+                   (delete-dups
+                    (ring-elements eshell-history-ring)))))
+;;
 (setq eshell-scroll-to-bottom-on-input t)
 (setq-local tab-always-indent 'complete)
-(setq eshell-history-size 10000) ;; Adjust size as needed
-(setq eshell-save-history-on-exit t) ;; Enable history saving on exit
-(setq eshell-hist-ignoredups t) ;; Ignore duplicates
-;; Activate M-s keybindings
+(setq eshell-history-size 10000)
+(setq eshell-save-history-on-exit t)
+(setq eshell-hist-ignoredups t)
+;;
 (with-eval-after-load 'em-hist
-  (define-key eshell-hist-mode-map (kbd "M-s") nil))
+  (define-key eshell-hist-mode-map (kbd "M-s") nil)
+  (define-key eshell-hist-mode-map (kbd "M-r") #'my/eshell-history-completing-read))
 ;;
 (org-babel-do-load-languages
  'org-babel-load-languages

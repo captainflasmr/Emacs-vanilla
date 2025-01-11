@@ -10,6 +10,19 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2025-01-11>
+
+eshell history completing-read for M-r
+
+- Changed `M-o` to `M-l` for `my-jump-keymap` keybinding.
+- Switched `M-l` to `M-o` for `bookmark-jump`.
+- Added and reorganized `my-win-keymap` keybindings (e.g., `b` for toggling `tab-bar-mode`, `r` for `my/rainbow-mode`).
+- Adjusted `org-todo-keyword-faces` with updated less saturated colors.
+- Enhanced eshell setup:
+  - Appended Bash history to eshell history on load.
+  - Introduced `my/eshell-history-completing-read`.
+  - Added `M-r` for eshell history search.
+
 ** <2025-01-07>
 
 Refactor Org Agenda custom commands: add dynamic yearly view command
