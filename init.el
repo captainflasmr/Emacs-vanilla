@@ -121,7 +121,7 @@
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "<f12>") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
-(global-set-key (kbd "C-c h") #'my/shell-create)
+;; (global-set-key (kbd "C-c h") #'my/shell-create)
 (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
 (global-set-key (kbd "C-c o s") #'outline-show-all)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
@@ -895,6 +895,25 @@ With directories under project root using find."
 (org-babel-do-load-languages
  'org-babel-load-languages
  '((shell . t)))
+;;
+(defun shell-menu ()
+  "Menu for Shell commands."
+  (interactive)
+  (let ((key (read-key
+              (propertize
+                "Shell Commands [q] Quit:\n
+[e] Eshell [s] Shell"
+                'face 'minibuffer-prompt))))
+    (pcase key
+      (?e (call-interactively 'my/shell-create))
+      (?s (call-interactively 'shell))
+      ;; Quit
+      (?q (message "Quit Shell menu."))
+      (?\C-g (message "Quit Shell menu."))
+      ;; Default Invalid Key
+      (_ (message "Invalid key: %c" key)))))
+;;
+(global-set-key (kbd "C-c h") 'shell-menu)
 
 ;;
 ;; -> tab-bar-core

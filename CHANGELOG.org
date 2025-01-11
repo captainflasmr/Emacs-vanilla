@@ -12,6 +12,10 @@ This document contains the release notes for Emacs-core
 
 ** <2025-01-11>
 
+Added shell menu
+
+** <2025-01-11>
+
 eshell history completing-read for M-r
 
 - Changed `M-o` to `M-l` for `my-jump-keymap` keybinding.

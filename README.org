@@ -29,6 +29,10 @@ Note that this package works in combination with https://github.com/captainflasm
 
 ** <2025-01-11>
 
+Added shell menu
+
+** <2025-01-11>
+
 eshell history completing-read for M-r
 
 - Changed `M-o` to `M-l` for `my-jump-keymap` keybinding.
@@ -451,7 +455,7 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "<f12>") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
-(global-set-key (kbd "C-c h") #'my/shell-create)
+;; (global-set-key (kbd "C-c h") #'my/shell-create)
 (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
 (global-set-key (kbd "C-c o s") #'outline-show-all)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
@@ -1363,6 +1367,25 @@ Demonstrates customizations for shell integration within Emacs, optimizing setti
 (org-babel-do-load-languages
  'org-babel-load-languages
  '((shell . t)))
+;;
+(defun shell-menu ()
+  "Menu for Shell commands."
+  (interactive)
+  (let ((key (read-key
+              (propertize
+                "Shell Commands [q] Quit:\n
+[e] Eshell [s] Shell"
+                'face 'minibuffer-prompt))))
+    (pcase key
+      (?e (call-interactively 'my/shell-create))
+      (?s (call-interactively 'shell))
+      ;; Quit
+      (?q (message "Quit Shell menu."))
+      (?\C-g (message "Quit Shell menu."))
+      ;; Default Invalid Key
+      (_ (message "Invalid key: %c" key)))))
+;;
+(global-set-key (kbd "C-c h") 'shell-menu)
 #+end_src
 
 * tab-bar-core
