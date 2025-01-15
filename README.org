@@ -11,15 +11,18 @@
 
 * Introduction
 
-*Emacs-core* is a stripped-down version of my primary Emacs configuration. It is designed to leverage only the default built-in features of Emacs (v27.1 and later). This makes it ideal for virtual machines or scenarios where you need a fast, package-free Emacs setup that works out of the box on most systems.
+*Emacs-core* is a stripped-down version of my primary Emacs configuration. It is designed to leverage only the default built-in features of the more recent versions of Emacs (v27.2 and later). This makes it ideal for virtual machines or scenarios where you need a fast, package-free Emacs setup that works out of the box on most recent systems.
 
+Supported Emacs versions:
+
+- *27.2* 2021-03-25
+- *28.2* 2022-09-12
+- *29.4* 2024-06-22
+  
 Supported Platforms:
 - SUSE Linux Enterprise (SLES15)
 - SwayWM - Wayland
 - Windows 10
-
-Looking to potentially support:
-- OpenSuse 11.2 (November 12, 2009)
 
 The configuration focuses on ease of use by providing custom keybindings, basic completion support, and visual enhancements without relying on any external packages.
 
@@ -2150,5 +2153,5 @@ Name=New Instance
 Exec=emacs --init-directory=~/.emacs.d.core %F
 #+end_src
 
-and run the basic core Emacs config and test the new features
+and run the basic core Emacs config and test the new features with the Exec changing to different emacs versions as built in the script in this repository : =build-emacs-versions.sh=
 
