@@ -4,8 +4,9 @@
 BUILD_ROOT="$HOME/emacs-builds"
 INSTALL_ROOT="$HOME/emacs-versions"
 
-# Build dependencies for Arch Linux
-BUILD_DEPS="base-devel gtk2 gtk3 libxpm libjpeg-turbo libpng libtiff giflib libxml2 gnutls"
+# Build dependencies for different distributions
+ARCH_BUILD_DEPS="base-devel gtk2 gtk3 libxpm libjpeg-turbo libpng libtiff giflib libxml2 gnutls"
+SLES_BUILD_DEPS="gcc gcc-c++ make automake gtk2-devel gtk3-devel libXpm-devel libjpeg8-devel libpng16-devel libtiff-devel giflib-devel libxml2-devel gnutls-devel cairo-devel harfbuzz-devel"
 
 # 27.2 2021-03-25
 # 28.2 2022-09-12
@@ -16,22 +17,50 @@ VERSIONS=(
     "emacs-29.4"
 )
 
+# Detect OS
+detect_os() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$NAME
+    else
+        OS=$(uname -s)
+    fi
+}
+
 function prepare_environment() {
     echo "Creating build directories..."
     mkdir -p "$BUILD_ROOT"
     mkdir -p "$INSTALL_ROOT"
     
-    echo "Installing build dependencies..."
-    sudo pacman -Syu --needed --noconfirm $BUILD_DEPS
+    detect_os
+    echo "Detected OS: $OS"
     
-    # Check if we have yay for AUR access (optional)
-    if ! command -v yay &> /dev/null; then
-        echo "Installing yay (AUR helper)..."
-        cd /tmp
-        git clone https://aur.archlinux.org/yay.git
-        cd yay
-        makepkg -si --noconfirm
-    fi
+    case "$OS" in
+        *"SLES"*|*"SUSE"*)
+            echo "Installing build dependencies for SUSE SLES..."
+            sudo zypper refresh
+            sudo zypper install -y pattern-devel-base-devel
+            sudo zypper install -y $SLES_BUILD_DEPS
+            ;;
+        *"Garuda"*)
+            echo "Installing build dependencies for Arch Linux..."
+            sudo pacman -Syu --needed --noconfirm $ARCH_BUILD_DEPS
+            
+            # Check if we have yay for AUR access (optional)
+            if ! command -v yay &> /dev/null; then
+                echo "Installing yay (AUR helper)..."
+                cd /tmp
+                git clone https://aur.archlinux.org/yay.git
+                cd yay
+                makepkg -si --noconfirm
+            fi
+            ;;
+        *)
+            echo "Unsupported OS detected: $OS"
+            echo "Please install build dependencies manually and continue."
+            read -p "Press Enter to continue or Ctrl+C to abort..."
+            ;;
+    esac
 }
 
 function build_emacs() {
@@ -91,6 +120,12 @@ function build_emacs() {
 }
 
 function create_pkgbuild() {
+    # Only create PKGBUILD for Arch Linux
+    if [[ "$OS" != *"Arch Linux"* ]]; then
+        echo "PKGBUILD creation is only supported on Arch Linux"
+        return 1
+    fi
+
     local version=$1
     local version_num=${version#emacs-}
     
@@ -142,7 +177,7 @@ EOF
 # Main execution
 echo "This script provides two methods to build Emacs:"
 echo "1. Direct compilation (traditional)"
-echo "2. Using makepkg (Arch way)"
+echo "2. Using makepkg (Arch Linux only)"
 read -p "Which method do you prefer? (1/2): " build_method
 
 case $build_method in
@@ -161,6 +196,11 @@ case $build_method in
         ;;
         
     2)
+        detect_os
+        if [[ "$OS" != *"Arch Linux"* ]]; then
+            echo "makepkg method is only supported on Arch Linux"
+            exit 1
+        fi
         prepare_environment
         for version in "${VERSIONS[@]}"; do
             create_pkgbuild "$version"
