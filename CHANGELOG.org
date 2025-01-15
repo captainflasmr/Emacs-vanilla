@@ -10,6 +10,23 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2025-01-15>
+
+- Introduced `my-kill-ring-save`, an enhanced `kill-ring-save` function:
+  - Automatically copies the current line when no region is selected.
+  - Binds the function globally to `[remap kill-ring-save]`.
+
+- Updated `dired-mode` keybindings:
+  - Added `C` for copying files in `dired`.
+
+- Improved minibuffer prompts clarity:
+  - Reformatted shell and build command menus for better readability.
+
+- Removed unused or redundant configuration:
+  - Eliminated `completion-cycle-threshold` setting.
+  - Removed unnecessary `em-hist` keybinding adjustments.
+  - Deleted legacy LLM-related configurations and dependencies.
+
 ** <2025-01-11>
 
 Added shell menu

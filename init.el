@@ -18,8 +18,6 @@
         try-expand-all-abbrevs try-expand-dabbrev
         try-expand-dabbrev-all-buffers try-expand-dabbrev-from-kill
         try-complete-lisp-symbol-partially try-complete-lisp-symbol))
-;; TAB cycle if there are only few candidates
-(setq completion-cycle-threshold 3)
 
 ;;
 ;; -> modeline-completion-core
@@ -588,6 +586,14 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
     (setq rows (reverse rows))
     (push 'hline rows)
     (cons header rows)))
+;;
+ (defun my-kill-ring-save (beg end flash)
+   (interactive (if (use-region-p)
+                    (list (region-beginning) (region-end) nil)
+                  (list (line-beginning-position)
+                        (line-beginning-position 2) 'flash)))
+   (kill-ring-save beg end))
+(global-set-key [remap kill-ring-save] 'my-kill-ring-save)
 
 ;;
 ;; -> window-positioning-core
@@ -699,6 +705,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
 (setq dired-deletion-confirmer '(lambda (x) t))
 (setq dired-recursive-deletes 'always)
 (with-eval-after-load 'dired
+  (define-key dired-mode-map (kbd "C") 'dired-copy-file)
   (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
   (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
   (define-key dired-mode-map (kbd "C-c i") 'my/image-dired-sort)
@@ -889,8 +896,6 @@ With directories under project root using find."
 ;;
 (setq eshell-scroll-to-bottom-on-input t)
 (setq-local tab-always-indent 'complete)
-(with-eval-after-load 'em-hist
-  (define-key eshell-hist-mode-map (kbd "M-s") nil))
 ;;
 (org-babel-do-load-languages
  'org-babel-load-languages
@@ -901,8 +906,9 @@ With directories under project root using find."
   (interactive)
   (let ((key (read-key
               (propertize
-                "Shell Commands [q] Quit:\n
-[e] Eshell [s] Shell"
+               "--- Shell Commands [q] Quit: ---
+[e] Eshell
+[s] Shell"
                 'face 'minibuffer-prompt))))
     (pcase key
       (?e (call-interactively 'my/shell-create))
@@ -964,62 +970,6 @@ With directories under project root using find."
   (setq font-general "Source Code Pro 12")
   (set-frame-font font-general nil t)
   (add-to-list 'default-frame-alist `(font . ,font-general)))
-
-;;
-;; -> LLM-core
-;;
-;;
-(defun safe-add-to-load-path (dir)
-  "Add DIR to `load-path` if it exists."
-  (when (file-directory-p dir)
-    (add-to-list 'load-path dir)))
-;; Add directories to load-path only if they exist
-(safe-add-to-load-path (expand-file-name "lisp/shell-maker" user-emacs-directory))
-(safe-add-to-load-path (expand-file-name "lisp/chatgpt-shell" user-emacs-directory))
-;;
-(when (locate-library "shell-maker")
-  (require 'shell-maker))
-;;
-(when (locate-library "chatgpt-shell")
-  (require 'chatgpt-shell)
-  (setq chatgpt-shell-models
-        '(((:provider . "Ollama")
-           (:label . "Ollama-llama")
-           (:version . "llama3_2")
-           (:short-version)
-           (:token-width . 4)
-           (:context-window . 8192)
-           (:handler . chatgpt-shell-ollama--handle-ollama-command)
-           (:filter . chatgpt-shell-ollama--extract-ollama-response)
-           (:payload . chatgpt-shell-ollama-make-payload)
-           (:url . chatgpt-shell-ollama--make-url))))
-  (with-eval-after-load 'chatgpt-shell
-    (defun chatgpt-shell-menu ()
-      "Menu for ChatGPT Shell commands."
-      (interactive)
-      (let ((key (read-key
-                  (propertize
-                   "ChatGPT Shell Commands [q] Quit:\n
-Model:  [m] Start Shell [l] Swap Model
-Code:   [g] Write Git Commit [e] Explain Code [d] Describe Code [u] Generate Unit Test
-Check:  [p] Proofread Region [r] Refactor Code
-Send:   [s] Send Region [a] Send & Review Region"
- 'face 'minibuffer-prompt))))
-        (pcase key
-          (?m (call-interactively 'chatgpt-shell))
-          (?l (call-interactively 'chatgpt-shell-swap-model))
-          (?g (call-interactively 'chatgpt-shell-write-git-commit))
-          (?e (call-interactively 'chatgpt-shell-explain-code))
-          (?d (call-interactively 'chatgpt-shell-describe-code))
-          (?u (call-interactively 'chatgpt-shell-generate-unit-test))
-          (?p (call-interactively 'chatgpt-shell-proofread-region))
-          (?r (call-interactively 'chatgpt-shell-refactor-code))
-          (?s (call-interactively 'chatgpt-shell-send-region))
-          (?a (call-interactively 'chatgpt-shell-send-and-review-region))
-          (?q (message "Quit ChatGPT Shell menu."))
-          (?\C-g (message "Quit ChatGPT Shell menu."))
-          (_ (message "Invalid key: %c" key))))))
-  (global-set-key (kbd "C-c g") 'chatgpt-shell-menu))
 
 ;;
 ;; -> programming-core
@@ -1093,12 +1043,13 @@ Send:   [s] Send Region [a] Send & Review Region"
   (interactive)
   (let ((key (read-key
               (propertize
-                "Build and Diagnostic Commands [q] Quit:\n
-CMake:   [p] Set Preset [c] Configure [RET] Build [i] Install [g] Refresh [x] Clean [s] List Presets
-Actions: [f] Toggle Flycheck [d] Show Diagnostics
-Coding:  [e] Eglot & Flymake [u] Undo Eglot & Flymake [h] Stop Eglot
-Run:     [r] All [1] CigiDummyIG [2] CigiMiniHost [3] CigiMiniHostCSharp
-Kill:    [5] Kill CigiDummyIG [6] Kill CigiMiniHost [7] Kill CigiMiniHostCSharp [k] Kill All"
+                "------- Build and Diagnostic Commands [q] Quit: -------
+CMake   [p] Set Preset      [c] Configure          [R] Build [i] Install
+        [g] Refresh         [x] Clean              [s] List Presets
+Actions [f] Toggle Flycheck [d] Show Diagnostics
+Coding  [e] Eglot & Flymake [u] Undo Eglot/Flymake [h] Stop Eglot
+Run     [r] All             [1] CigiDummyIG        [2] CigiMiniHost       [3] CigiMiniHostCSharp
+Kill    [5] CigiDummyIG     [6] CigiMiniHost       [7] CigiMiniHostCSharp [k] All"
                 'face 'minibuffer-prompt))))
     (pcase key
       ;; CMake Commands
@@ -1412,11 +1363,6 @@ It doesn't define any keybindings. In comparison with `ada-mode',
     (apply args)))
 
 ;;
-;; -> core-configuration
-;;
-(load-file "~/.emacs.d/Emacs-enhanced/init.el")
-
-;;
 ;; -> image-dired
 ;;
 (require 'image-mode)
@@ -1574,6 +1520,11 @@ It doesn't define any keybindings. In comparison with `ada-mode',
         (my/dwim-convert-generic chosen-command)))
     ;;
     (global-set-key (kbd "C-c v") 'my/dwim-convert-with-selection)))
+
+;;
+;; -> core-configuration
+;;
+(load-file "~/.emacs.d/Emacs-enhanced/init.el")
 
 ;;
 ;; -> dwim
