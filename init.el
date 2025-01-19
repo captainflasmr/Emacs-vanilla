@@ -111,9 +111,9 @@
 (global-set-key (kbd "C-M-h") (lambda () (interactive)
                                 (my/adaptive-resize t 2)))
 (global-set-key (kbd "C-M-j") (lambda () (interactive)
-                                (my/adaptive-resize nil 1)))
-(global-set-key (kbd "C-M-k") (lambda () (interactive)
                                 (my/adaptive-resize nil -1)))
+(global-set-key (kbd "C-M-k") (lambda () (interactive)
+                                (my/adaptive-resize nil 1)))
 (global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
 (global-set-key (kbd "C-c a") #'org-agenda)
@@ -1475,6 +1475,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
   (progn
     (defvar my/dwim-convert-commands
       '("ConvertNoSpace" "AudioConvert" "AudioInfo" "AudioNormalise"
+        "MoveFile"
         "AudioTrimSilence" "PictureAutoColour" "PictureConvert"
         "PictureCrush" "PictureFrompdf" "PictureInfo" "PictureMontage"
         "PictureOrganise" "PictureCrop" "PictureRotateFlip" "PictureEmail"
