@@ -52,7 +52,7 @@
 (define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "~/DCIM/content/")))
 (define-key my-jump-keymap (kbd "-") #'tab-close)
 ;;
-(global-set-key (kbd "M-a") #'my/quick-window-jump)
+(global-set-key (kbd "M-;") #'my/quick-window-jump)
 
 ;;
 ;; -> keys-visual-core
@@ -134,6 +134,7 @@
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "C-z") #'my/comment-or-uncomment)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
+(global-set-key (kbd "M-a") #'delete-other-windows)
 (global-set-key (kbd "M-0") 'delete-window)
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-2") #'split-window-vertically)
