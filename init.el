@@ -51,7 +51,6 @@
 (define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
 (define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "~/DCIM/content/")))
 (define-key my-jump-keymap (kbd "-") #'tab-close)
-;;
 (global-set-key (kbd "M-;") #'my/quick-window-jump)
 
 ;;
@@ -119,7 +118,6 @@
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "<f12>") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
-;; (global-set-key (kbd "C-c h") #'my/shell-create)
 (global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
 (global-set-key (kbd "C-c o s") #'outline-show-all)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
@@ -233,7 +231,7 @@
  '(window-divider ((t (:foreground "black"))))
  '(org-tag ((t (:height 0.9))))
  '(vertical-border ((t (:foreground "#000000")))))
-;;
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -255,7 +253,7 @@
   (newline)
   (insert-kbd-macro name)
   (newline))
-;;
+
 (defun my/comment-or-uncomment ()
   "Comments or uncomments the current line or region."
   (interactive)
@@ -264,7 +262,7 @@
        (region-beginning)(region-end))
     (comment-or-uncomment-region
      (line-beginning-position)(line-end-position))))
-;;
+
 (defun my/dired-duplicate-file (arg)
   "Duplicate a file from DIRED with an incremented number.
                                 If ARG is provided, it sets the counter."
@@ -284,7 +282,7 @@
         (copy-directory file new-file)
       (copy-file file new-file))
     (dired-revert)))
-;;
+
 (defun my/mark-line ()
   "Mark the current line, handling Eshell prompt if in Eshell."
   (interactive)
@@ -296,7 +294,7 @@
     (beginning-of-line)
     (push-mark (point) nil t)
     (end-of-line)))
-;;
+
 (defun my/mark-block ()
   "Marking a block of text surrounded by a newline."
   (interactive)
@@ -320,7 +318,7 @@
     (define-key map (kbd "k") (lambda () (interactive)
                                 (tab-bar-history-forward)))
     (set-transient-map map t)))
-;;
+
 (defun my/get-window-position ()
   "Return the position of the current window as 'left', 'right', 'top', or 'bottom'."
   (let* ((edges (window-edges))
@@ -336,7 +334,7 @@
      ((= min-y 0) 'top)
      ((= max-y frame-height) 'bottom)
      (t 'center))))
-;;
+
 (defun my/adaptive-resize (horizontal delta)
   "Resize the current window adaptively based on its position.
 HORIZONTAL is non-nil for horizontal resizing (left/right).
@@ -348,7 +346,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
      ((and (not horizontal) (eq pos 'top)) (enlarge-window delta nil))
      ((and (not horizontal) (eq pos 'bottom)) (enlarge-window (- delta) nil))
      (t (enlarge-window delta horizontal)))))
-;;
+
 (defun my/dired-du ()
   "Run 'du -hc' and count the total number of files in the directory under
   the cursor in Dired, then display the output in a buffer named *dired-du*."
@@ -364,14 +362,14 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
                    (shell-quote-argument current-dir))
            output-buffer-name))
       (message "The current point is not a directory."))))
-;;
+
 (defun darken-color (color percent)
   "Return a darker shade of COLOR by reducing its brightness by PERCENT."
   (let* ((rgb (color-values color))
          (factor (/ (- 100 percent) 100.0))
          (darker-rgb (mapcar (lambda (x) (max 0 (round (* x factor)))) rgb)))
     (apply 'format "#%02x%02x%02x" (mapcar (lambda (x) (/ x 256)) darker-rgb))))
-;;
+
 (defun set-hl-line-darker-background ()
   "Set the hl-line background to a slightly darker shade of the default background,
                                             preserving the original foreground colors of the current line."
@@ -384,7 +382,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
            (darker-bg (darken-color bg 15)))
       (custom-set-faces
        `(hl-line ((t (:background ,darker-bg))))))))
-;;
+
 (defun my/load-theme ()
   "Prompt to select a theme from available themes and load the selected theme."
   (interactive)
@@ -392,7 +390,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
     (dolist (item custom-enabled-themes)
       (disable-theme item))
     (load-theme (intern theme) t)))
-;;
+
 (defvar highlight-rules
   '((th . (("TODO" . "#999")))
     (td . (("\\&gt" . "#bbb")
@@ -404,13 +402,13 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
            ("DOING" . "#ddf")
            ("DONE" . "#dfd"))))
   "Alist of elements ('th or 'td) and associated keywords/colors for row highlighting.")
-;;
+
 (defun apply-row-style (row-start row-attributes color)
   "Apply a background COLOR to the row starting at ROW-START with ROW-ATTRIBUTES."
   (goto-char row-start)
   (kill-line)
   (insert (format "<tr%s style=\"background: %s\">\n" row-attributes color)))
-;;
+
 (defun highlight-row-by-rules (row-start row-end row-attributes element)
   "Highlight a row based on ELEMENT ('th or 'td) keyword rules within ROW-START to ROW-END."
   (let ((rules (cdr (assoc element highlight-rules))))
@@ -421,7 +419,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
                 (and (re-search-forward (format "<%s.*>%s.*</%s>" element keyword element) row-end t)
                      (goto-char row-start)))
           (apply-row-style row-start row-attributes color))))))
-;;
+
 (defun my/html-org-table-highlight ()
   "Open the exported HTML file, find tables with specific classes,
                                                         and add background styles to rows containing keywords in <td> or <th> elements."
@@ -447,7 +445,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
                   (highlight-row-by-rules row-start row-end row-attributes 'th)
                   (highlight-row-by-rules row-start row-end row-attributes 'td)))))))
       (write-region (point-min) (point-max) html-file))))
-;;
+
 (defun my/format-to-table (&optional match properties-to-display)
   "Format Org headings into a structured alist, optionally filtered by MATCH
   and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"))."
@@ -513,7 +511,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
     (setq rows (reverse rows))
     (push 'hline rows)
     (cons header rows)))
-;;
+
 (defun my/html-promote-headers ()
   "Promote all headers in the HTML file by one level (e.g., h2 -> h1, h3 -> h2, etc.), accounting for attributes."
   (interactive)
@@ -539,13 +537,13 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
             (while (re-search-forward close-tag-regex nil t)
               (replace-match new-close-tag)))))
       (write-region (point-min) (point-max) html-file))))
-;;
+
 (defun my/copy-buffer-to-kill-ring ()
   "Copy the entire buffer to the kill ring without changing the point."
   (interactive)
   (kill-ring-save (point-min) (point-max))
   (message (concat (buffer-file-name) " Copied")))
-;;
+
 (defun my/dired-file-to-org-link ()
   "Transform the file path under the cursor in Dired to an Org mode
   link and copy to kill ring.
@@ -564,7 +562,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
           (kill-new org-link)
           (message "Copied to kill ring: %s" org-link))
       (message "No file under the cursor"))))
-;;
+
 (defun my/collate-issues-into-table ()
   "Insert all Org headings in the current buffer into the Org file."
   (interactive)
@@ -587,8 +585,8 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
     (setq rows (reverse rows))
     (push 'hline rows)
     (cons header rows)))
-;;
- (defun my-kill-ring-save (beg end flash)
+
+(defun my-kill-ring-save (beg end flash)
    (interactive (if (use-region-p)
                     (list (region-beginning) (region-end) nil)
                   (list (line-beginning-position)
@@ -651,7 +649,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
 (setq org-use-speed-commands t)
 (setq org-hide-leading-stars t)
 (setq org-todo-keywords
-      '((sequence "TODO" "DOING" "ORDR" "SENT" "|" "DONE" "CANCELLED")))
+      '((sequence "TODO(t)" "DOING(g)" "ORDR(o)" "SENT(s)" "|" "DONE(d)" "CANCELLED(c)")))
 (setq org-todo-keyword-faces
       '(("TODO" . "#ee6273")
         ("DOING" . "#6e8baa")
@@ -685,7 +683,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
     (when (= year this-year)
       (org-agenda-goto-today)
       (recenter-top-bottom 10))))
-;;
+
 (global-set-key (kbd "C-c y") 'display-year-agenda)
 
 ;;
@@ -730,7 +728,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
 (set-fringe-mode '(20 . 20))
 (setq bookmark-set-fringe-mark nil)
 (setq bookmark-fringe-mark nil)
-;;
+
 (add-hook 'prog-mode-hook #'my/rainbow-mode)
 (add-hook 'org-mode-hook #'my/rainbow-mode)
 (add-hook 'conf-space-mode-hook #'my/rainbow-mode)
@@ -762,7 +760,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
             (setq imenu-generic-expression
                   '((nil "^;;[[:space:]]+-> \\(.*\\)$" 1)))
             (imenu-add-menubar-index)))
-;;
+
 (add-hook 'conf-space-mode-hook
           (lambda ()
             (setq imenu-sort-function 'imenu--sort-by-name)
@@ -795,9 +793,9 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
        'mode-line-modes
        'mode-line-misc-info
        '(:eval (format " | Point: %d" (point)))))
-;;
+
 (setq-default mode-line-format my/mode-line-format)
-;;
+
 (defun my/toggle-mode-line ()
   "Toggle the visibility of the mode-line by checking its current state."
   (interactive)
@@ -862,7 +860,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
     ;; Compatibility for Emacs < 29
     (when-let ((project (project-current)))
       (cdr (project-roots project)))))
-;;
+
 (defun my/project-create-compilation-search-path ()
   "Populate the 'compilation-search-path' variable.
 With directories under project root using find."
@@ -876,7 +874,7 @@ With directories under project root using find."
           (split-string
            (shell-command-to-string find-command)
            "\n" t))))
-;;
+
 (setq project-vc-extra-root-markers '(".project"))
 
 ;;
@@ -894,14 +892,14 @@ With directories under project root using find."
   (eshell 'new)
   (let ((new-buffer-name (concat "*eshell-" name "*")))
     (rename-buffer new-buffer-name t)))
-;;
+
 (setq eshell-scroll-to-bottom-on-input t)
 (setq-local tab-always-indent 'complete)
-;;
+
 (org-babel-do-load-languages
  'org-babel-load-languages
  '((shell . t)))
-;;
+
 (defun shell-menu ()
   "Menu for Shell commands."
   (interactive)
@@ -919,7 +917,7 @@ With directories under project root using find."
       (?\C-g (message "Quit Shell menu."))
       ;; Default Invalid Key
       (_ (message "Invalid key: %c" key)))))
-;;
+
 (global-set-key (kbd "C-c h") 'shell-menu)
 
 ;;
@@ -948,7 +946,7 @@ With directories under project root using find."
            "c:/GNAT/2021/bin")))
     (setenv "PATH" (mapconcat 'identity xPaths ";"))
     (setq exec-path (append xPaths (list "." exec-directory))))
-  ;;
+
   (custom-theme-set-faces
    'user
    '(variable-pitch ((t (:family "Consolas" :height 110 :weight normal))))
@@ -957,7 +955,7 @@ With directories under project root using find."
   (setq font-general "Consolas 11")
   (set-frame-font font-general nil t)
   (add-to-list 'default-frame-alist `(font . ,font-general)))
-;;
+
 (setq tab-bar-show 1)
 
 ;;
@@ -983,7 +981,7 @@ With directories under project root using find."
    'ada-mode
    'eglot-workspace-configuration
    `((ada . (:projectFile ,(dired-get-filename))))))
-;;
+
 (setq vc-handled-backends '(SVN Git))
 ;;
 ;; all-purpose build menu
@@ -991,37 +989,37 @@ With directories under project root using find."
 (defvar cmake-preset
   "build/linux/debug"
   "cmake-preset")
-;;
+
 (defun change-directory-and-run (dir command bufname)
   "Change to DIR and run the COMMAND."
   (let ((default-directory dir))
     (async-shell-command command bufname)
     (message "Running command: %s:%s" dir command)))
-;;
+
 (defun run-exe-command (dir exe bufname)
   "Run EXE from a specified DIR."
   (message "run-exe-command: %s:%s:%s" dir exe bufname)
   (change-directory-and-run dir exe bufname))
-;;
+
 (defun run-cmake-command (command)
   "Run COMMAND from the top level of the project."
   (message command)
   (change-directory-and-run (project-root (project-current t)) command "*cmake*"))
-;;
+
 (defun run-cmake-compile-command (command)
   "Run compile COMMAND from the top level of the project."
   (message command)
   (let ((default-directory (project-root (project-current t))))
     (compile command)
     (message "Running command: %s:%s" dir command)))
-;;
+
 (defun kill-async-buffer (buffer-name)
   "Kill the async buffer with BUFFER-NAME."
   (let ((buffer (get-buffer buffer-name)))
     (when buffer
       (kill-buffer buffer)
       (message "Killed buffer: %s" buffer-name))))
-;;
+
 (defun list-cmake-presets ()
   "List available CMake presets using `cmake --list-presets=configure`."
   (let ((output (shell-command-to-string "cmake --list-presets=configure")))
@@ -1030,7 +1028,7 @@ With directories under project root using find."
                     (if (string-match "^\\s-+\"\\([^\"]+\\)\"\\s-*$" line)
                         (match-string 1 line)))
                   (split-string output "\n")))))
-;;
+
 (defun transient-select-cmake-preset ()
   "Function to select a CMake preset."
   (interactive)
@@ -1038,7 +1036,7 @@ With directories under project root using find."
          (preset (completing-read "Select CMake preset: " presets nil t)))
     (setq cmake-preset preset)
     (message "Selected CMake preset: %s" preset)))
-;;
+
 (defun build-menu ()
   "Menu for Build and Diagnostic commands (Horizontal Layout)."
   (interactive)
@@ -1107,7 +1105,7 @@ Kill    [5] CigiDummyIG     [6] CigiMiniHost       [7] CigiMiniHostCSharp [k] Al
       (?\C-g (message "Quit Build menu."))
       ;; Default Invalid Key
       (_ (message "Invalid key: %c" key)))))
-;;
+
 (global-set-key (kbd "M-RET") #'build-menu)
 
 ;;
@@ -1317,7 +1315,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 (global-set-key (kbd "C-c t") 'toggle-centered-buffer)
 (global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
 (global-set-key (kbd "M-s u") #'my/org-promote-all-headings)
-;;
+
 (defun my-icomplete-copy-candidate ()
   "Copy the current Icomplete candidate to the kill ring."
   (interactive)
@@ -1325,9 +1323,9 @@ It doesn't define any keybindings. In comparison with `ada-mode',
     (when candidate
       (kill-new (substring-no-properties candidate))
       (abort-recursive-edit))))
-;;
+
 (define-key minibuffer-local-completion-map (kbd "C-c ,") 'my-icomplete-copy-candidate)
-;;
+
 (defun prot/keyboard-quit-dwim ()
   "Do-What-I-Mean behaviour for a general `keyboard-quit'.
     The generic `keyboard-quit' does not do the expected thing when
@@ -1348,9 +1346,9 @@ It doesn't define any keybindings. In comparison with `ada-mode',
     (abort-recursive-edit))
    (t
     (keyboard-quit))))
-;;
+
 (define-key global-map (kbd "C-g") #'prot/keyboard-quit-dwim)
-;;
+
 (add-to-list 'display-buffer-alist
              '("\\*my-rg-results"
                (display-buffer-reuse-window display-buffer-in-direction)
@@ -1358,7 +1356,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
                (dedicated . t)
                (window-width . 0.33)
                (inhibit-same-window . t)))
-;;
+
 (defun without-gc (&rest args)
   (let ((gc-cons-threshold most-positive-fixnum))
     (apply args)))
@@ -1368,21 +1366,21 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;;
 (require 'image-mode)
 (require 'image-dired)
-;;
+
 (add-to-list 'display-buffer-alist
              '("\\*image-dired\\*"
                display-buffer-in-direction
                (direction . left)
                (window . root)
                (window-width . 0.5)))
-;;
+
 (add-to-list 'display-buffer-alist
              '("\\*image-dired-display-image\\*"
                display-buffer-in-direction
                (direction . right)
                (window . root)
                (window-width . 0.5)))
-;;
+
 (defun my/image-dired-sort (arg)
   "Sort images in various ways given ARG."
   (interactive "P")
@@ -1405,7 +1403,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
         (select-window idw)
         (image-dired-display-this)
         (image-dired-line-up-dynamic)))))
-;;
+
 (setq image-use-external-converter t)
 (setq image-dired-external-viewer "/usr/bin/gthumb")
 (setq image-dired-show-all-from-dir-max-files 999)
@@ -1413,7 +1411,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 (setq image-dired-thumb-relief 0)
 (setq image-dired-thumb-margin 5)
 (setq image-dired-thumb-size 120)
-;;
+
 (defun my/image-save-as ()
   "Save the current image buffer as a new file."
   (interactive)
@@ -1437,7 +1435,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
           (image-dired ".")
           (image-dired-display-this))
       (find-file new-file t))))
-;;
+
 (defun my/delete-current-image-and-move-to-next ()
   "Delete the current image file and move to the next image in the directory."
   (interactive)
@@ -1446,7 +1444,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
       (image-next-file 1)
       (delete-file current-file)
       (message "Deleted %s" current-file))))
-;;
+
 (defun my/delete-current-image-thumbnails ()
   "Delete the current image file and move to the next image in the directory."
   (interactive)
@@ -1454,12 +1452,12 @@ It doesn't define any keybindings. In comparison with `ada-mode',
     (delete-file file-name)
     (image-dired-delete-char)
     (image-dired-display-this)))
-;;
+
 (eval-after-load 'image-mode
   '(progn
      (define-key image-mode-map (kbd "C-d") 'my/delete-current-image-and-move-to-next)
      (define-key image-mode-map (kbd "C-x C-s") 'my/image-save-as)))
-;;
+
 (eval-after-load 'image-dired
   '(progn
      (define-key image-dired-thumbnail-mode-map (kbd "C-d") 'my/delete-current-image-thumbnails)
@@ -1492,13 +1490,13 @@ It doesn't define any keybindings. In comparison with `ada-mode',
         "PictureCorrect" "Picture2pdf" "PictureTag" "PictureTagRename"
         "OtherTagDate" "VideoRemoveFlips")
       "List of commands for dwim-convert.")
-    ;;
+
     (defun my/read-lines (file-path)
       "Return a list of lines of a file at FILE-PATH."
       (with-temp-buffer
         (insert-file-contents file-path)
         (split-string (buffer-string) "\n" t)))
-    ;;
+    
     (defun my/dwim-convert-generic (command)
       "Execute a dwim-shell-command-on-marked-files with the given COMMAND."
       (let* ((unique-text-file "~/bin/category-list-uniq.txt")
@@ -1513,14 +1511,14 @@ It doesn't define any keybindings. In comparison with `ada-mode',
                                  (concat command " " user-selection " " (mapconcat 'identity files " "))
                                (concat command " " (mapconcat 'identity files " ")))
                              "*convert*")))
-    ;;
+    
     (defun my/dwim-convert-with-selection ()
       "Prompt user to choose command and execute dwim-shell-command-on-marked-files."
       (interactive)
       (let ((chosen-command (completing-read "Choose command: "
                                              my/dwim-convert-commands)))
         (my/dwim-convert-generic chosen-command)))
-    ;;
+    
     (global-set-key (kbd "C-c v") 'my/dwim-convert-with-selection)))
 
 ;;
