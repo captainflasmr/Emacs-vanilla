@@ -983,6 +983,7 @@ With directories under project root using find."
    `((ada . (:projectFile ,(dired-get-filename))))))
 
 (setq vc-handled-backends '(SVN Git))
+
 ;;
 ;; all-purpose build menu
 ;;
@@ -1042,14 +1043,14 @@ With directories under project root using find."
   (interactive)
   (let ((key (read-key
               (propertize
-                "------- Build and Diagnostic Commands [q] Quit: -------
+               "------- Build and Diagnostic Commands [q] Quit: -------
 CMake   [p] Set Preset      [c] Configure          [R] Build [i] Install
         [g] Refresh         [x] Clean              [s] List Presets
 Actions [f] Toggle Flycheck [d] Show Diagnostics
 Coding  [e] Eglot & Flymake [u] Undo Eglot/Flymake [h] Stop Eglot
 Run     [r] All             [1] CigiDummyIG        [2] CigiMiniHost       [3] CigiMiniHostCSharp
 Kill    [5] CigiDummyIG     [6] CigiMiniHost       [7] CigiMiniHostCSharp [k] All"
-                'face 'minibuffer-prompt))))
+               'face 'minibuffer-prompt))))
     (pcase key
       ;; CMake Commands
       (?p (call-interactively 'transient-select-cmake-preset))
@@ -1107,6 +1108,30 @@ Kill    [5] CigiDummyIG     [6] CigiMiniHost       [7] CigiMiniHostCSharp [k] Al
       (_ (message "Invalid key: %c" key)))))
 
 (global-set-key (kbd "M-RET") #'build-menu)
+
+;;
+;; coding menu
+;;
+(defun code-menu ()
+  "Menu format code ."
+  (interactive)
+  (let ((key (read-key
+              (propertize
+               "------- Coding [q] Quit: -------
+Coding  [e] Eglot & Flymake [u] Undo Eglot/Flymake [h] Stop Eglot"
+               'face 'minibuffer-prompt))))
+    (pcase key
+      ;; Coding
+      (?e (progn (call-interactively 'eglot) (flymake-mode 1)))
+      (?u (progn (eglot-shutdown-all) (flymake-mode -1)))
+      (?h (eglot-shutdown-all))
+      ;; Quit
+      (?q (message "Quit Build menu."))
+      (?\C-g (message "Quit Build menu."))
+      ;; Default Invalid Key
+      (_ (message "Invalid key: %c" key)))))
+
+(global-set-key (kbd "M-c") #'code-menu)
 
 ;;
 ;; -> ada-core
