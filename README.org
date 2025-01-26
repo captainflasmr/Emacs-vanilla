@@ -30,6 +30,14 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2025-01-26>
+
+- Improve mode-line and update org-todo keywords
+
+  - Deleted the `my/toggle-mode-line` keybinding and function.
+  - Enhanced mode-line by Including version control (VC) information to display backend, branch, and state.
+  - Simplified and reorganized the mode-line setup for improved maintainability.
+
 ** <2025-01-15>
 
 - Introduced `my-kill-ring-save`, an enhanced `kill-ring-save` function:
@@ -423,7 +431,6 @@ Sets up keybindings for quickly toggling visual features like font, theme, line 
 (define-key my-win-keymap (kbd "e") #'whitespace-mode)
 (define-key my-win-keymap (kbd "f") #'font-lock-mode)
 (define-key my-win-keymap (kbd "h") #'global-hl-line-mode)
-(define-key my-win-keymap (kbd "k") #'my/toggle-mode-line)
 (define-key my-win-keymap (kbd "l") #'my/sync-tab-bar-to-theme)
 (define-key my-win-keymap (kbd "m") #'my/load-theme)
 (define-key my-win-keymap (kbd "n") #'display-line-numbers-mode)
@@ -1069,7 +1076,7 @@ Extends and customizes Org mode for document structuring, note-taking, and proje
 (setq org-use-speed-commands t)
 (setq org-hide-leading-stars t)
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "DOING(g)" "ORDR(o)" "SENT(s)" "|" "DONE(d)" "CANCELLED(c)")))
+      '((sequence "TODO(t)" "DOING(d)" "ORDR(o)" "SENT(s)" "|" "DONE(n)" "CANCELLED(c)")))
 (setq org-todo-keyword-faces
       '(("TODO" . "#ee6273")
         ("DOING" . "#6e8baa")
@@ -1240,35 +1247,37 @@ Customizes the modeline for displaying active modes, buffer names, or other cont
 ;;
 ;; -> modeline-core
 ;;
-(setq my/mode-line-format
-      (list
-       '(:eval (if (and (buffer-file-name) (buffer-modified-p))
-                   (propertize " * " 'face
-                               '(:background "#ff0000" :foreground "#ffffff" :inherit bold)) ""))
-       '(:eval
-         (propertize (format "%s" (abbreviate-file-name default-directory)) 'face '(:inherit bold)))
-       '(:eval
-         (if (not (equal major-mode 'dired-mode))
-             (propertize (format "%s " (buffer-name)))
-           " "))
-       'mode-line-position
-       'mode-line-modes
-       'mode-line-misc-info
-       '(:eval (format " | Point: %d" (point)))))
-
-(setq-default mode-line-format my/mode-line-format)
-
-(defun my/toggle-mode-line ()
-  "Toggle the visibility of the mode-line by checking its current state."
-  (interactive)
-  (if (eq mode-line-format nil)
-      (progn
-        (setq-default mode-line-format my/mode-line-format)
-        (setq frame-title-format "%f"))
-    (progn
-      (setq-default mode-line-format nil)
-      (setq frame-title-format mode-line-format)))
-  (force-mode-line-update t))
+(setq-default mode-line-format
+              (list
+               '(:eval (if (and (buffer-file-name) (buffer-modified-p))
+                           (propertize " * " 'face
+                                       '(:background "#ff0000" :foreground "#ffffff" :inherit bold))
+                         ""))
+               '(:eval
+                 (propertize (format "%s" (abbreviate-file-name default-directory))
+                             'face '(:inherit bold)))
+               '(:eval
+                 (if (not (equal major-mode 'dired-mode))
+                     (propertize (format "%s " (buffer-name)))
+                   " "))
+               '(:eval
+                 (when vc-mode
+                   (let* ((backend (vc-backend (buffer-file-name)))
+                          (branch (substring-no-properties vc-mode (+ (length (symbol-name backend)) 2)))
+                          (state (vc-state (buffer-file-name))))
+                     (propertize
+                      (format "<%s:%s:%s> "
+                              backend
+                              branch
+                              (if state
+                                  (symbol-name state)
+                                "Unknown"))
+                      'face '(:inherit italic)))))
+               'mode-line-position
+               ;; 'mode-line-modes
+               'mode-line-misc-info
+               '(:eval (format " %d" (point)))
+               ))
 #+end_src
 
 * grep-core

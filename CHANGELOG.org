@@ -10,6 +10,14 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2025-01-26>
+
+- Improve mode-line and update org-todo keywords
+
+  - Deleted the `my/toggle-mode-line` keybinding and function.
+  - Enhanced mode-line by Including version control (VC) information to display backend, branch, and state.
+  - Simplified and reorganized the mode-line setup for improved maintainability.
+
 ** <2025-01-15>
 
 - Introduced `my-kill-ring-save`, an enhanced `kill-ring-save` function:
