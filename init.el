@@ -34,6 +34,7 @@
 (global-set-key (kbd "M-l") my-jump-keymap)
 (define-key my-jump-keymap (kbd "=") #'tab-bar-new-tab)
 (define-key my-jump-keymap (kbd "b") (lambda () (interactive) (find-file "~/bin")))
+(define-key my-jump-keymap (kbd "c") (lambda () (interactive) (find-file "~/DCIM/content/aaa--calendar.org")))
 (define-key my-jump-keymap (kbd "e")
             (lambda ()
               (interactive)
@@ -68,6 +69,7 @@
 (define-key my-win-keymap (kbd "d") #'window-divider-mode)
 (define-key my-win-keymap (kbd "e") #'whitespace-mode)
 (define-key my-win-keymap (kbd "f") #'font-lock-mode)
+(define-key my-win-keymap (kbd "g") #'font-lock-update)
 (define-key my-win-keymap (kbd "h") #'global-hl-line-mode)
 (define-key my-win-keymap (kbd "l") #'my/sync-tab-bar-to-theme)
 (define-key my-win-keymap (kbd "m") #'my/load-theme)
@@ -213,6 +215,8 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(mode-line ((t (:height 140 :underline nil :overline nil :box nil))))
+ '(mode-line-inactive ((t (:height 140 :underline nil :overline nil :box nil))))
  '(org-level-1 ((t (:inherit default :weight regular :height 1.0))))
  '(org-level-2 ((t (:inherit default :weight light :height 1.0))))
  '(org-level-3 ((t (:inherit default :weight light :height 1.0))))
@@ -597,7 +601,7 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
 ;; -> window-positioning-core
 ;;
 (add-to-list 'display-buffer-alist
-             '("\\*\\(.*shell\\|eldoc.*\\*\\|Flymake.*\\)"
+             '("\\*\\(.*shell\\|.*term.*\\|eldoc.*\\*\\|Flymake.*\\)"
                (display-buffer-reuse-window display-buffer-at-bottom)
                (inhibit-same-window . t)
                (window-height . 0.3)))
@@ -709,6 +713,15 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
   (define-key dired-mode-map (kbd "C-c i") 'my/image-dired-sort)
   (define-key dired-mode-map (kbd "b") 'my/dired-file-to-org-link)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
+(defun my-dired-switch-to-destination ()
+  "Switch to the destination window after copying in Dired."
+  (when-let ((dest-window (get-window-with-predicate
+                           (lambda (win)
+                             (with-current-buffer (window-buffer win)
+                               (and (derived-mode-p 'dired-mode)
+                                    (not (eq win (selected-window)))))))))
+    (select-window dest-window)))
+(advice-add 'dired-do-copy :after (lambda (&rest _) (my-dired-switch-to-destination)))
 
 ;;
 ;; -> visuals-core
@@ -777,37 +790,39 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
 ;;
 ;; -> modeline-core
 ;;
+
 (setq-default mode-line-format
               (list
                '(:eval (if (and (buffer-file-name) (buffer-modified-p))
                            (propertize " * " 'face
-                                       '(:background "#ff0000" :foreground "#ffffff" :inherit bold))
+                                       '(:background "#ff0000" :foreground "#ffffff"))
                          ""))
                '(:eval
-                 (propertize (format "%s" (abbreviate-file-name default-directory))
-                             'face '(:inherit bold)))
+                 (format "%s" (abbreviate-file-name default-directory)))
                '(:eval
                  (if (not (equal major-mode 'dired-mode))
-                     (propertize (format "%s " (buffer-name)))
+                     (format "%s " (replace-regexp-in-string "<[^>]+>$" "" (buffer-name)))
                    " "))
                '(:eval
                  (when vc-mode
                    (let* ((backend (vc-backend (buffer-file-name)))
                           (branch (substring-no-properties vc-mode (+ (length (symbol-name backend)) 2)))
                           (state (vc-state (buffer-file-name))))
-                     (propertize
-                      (format "<%s:%s:%s> "
-                              backend
-                              branch
-                              (if state
-                                  (symbol-name state)
-                                "Unknown"))
-                      'face '(:inherit italic)))))
+                     (concat
+                      (propertize
+                       (format "%s:%s"
+                               backend
+                               branch)
+                       'face '(:inherit bold))
+                      (when state
+                        (if (string= state "edited")
+                            (propertize
+                             (format ":%s " state) 'face '(:inherit bold))
+                          (format ":%s " state)))))))
                'mode-line-position
-               ;; 'mode-line-modes
+               'mode-line-modes
                'mode-line-misc-info
-               '(:eval (format " %d" (point)))
-               ))
+               '(:eval (format "%d" (point)))))
 
 ;;
 ;; -> grep-core
@@ -901,18 +916,42 @@ With directories under project root using find."
  'org-babel-load-languages
  '((shell . t)))
 
+(defun ansi-term-update-mode-line ()
+  "Update the mode-line to show whether `ansi-term` is in character or line mode."
+  (setq mode-name
+        (if (term-in-char-mode)
+            "Ansi-Term [Char]"
+          "Ansi-Term [Line]"))
+  (force-mode-line-update))
+
+(defun enable-ansi-term-mode-line-indicator ()
+  "Enable dynamic mode-line indicator for `ansi-term` modes."
+  (add-hook 'post-command-hook #'ansi-term-update-mode-line nil t))
+
+(defun disable-ansi-term-mode-line-indicator ()
+  "Disable dynamic mode-line indicator for `ansi-term` modes."
+  (remove-hook 'post-command-hook #'ansi-term-update-mode-line t))
+
+(add-hook 'term-mode-hook #'enable-ansi-term-mode-line-indicator)
+(add-hook 'term-mode-hook
+          (lambda ()
+            (add-hook 'kill-buffer-hook #'disable-ansi-term-mode-line-indicator nil t)))
+
 (defun shell-menu ()
   "Menu for Shell commands."
   (interactive)
   (let ((key (read-key
               (propertize
                "--- Shell Commands [q] Quit: ---
-[e] Eshell
-[s] Shell"
+[e] eshell
+[s] shell
+[a] ansi-term"
+
                 'face 'minibuffer-prompt))))
     (pcase key
       (?e (call-interactively 'my/shell-create))
       (?s (call-interactively 'shell))
+      (?a (call-interactively 'ansi-term))
       ;; Quit
       (?q (message "Quit Shell menu."))
       (?\C-g (message "Quit Shell menu."))
@@ -1119,13 +1158,29 @@ Kill    [5] CigiDummyIG     [6] CigiMiniHost       [7] CigiMiniHostCSharp [k] Al
   (let ((key (read-key
               (propertize
                "------- Coding [q] Quit: -------
-Coding  [e] Eglot & Flymake [u] Undo Eglot/Flymake [h] Stop Eglot"
+Action  [f] Toggle Flycheck      [d] Show diagnostics
+Eglot   [e] Eglot & Flymake      [u] Undo Eglot/Flymake   [h] Stop Eglot
+Xref    [x] xref-find-references [n] xref-find-defintions [p] xref-go-back
+Eldoc   [l] eldoc toggle         [c] eldoc-doc-buffer
+Ada     [o] Other File"
                'face 'minibuffer-prompt))))
     (pcase key
-      ;; Coding
+      ;; Actions
+      (?f (call-interactively 'flymake-mode))
+      (?d (flymake-show-buffer-diagnostics))
+      ;; Eglot
       (?e (progn (call-interactively 'eglot) (flymake-mode 1)))
       (?u (progn (eglot-shutdown-all) (flymake-mode -1)))
       (?h (eglot-shutdown-all))
+      ;; Xref
+      (?x (call-interactively 'xref-find-references))
+      (?n (call-interactively 'xref-find-definitions))
+      (?p (call-interactively 'xref-go-back))
+      ;; Eldoc
+      (?l (global-eldoc-mode 'toggle))
+      (?c (call-interactively 'eldoc-doc-buffer))
+      ;; Ada
+      (?o (ada-light-other-file))
       ;; Quit
       (?q (message "Quit Build menu."))
       (?\C-g (message "Quit Build menu."))

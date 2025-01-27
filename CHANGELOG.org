@@ -10,6 +10,38 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2025-01-27>
+
+Enhanced keybindings, modeline, and shell workflows
+
+*Keybindings:*
+- Added `M-c` in `my-jump-keymap` to quickly open `~/DCIM/content/aaa--calendar.org`.
+- Added `M-g` in `my-win-keymap` to invoke `font-lock-update`.
+- Introduced a new Dired feature: Automatically switch to the destination window after copying files.
+
+*UI Improvements:*
+- Customized `mode-line` and `mode-line-inactive` for consistent height and removed unnecessary decorations.
+- Enhanced `mode-line` to:
+  - Display cleaner buffer names by stripping `<...>` suffixes.
+  - Improve version control indicators for `edited` files with better formatting.
+
+*Buffer Display:*
+- Updated `display-buffer-alist` to match `.*term.*` buffers, optimizing layout for terminal-related buffers at the bottom.
+
+*Term Mode Enhancements:*
+- Added dynamic mode-line updates for `ansi-term` to indicate `[Char]` or `[Line]` mode.
+- Hooks for `term-mode` ensure proper tracking and cleanup of mode-line updates.
+
+*Shell Menu:*
+- Extended the shell command menu with `ansi-term`.
+
+*Coding Workflow:*
+- Incorporated additional actions in the coding helper menu:
+  - Flycheck toggle and diagnostics view.
+  - Xref navigation for references and definitions.
+  - Eldoc enhancements and toggle.
+  - Ada file switching with `other-file`.
+  
 ** <2025-01-26>
 
 - Improve mode-line and update org-todo keywords
