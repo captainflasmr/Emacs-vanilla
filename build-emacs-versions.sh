@@ -5,12 +5,12 @@ BUILD_ROOT="$HOME/emacs-builds"
 INSTALL_ROOT="$HOME/emacs-versions"
 
 # Build dependencies for different distributions
-ARCH_BUILD_DEPS="base-devel gtk2 gtk3 libxpm libjpeg-turbo libpng libtiff giflib libxml2 gnutls"
-SLES_BUILD_DEPS="gcc gcc-c++ make automake gtk2-devel gtk3-devel libXpm-devel libjpeg8-devel libpng16-devel libtiff-devel giflib-devel libxml2-devel gnutls-devel cairo-devel harfbuzz-devel"
+ARCH_BUILD_DEPS="base-devel gtk2 gtk3 libxpm libjpeg-turbo libpng libtiff giflib libxml2 gnutls librsvg"
+SLES_BUILD_DEPS="gcc gcc-c++ make automake gtk2-devel gtk3-devel libXpm-devel libjpeg8-devel libpng16-devel libtiff-devel giflib-devel libxml2-devel gnutls-devel cairo-devel harfbuzz-devel librsvg-devel"
 
 # 27.2 2021-03-25
 # 28.2 2022-09-12
-# 29.4 2024-06-22 
+# 29.4 2024-06-22
 VERSIONS=(
     "emacs-27.2"
     "emacs-28.2"
@@ -36,7 +36,7 @@ function prepare_environment() {
     echo "Detected OS: $OS"
     
     case "$OS" in
-        *"SLES"*|*"SUSE"*)
+        *"SLED"*|"SLES"*|*"SUSE"*)
             echo "Installing build dependencies for SUSE SLES..."
             sudo zypper refresh
             sudo zypper install -y pattern-devel-base-devel
@@ -95,7 +95,8 @@ function build_emacs() {
             --with-gif \
             --with-tiff \
             --with-gnutls \
-            --with-xml2
+            --with-xml2 \
+            --with-rsvg
     else
         # Newer versions use GTK3
         ./configure \
@@ -109,7 +110,8 @@ function build_emacs() {
             --with-gnutls \
             --with-xml2 \
             --with-cairo \
-            --with-harfbuzz
+            --with-harfbuzz \
+            --with-rsvg
     fi
     
     # Use all available cores for compilation
