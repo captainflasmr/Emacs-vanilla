@@ -10,6 +10,15 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2025-01-28>
+
+Refactor color adjustment logic and improve hl-line background handling
+
+- Replace `darken-color` with a more versatile `adjust-color` function that supports both darkening and lightening with minimum visible increments for very dark colors.
+- Update `set-hl-line-darker-background` to `set-simple-hl-line`:
+  - Adjust background dynamically based on theme brightness.
+  - Lightens backgrounds of dark themes by 20% and darkens light themes by 5%.
+
 ** <2025-01-27>
 
 Enhanced keybindings, modeline, and shell workflows

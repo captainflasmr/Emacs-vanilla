@@ -366,25 +366,37 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
            output-buffer-name))
       (message "The current point is not a directory."))))
 
-(defun darken-color (color percent)
-  "Return a darker shade of COLOR by reducing its brightness by PERCENT."
+(defun adjust-color (color percent)
+  "Adjust COLOR by PERCENT (positive to lighten, negative to darken).
+For very dark backgrounds, ensures a minimum visible difference."
   (let* ((rgb (color-values color))
-         (factor (/ (- 100 percent) 100.0))
-         (darker-rgb (mapcar (lambda (x) (max 0 (round (* x factor)))) rgb)))
-    (apply 'format "#%02x%02x%02x" (mapcar (lambda (x) (/ x 256)) darker-rgb))))
+         (factor (/ (+ 100 percent) 100.0))
+         (min-increment 4096)  ; minimum increment for very dark colors
+         (new-rgb (mapcar (lambda (x)
+                           (if (> percent 0)
+                               ;; When lightening, ensure minimum increment
+                               (max (+ x min-increment)
+                                    (round (* x factor)))
+                               ;; When darkening, just use factor
+                               (max 0 (round (* x factor)))))
+                         rgb)))
+    (apply 'format "#%02x%02x%02x" (mapcar (lambda (x) (/ x 256)) new-rgb))))
 
-(defun set-hl-line-darker-background ()
-  "Set the hl-line background to a slightly darker shade of the default background,
-                                            preserving the original foreground colors of the current line."
+(defun set-simple-hl-line ()
+  "Set the hl-line background based on current theme.
+Lightens dark themes by 20%, darkens light themes by 5%."
   (interactive)
   (require 'hl-line)
   (unless global-hl-line-mode
     (global-hl-line-mode 1))
   (when (facep 'hl-line)
     (let* ((bg (face-background 'default))
-           (darker-bg (darken-color bg 15)))
+           (is-dark (not (string-greaterp bg "#888888")))
+           (adjusted-bg (if is-dark
+                           (adjust-color bg 20)
+                         (adjust-color bg -5))))
       (custom-set-faces
-       `(hl-line ((t (:background ,darker-bg))))))))
+       `(hl-line ((t (:background ,adjusted-bg))))))))
 
 (defun my/load-theme ()
   "Prompt to select a theme from available themes and load the selected theme."
