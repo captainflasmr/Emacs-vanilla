@@ -677,7 +677,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (setq org-use-speed-commands t)
 (setq org-hide-leading-stars t)
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "DOING(d)" "ORDR(o)" "SENT(s)" "|" "DONE(n)" "CANCELLED(c)")))
+      '((sequence "TODO(t)" "DOING(g)" "ORDR(o)" "SENT(s)" "|" "DONE(n)" "CANCELLED(c)")))
 (setq org-todo-keyword-faces
       '(("TODO" . "#ee6273")
         ("DOING" . "#6e8baa")
