@@ -10,6 +10,13 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2025-02-02>
+
+Imported shell environment variables and enabled org-babel for C
+
+- Added `import-shell-environment` function to import shell variables like PATH.
+- Configured `org-babel` to support C language.
+
 ** <2025-01-28>
 
 Refactor color adjustment logic and improve hl-line background handling

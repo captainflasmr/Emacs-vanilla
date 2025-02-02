@@ -30,6 +30,13 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2025-02-02>
+
+Imported shell environment variables and enabled org-babel for C
+
+- Added `import-shell-environment` function to import shell variables like PATH.
+- Configured `org-babel` to support C language.
+
 ** <2025-01-28>
 
 Refactor color adjustment logic and improve hl-line background handling
@@ -1604,6 +1611,24 @@ Curates configurations specific to Linux, making adjustments for paths, fonts, a
 ;; -> programming-core
 ;;
 ;;
+
+;; import shell variables
+(defun import-shell-environment (env-var)
+  "Import a specific ENV-VAR from the shell and set it inside Emacs."
+  (let ((value (shell-command-to-string
+                (concat "bash --login -c 'echo $" env-var "'"))))
+    (when value
+      (setenv env-var value)
+      (when (string= env-var "PATH") ;; Special handling for PATH
+        (setq exec-path (split-string value path-separator))))))
+
+(import-shell-environment "PATH")
+
+;; org babel
+(require 'org)
+(org-babel-do-load-languages
+ 'org-babel-load-languages '((C . t)))
+
 (defun my/eglot-dir-locals ()
   "Create .dir-locals.el file for eglot ada-mode using the selected DIRED path."
   (interactive)

@@ -1028,6 +1028,24 @@ With directories under project root using find."
 ;; -> programming-core
 ;;
 ;;
+
+;; import shell variables
+(defun import-shell-environment (env-var)
+  "Import a specific ENV-VAR from the shell and set it inside Emacs."
+  (let ((value (shell-command-to-string
+                (concat "bash --login -c 'echo $" env-var "'"))))
+    (when value
+      (setenv env-var value)
+      (when (string= env-var "PATH") ;; Special handling for PATH
+        (setq exec-path (split-string value path-separator))))))
+
+(import-shell-environment "PATH")
+
+;; org babel
+(require 'org)
+(org-babel-do-load-languages
+ 'org-babel-load-languages '((C . t)))
+
 (defun my/eglot-dir-locals ()
   "Create .dir-locals.el file for eglot ada-mode using the selected DIRED path."
   (interactive)
