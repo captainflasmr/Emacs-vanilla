@@ -611,6 +611,17 @@ Lightens dark themes by 20%, darkens light themes by 5%."
    (kill-ring-save beg end))
 (global-set-key [remap kill-ring-save] 'my-kill-ring-save)
 
+(defun disk-space-query ()
+  "Run 'df -h' and display the output in a new buffer."
+  (interactive)
+  (let ((output-buffer (get-buffer-create "*Disk Space*")))
+    (with-current-buffer output-buffer
+      (erase-buffer)
+      (insert (shell-command-to-string "df -h"))
+      (display-buffer output-buffer))))
+
+(global-set-key (kbd "<f8>") 'disk-space-query)
+
 ;;
 ;; -> window-positioning-core
 ;;
