@@ -10,6 +10,15 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2025-02-04>
+
+Refactor global keybindings and add selective text folding function
+
+- Updated `C-x k` to `kill-buffer`.
+- Moved tab-bar history bindings to `C-c j` and `C-c k`.
+- Added `C-c f` to bind `my/selective-display-fold`.
+- Defined `my/selective-display-fold` function for selective text folding.
+
 ** <2025-02-02>
 
 Imported shell environment variables and enabled org-babel for C

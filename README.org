@@ -30,6 +30,15 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2025-02-04>
+
+Refactor global keybindings and add selective text folding function
+
+- Updated `C-x k` to `kill-buffer`.
+- Moved tab-bar history bindings to `C-c j` and `C-c k`.
+- Added `C-c f` to bind `my/selective-display-fold`.
+- Defined `my/selective-display-fold` function for selective text folding.
+
 ** <2025-02-02>
 
 Imported shell environment variables and enabled org-babel for C
@@ -45,123 +54,6 @@ Refactor color adjustment logic and improve hl-line background handling
 - Update `set-hl-line-darker-background` to `set-simple-hl-line`:
   - Adjust background dynamically based on theme brightness.
   - Lightens backgrounds of dark themes by 20% and darkens light themes by 5%.
-
-** <2025-01-27>
-
-Enhanced keybindings, modeline, and shell workflows
-
-*Keybindings:*
-- Added `M-c` in `my-jump-keymap` to quickly open `~/DCIM/content/aaa--calendar.org`.
-- Added `M-g` in `my-win-keymap` to invoke `font-lock-update`.
-- Introduced a new Dired feature: Automatically switch to the destination window after copying files.
-
-*UI Improvements:*
-- Customized `mode-line` and `mode-line-inactive` for consistent height and removed unnecessary decorations.
-- Enhanced `mode-line` to:
-  - Display cleaner buffer names by stripping `<...>` suffixes.
-  - Improve version control indicators for `edited` files with better formatting.
-
-*Buffer Display:*
-- Updated `display-buffer-alist` to match `.*term.*` buffers, optimizing layout for terminal-related buffers at the bottom.
-
-*Term Mode Enhancements:*
-- Added dynamic mode-line updates for `ansi-term` to indicate `[Char]` or `[Line]` mode.
-- Hooks for `term-mode` ensure proper tracking and cleanup of mode-line updates.
-
-*Shell Menu:*
-- Extended the shell command menu with `ansi-term`.
-
-*Coding Workflow:*
-- Incorporated additional actions in the coding helper menu:
-  - Flycheck toggle and diagnostics view.
-  - Xref navigation for references and definitions.
-  - Eldoc enhancements and toggle.
-  - Ada file switching with `other-file`.
-  
-** <2025-01-26>
-
-- Improve mode-line and update org-todo keywords
-
-  - Deleted the `my/toggle-mode-line` keybinding and function.
-  - Enhanced mode-line by Including version control (VC) information to display backend, branch, and state.
-  - Simplified and reorganized the mode-line setup for improved maintainability.
-
-** <2025-01-15>
-
-- Introduced `my-kill-ring-save`, an enhanced `kill-ring-save` function:
-  - Automatically copies the current line when no region is selected.
-  - Binds the function globally to `[remap kill-ring-save]`.
-
-- Updated `dired-mode` keybindings:
-  - Added `C` for copying files in `dired`.
-
-- Improved minibuffer prompts clarity:
-  - Reformatted shell and build command menus for better readability.
-
-- Removed unused or redundant configuration:
-  - Eliminated `completion-cycle-threshold` setting.
-  - Removed unnecessary `em-hist` keybinding adjustments.
-  - Deleted legacy LLM-related configurations and dependencies.
-
-** <2025-01-11>
-
-Added shell menu
-
-** <2025-01-11>
-
-eshell history completing-read for M-r
-
-- Changed `M-o` to `M-l` for `my-jump-keymap` keybinding.
-- Switched `M-l` to `M-o` for `bookmark-jump`.
-- Added and reorganized `my-win-keymap` keybindings (e.g., `b` for toggling `tab-bar-mode`, `r` for `my/rainbow-mode`).
-- Adjusted `org-todo-keyword-faces` with updated less saturated colors.
-- Enhanced eshell setup:
-  - Appended Bash history to eshell history on load.
-  - Introduced `my/eshell-history-completing-read`.
-  - Added `M-r` for eshell history search.
-
-** <2025-01-07>
-
-Refactor Org Agenda custom commands: add dynamic yearly view command
-
-- Replaced hardcoded yearly views with `display-year-agenda` function.
-- Added interactive prompt for selecting a year dynamically.
-- Bound `display-year-agenda` to "C-c y".
-
-** <2025-01-06>
-
-Add keybinding and enhance Org mode TODO workflow
-
-- Added `C-;` keybinding for `my/comment-or-uncomment`.
-- Extended `org-todo-keywords` with new states: `ORDR` and `SENT`.
-- Updated `org-todo-keyword-faces` to include styling for `ORDR` and `SENT`.
-
-** <2025-01-01>
-
-Update keybindings and improve deferred loading for =diff-mode=
-
-- Changed backup keybinding from =C-c b= to =<f12>= to align with function key usage 
-  for global/system actions.
-- Updated =diff-mode= keybinding adjustments to use =with-eval-after-load=:
-  - Ensures =M-j= and =M-k= bindings are unset only after =diff-mode= is loaded.
-  - Prevents potential issues with uninitialized =diff-mode-map=.
-- No changes to functionality; these updates improve keybinding management and load behavior.
-
-** <2024-12-31>
-
-Refactor and update keybindings, configuration, and package setup
-
-- Removed unused or redundant global keybindings, such as:
-  - `C-x ;` (my/switch-to-thing)
-  - `M-'` (set-mark-command)
-  - `M-;` and `M-c` (delete-other-windows)
-  - Others redundant to existing functionality or cleanup.
-- Updated `M-l` keybinding to `bookmark-jump` from `split-window-horizontally`.
-- Unset keybindings in `diff-mode-map` for `M-j` and `M-k`.
-
-- Adjusted package configurations:
-  - Removed `gptel`-related setup as it is no longer needed.
-  - Updated `chatgpt-shell` quick access command binding from `?l` to `?j`.
 
 * Issues
 
@@ -546,8 +438,9 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (global-set-key (kbd "C-x [") #'beginning-of-buffer)
 (global-set-key (kbd "C-x ]") #'end-of-buffer)
-(global-set-key (kbd "C-x j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
-(global-set-key (kbd "C-x k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
+(global-set-key (kbd "C-x k") #'kill-buffer)
+(global-set-key (kbd "C-c j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
+(global-set-key (kbd "C-c k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
 (global-set-key (kbd "C-x l") #'scroll-lock-mode)
 (global-set-key (kbd "C-x s") #'save-buffer)
 (global-set-key (kbd "C-x v e") 'vc-ediff)
@@ -1815,6 +1708,18 @@ Ada     [o] Other File"
       (_ (message "Invalid key: %c" key)))))
 
 (global-set-key (kbd "M-c") #'code-menu)
+
+(global-set-key (kbd "C-c f") 'my/selective-display-fold)
+
+(defun my/selective-display-fold (&optional level)
+  "Fold text indented same of more than the cursor.
+If level is set, set the indent level to LEVEL.
+If 'selective-display' is already set to LEVEL, clicking
+F5 again will unset 'selective-display' by setting it to 0."
+  (interactive "P")
+  (if (eq selective-display (1+ (current-column)))
+      (set-selective-display 0)
+    (set-selective-display (or level (1+ (current-column))))))
 
 #+end_src
 

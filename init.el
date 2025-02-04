@@ -124,8 +124,9 @@
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (global-set-key (kbd "C-x [") #'beginning-of-buffer)
 (global-set-key (kbd "C-x ]") #'end-of-buffer)
-(global-set-key (kbd "C-x j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
-(global-set-key (kbd "C-x k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
+(global-set-key (kbd "C-x k") #'kill-buffer)
+(global-set-key (kbd "C-c j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
+(global-set-key (kbd "C-c k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
 (global-set-key (kbd "C-x l") #'scroll-lock-mode)
 (global-set-key (kbd "C-x s") #'save-buffer)
 (global-set-key (kbd "C-x v e") 'vc-ediff)
@@ -1231,6 +1232,18 @@ Ada     [o] Other File"
       (_ (message "Invalid key: %c" key)))))
 
 (global-set-key (kbd "M-c") #'code-menu)
+
+(global-set-key (kbd "C-c f") 'my/selective-display-fold)
+
+(defun my/selective-display-fold (&optional level)
+  "Fold text indented same of more than the cursor.
+If level is set, set the indent level to LEVEL.
+If 'selective-display' is already set to LEVEL, clicking
+F5 again will unset 'selective-display' by setting it to 0."
+  (interactive "P")
+  (if (eq selective-display (1+ (current-column)))
+      (set-selective-display 0)
+    (set-selective-display (or level (1+ (current-column))))))
 
 ;;
 ;; -> ada-core
