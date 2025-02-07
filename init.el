@@ -50,6 +50,7 @@
 (define-key my-jump-keymap (kbd "m") #'customize-themes)
 (define-key my-jump-keymap (kbd "o") #'bookmark-jump)
 (define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
+(define-key my-jump-keymap (kbd "s") (lambda () (interactive) (find-file "~/source")))
 (define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "~/DCIM/content/")))
 (define-key my-jump-keymap (kbd "-") #'tab-close)
 (global-set-key (kbd "M-;") #'my/quick-window-jump)
@@ -734,6 +735,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (setq dired-no-confirm t)
 (setq dired-deletion-confirmer '(lambda (x) t))
 (setq dired-recursive-deletes 'always)
+
 (with-eval-after-load 'dired
   (define-key dired-mode-map (kbd "C") 'dired-copy-file)
   (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
@@ -741,15 +743,19 @@ Lightens dark themes by 20%, darkens light themes by 5%."
   (define-key dired-mode-map (kbd "C-c i") 'my/image-dired-sort)
   (define-key dired-mode-map (kbd "b") 'my/dired-file-to-org-link)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
+
 (defun my-dired-switch-to-destination ()
   "Switch to the destination window after copying in Dired."
-  (when-let ((dest-window (get-window-with-predicate
-                           (lambda (win)
-                             (with-current-buffer (window-buffer win)
-                               (and (derived-mode-p 'dired-mode)
-                                    (not (eq win (selected-window)))))))))
+  (when-let ((dest-window
+              (get-window-with-predicate
+               (lambda (win)
+                 (with-current-buffer (window-buffer win)
+                   (and (derived-mode-p 'dired-mode)
+                        (not (eq win (selected-window)))))))))
     (select-window dest-window)))
+
 (advice-add 'dired-do-copy :after (lambda (&rest _) (my-dired-switch-to-destination)))
+(advice-add 'dired-do-rename :after (lambda (&rest _) (my-dired-switch-to-destination)))
 
 ;;
 ;; -> visuals-core
