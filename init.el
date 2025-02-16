@@ -851,8 +851,9 @@ Lightens dark themes by 20%, darkens light themes by 5%."
                       (when state
                         (if (string= state "edited")
                             (propertize
-                             (format ":%s " state) 'face '(:inherit bold))
-                          (format ":%s " state)))))))
+                             (format ":%s " state) 'face '(:foreground "#ff0000" :inherit bold))
+                           (propertize
+                            (format ":%s " state) 'face '(:foreground "#00ff00"))))))))
                'mode-line-position
                'mode-line-modes
                'mode-line-misc-info
