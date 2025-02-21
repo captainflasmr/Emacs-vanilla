@@ -81,6 +81,7 @@
 (define-key my-win-keymap (kbd "r") #'my/rainbow-mode)
 (define-key my-win-keymap (kbd "s") #'my/toggle-internal-border-width)
 (define-key my-win-keymap (kbd "u") #'set-cursor-color)
+(define-key my-win-keymap (kbd "U") #'set-foreground-color)
 (define-key my-win-keymap (kbd "v") #'visual-line-mode)
 
 ;;
@@ -103,7 +104,10 @@
 (global-set-key (kbd "M-s e") #'(lambda ()(interactive)
                                   (org-odt-export-to-odt)
                                   (async-shell-command
-                                   "libreoffice --headless --convert-to docx confluence--setup-sles.odt" "*create-docs*")))
+                                   (concat "libreoffice --headless --convert-to docx "
+                                           (file-name-with-extension
+                                            (file-name-nondirectory (buffer-file-name))
+                                            "odt")) "*create-docs*")))
 (global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
 
 ;;
@@ -122,8 +126,8 @@
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "<f12>") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
-(global-set-key (kbd "C-c o h") #'outline-hide-sublevels)
-(global-set-key (kbd "C-c o s") #'outline-show-all)
+(global-set-key (kbd "M-[") #'outline-hide-sublevels)
+(global-set-key (kbd "M-]") #'outline-show-all)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (global-set-key (kbd "C-x [") #'beginning-of-buffer)
 (global-set-key (kbd "C-x ]") #'end-of-buffer)
@@ -142,8 +146,6 @@
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-2") #'split-window-vertically)
 (global-set-key (kbd "M-3") #'split-window-horizontally)
-(global-set-key (kbd "M-[") #'yank)
-(global-set-key (kbd "M-]") #'yank-pop)
 (global-set-key (kbd "M-e") #'dired-jump)
 (global-set-key (kbd "M-g i") #'imenu)
 (global-set-key (kbd "M-g o") #'org-goto)
