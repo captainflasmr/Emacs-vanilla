@@ -1264,9 +1264,10 @@ Customizes the modeline for displaying active modes, buffer names, or other cont
                       (when state
                         (if (string= state "edited")
                             (propertize
-                             (format ":%s " state) 'face '(:foreground "#ff0000" :inherit bold))
+                             (format ":%s " state) 'face '(:inherit bold :inverse-video nil))
                            (propertize
-                            (format ":%s " state) 'face '(:foreground "#00ff00"))))))))
+                            (format " ") 'face '(:inverse-video nil))
+                           ))))))
                'mode-line-position
                'mode-line-modes
                'mode-line-misc-info
