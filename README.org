@@ -1026,6 +1026,8 @@ Configures rules and behaviours for display-buffer functions to control how new 
                (allow-no-window . t)))
 (add-to-list 'display-buffer-alist
              '("\\*Messages" display-buffer-same-window))
+(add-to-list 'display-buffer-alist
+             '("\\*Process" display-buffer-same-window))
 #+end_src
 
 * org-core

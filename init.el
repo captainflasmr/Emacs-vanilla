@@ -663,6 +663,8 @@ Lightens dark themes by 20%, darkens light themes by 5%."
                (allow-no-window . t)))
 (add-to-list 'display-buffer-alist
              '("\\*Messages" display-buffer-same-window))
+(add-to-list 'display-buffer-alist
+             '("\\*Process" display-buffer-same-window))
 
 ;;
 ;; -> org-core
