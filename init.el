@@ -95,7 +95,6 @@
 (global-set-key (kbd "M-s h") #'my/mark-block)
 (global-set-key (kbd "M-h") #'my/mark-block)
 (global-set-key (kbd "M-s j") #'eval-defun)
-(global-set-key (kbd "M-s l") #'eval-expression)
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
 (global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
 
@@ -115,8 +114,8 @@
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "<f12>") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
-(global-set-key (kbd "M-[") #'outline-hide-sublevels)
-(global-set-key (kbd "M-]") #'outline-show-all)
+(global-set-key (kbd "M-[") #'eval-expression)
+(global-set-key (kbd "M-]") #'my/shell-menu)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (global-set-key (kbd "C-x [") #'beginning-of-buffer)
 (global-set-key (kbd "C-x ]") #'end-of-buffer)
@@ -966,7 +965,7 @@ With directories under project root using find."
           (lambda ()
             (add-hook 'kill-buffer-hook #'disable-ansi-term-mode-line-indicator nil t)))
 
-(defun shell-menu ()
+(defun my/shell-menu ()
   "Menu for Shell commands."
   (interactive)
   (let ((key (read-key
@@ -986,8 +985,6 @@ With directories under project root using find."
       (?\C-g (message "Quit Shell menu."))
       ;; Default Invalid Key
       (_ (message "Invalid key: %c" key)))))
-
-(global-set-key (kbd "C-c h") 'shell-menu)
 
 ;;
 ;; -> tab-bar-core
