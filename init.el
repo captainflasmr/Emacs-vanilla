@@ -72,7 +72,7 @@
 (define-key my-win-keymap (kbd "f") #'font-lock-mode)
 (define-key my-win-keymap (kbd "g") #'global-hl-line-mode)
 (define-key my-win-keymap (kbd "h") #'font-lock-update)
-(define-key my-win-keymap (kbd "l") #'my/sync-tab-bar-to-theme)
+(define-key my-win-keymap (kbd "l") #'my/sync-ui-accent-color)
 (define-key my-win-keymap (kbd "m") #'my/load-theme)
 (define-key my-win-keymap (kbd "n") #'display-line-numbers-mode)
 (define-key my-win-keymap (kbd "o") #'toggle-centered-buffer)
@@ -97,17 +97,6 @@
 (global-set-key (kbd "M-s j") #'eval-defun)
 (global-set-key (kbd "M-s l") #'eval-expression)
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
-(global-set-key (kbd "M-s w") #'(lambda ()(interactive)
-                                  (org-html-export-to-html)
-                                  (my/html-promote-headers)
-                                  (my/html-org-table-highlight)))
-(global-set-key (kbd "M-s e") #'(lambda ()(interactive)
-                                  (org-odt-export-to-odt)
-                                  (async-shell-command
-                                   (concat "libreoffice --headless --convert-to docx "
-                                           (file-name-with-extension
-                                            (file-name-nondirectory (buffer-file-name))
-                                            "odt")) "*create-docs*")))
 (global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
 
 ;;
@@ -1673,6 +1662,38 @@ It doesn't define any keybindings. In comparison with `ada-mode',
     (global-set-key (kbd "C-c v") 'my/dwim-convert-with-selection)))
 
 ;;
+;; -> publishing-core
+;;
+(defun export-menu ()
+  "Menu for Export/Publishing commands."
+  (interactive)
+  (let ((key (read-key
+              (propertize
+               "--- Export Commands [q] Quit: ---
+[w] Export to HTML (with table highlighting)
+[d] Export to DOCX (via ODT)"
+                'face 'minibuffer-prompt))))
+    (pcase key
+      (?w (progn
+            (org-html-export-to-html)
+            (my/html-promote-headers)
+            (my/html-org-table-highlight)))
+      (?d (progn
+            (org-odt-export-to-odt)
+            (async-shell-command
+             (concat "libreoffice --headless --convert-to docx "
+                     (file-name-with-extension
+                      (file-name-nondirectory (buffer-file-name))
+                      "odt")) "*create-docs*")))
+      ;; Quit
+      (?q (message "Quit Export menu."))
+      (?\C-g (message "Quit Export menu."))
+      ;; Default Invalid Key
+      (_ (message "Invalid key: %c" key)))))
+
+(global-set-key (kbd "C-c e") 'export-menu)
+
+;;
 ;; -> core-configuration
 ;;
 (load-file "~/.emacs.d/Emacs-enhanced/init.el")
@@ -1681,4 +1702,4 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;; -> dwim
 ;;
 ;;
-(my/sync-tab-bar-to-theme "#355369")
+(my/sync-ui-accent-color "coral")
