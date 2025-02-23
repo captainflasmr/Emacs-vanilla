@@ -1660,7 +1660,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;;
 ;; -> publishing-core
 ;;
-(defun export-menu ()
+(defun my/export-menu ()
   "Menu for Export/Publishing commands."
   (interactive)
   (let ((key (read-key
@@ -1687,7 +1687,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
       ;; Default Invalid Key
       (_ (message "Invalid key: %c" key)))))
 
-(global-set-key (kbd "C-c e") 'export-menu)
+(global-set-key (kbd "C-c e") 'my/export-menu)
 
 ;;
 ;; -> core-configuration

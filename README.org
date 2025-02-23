@@ -2206,7 +2206,7 @@ A soft wrapper around the Emacs basic publishing mechanism for my own exporting 
 ;;
 ;; -> publishing-core
 ;;
-(defun export-menu ()
+(defun my/export-menu ()
   "Menu for Export/Publishing commands."
   (interactive)
   (let ((key (read-key
@@ -2233,7 +2233,7 @@ A soft wrapper around the Emacs basic publishing mechanism for my own exporting 
       ;; Default Invalid Key
       (_ (message "Invalid key: %c" key)))))
 
-(global-set-key (kbd "C-c e") 'export-menu)
+(global-set-key (kbd "C-c e") 'my/export-menu)
 #+end_src
 
 * emacs-enhanced
