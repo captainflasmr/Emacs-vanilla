@@ -15,6 +15,7 @@ VERSIONS=(
     "emacs-27.2"
     "emacs-28.2"
     "emacs-29.4"
+    "emacs-30.1"
 )
 
 # Detect OS
