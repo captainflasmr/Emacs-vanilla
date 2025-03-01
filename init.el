@@ -596,15 +596,15 @@ Lightens dark themes by 20%, darkens light themes by 5%."
     (push 'hline rows)
     (cons header rows)))
 
-(defun my-kill-ring-save (beg end flash)
+(defun my/kill-ring-save (beg end flash)
    (interactive (if (use-region-p)
                     (list (region-beginning) (region-end) nil)
                   (list (line-beginning-position)
                         (line-beginning-position 2) 'flash)))
    (kill-ring-save beg end))
-(global-set-key [remap kill-ring-save] 'my-kill-ring-save)
+(global-set-key [remap kill-ring-save] 'my/kill-ring-save)
 
-(defun disk-space-query ()
+(defun my/disk-space-query ()
   "Run 'df -h' and display the output in a new buffer."
   (interactive)
   (let ((output-buffer (get-buffer-create "*Disk Space*")))
@@ -613,7 +613,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
       (insert (shell-command-to-string "df -h"))
       (display-buffer output-buffer))))
 
-(global-set-key (kbd "<f8>") 'disk-space-query)
+(global-set-key (kbd "<f8>") 'my/disk-space-query)
 
 ;;
 ;; -> window-positioning-core
