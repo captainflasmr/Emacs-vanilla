@@ -795,7 +795,12 @@ Lightens dark themes by 20%, darkens light themes by 5%."
             (setq truncate-lines t)
             (setq imenu-sort-function 'imenu--sort-by-name)
             (setq imenu-generic-expression
-                  '((nil "^;;[[:space:]]+-> \\(.*\\)$" 1)))
+                  '(
+                    ;; Match comment-based section markers: ;; -> Section Name
+                    (nil "^;;[[:space:]]+-> \\(.*\\)$" 1)
+                    ;; Match function definitions
+                    (nil "^\\s-*(defun\\s-+\\([^( \t\n]+\\)" 1)
+                   ))
             (imenu-add-menubar-index)))
 
 (add-hook 'conf-space-mode-hook
