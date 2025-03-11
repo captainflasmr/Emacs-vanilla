@@ -1194,7 +1194,12 @@ Customizes the Imenu index-building functionality for improved navigation within
             (setq truncate-lines t)
             (setq imenu-sort-function 'imenu--sort-by-name)
             (setq imenu-generic-expression
-                  '((nil "^;;[[:space:]]+-> \\(.*\\)$" 1)))
+                  '(
+                    ;; Match comment-based section markers: ;; -> Section Name
+                    (nil "^;;[[:space:]]+-> \\(.*\\)$" 1)
+                    ;; Match function definitions
+                    (nil "^\\s-*(defun\\s-+\\([^( \t\n]+\\)" 1)
+                   ))
             (imenu-add-menubar-index)))
 
 (add-hook 'conf-space-mode-hook
