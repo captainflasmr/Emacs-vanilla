@@ -30,6 +30,14 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2025-03-13>
+
+Added flyspell error collection
+
+- Introduce `my/collect-flyspell-errors` to list and navigate flyspell errors
+- Enhance `imenu-generic-expression` to index function definitions
+- Set `ispell-personal-dictionary` path
+
 ** <2025-02-04>
 
 Refactor global keybindings and add selective text folding function
@@ -2029,6 +2037,97 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 (defun without-gc (&rest args)
   (let ((gc-cons-threshold most-positive-fixnum))
     (apply args)))
+
+(defun my/collect-flyspell-errors ()
+  "Collect all flyspell errors in the current buffer and display them in a separate buffer with clickable links."
+  (interactive)
+  ;; Store the buffer name and buffer itself for later reference
+  (let* ((source-buffer (current-buffer))
+         (source-buffer-name (buffer-name))
+         (error-list nil))
+    
+    ;; Ensure the buffer is fully spell-checked
+    (flyspell-buffer)
+    
+    ;; Collect all misspelled words and their positions
+    (save-excursion
+      (goto-char (point-min))
+      (while (not (eobp))
+        (let ((overlays (overlays-at (point)))
+              (moved nil))
+          (dolist (overlay overlays)
+            (when (overlay-get overlay 'flyspell-overlay)
+              (let ((start (overlay-start overlay))
+                    (end (overlay-end overlay))
+                    (word (buffer-substring-no-properties 
+                           (overlay-start overlay) 
+                           (overlay-end overlay)))
+                    (line-num (line-number-at-pos (overlay-start overlay))))
+                ;; Store the buffer name string rather than buffer object
+                (push (list word start end line-num) error-list)
+                (goto-char end)
+                (setq moved t))))
+          (unless moved
+            (forward-char 1)))))
+    
+    ;; Sort by position in buffer
+    (setq error-list (nreverse error-list))
+    
+    ;; Create and populate the errors buffer
+    (let ((errors-buffer (get-buffer-create "*Flyspell Errors*")))
+      (with-current-buffer errors-buffer
+        (let ((inhibit-read-only t))
+          (visual-line-mode 1)
+          (erase-buffer)
+          (insert (format "Flyspell Errors in %s (%d found)\n\n" 
+                          source-buffer-name
+                          (length error-list)))
+          
+          ;; Use buffer-local variables to store the source buffer
+          (set (make-local-variable 'flyspell-source-buffer) source-buffer)
+          
+          ;; Add all the errors with buttons
+          (dolist (error-info error-list)
+            (let ((word (nth 0 error-info))
+                  (start (nth 1 error-info))
+                  (end (nth 2 error-info))
+                  (line-num (nth 3 error-info)))
+              
+              ;; Store position as a text property for the button
+              (let ((pos start))
+                (insert-button word
+                               'follow-link t
+                               'help-echo "Click to jump to this misspelled word"
+                               'buffer source-buffer
+                               'position pos
+                               'action (lambda (button)
+                                         (let ((target-buffer (button-get button 'buffer))
+                                               (target-pos (button-get button 'position)))
+                                           (switch-to-buffer target-buffer)
+                                           (goto-char target-pos)
+                                           (recenter)))))
+              (insert " ")))
+          
+          (insert (format "\nTotal: %d spelling errors found\n" (length error-list)))
+          
+          (goto-char (point-min))
+          (special-mode)
+          
+          ;; Use the buffer-local variable for the refresh command
+          (local-set-key (kbd "g") 
+                         (lambda () 
+                           (interactive)
+                           (let ((buffer-to-check flyspell-source-buffer))
+                             (kill-buffer)
+                             (with-current-buffer buffer-to-check
+                               (collect-flyspell-errors)))))
+          
+          (local-set-key (kbd "q") 'quit-window)))
+      
+      (switch-to-buffer-other-window errors-buffer)
+      (message "Found %d flyspell errors" (length error-list)))))
+
+(setq ispell-personal-dictionary (concat user-emacs-directory "Emacs-core/my-dictionary"))
 #+end_src
 
 * image-dired

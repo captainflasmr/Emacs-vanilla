@@ -10,6 +10,14 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2025-03-13>
+
+Added flyspell error collection
+
+- Introduce `my/collect-flyspell-errors` to list and navigate flyspell errors
+- Enhance `imenu-generic-expression` to index function definitions
+- Set `ispell-personal-dictionary` path
+
 ** <2025-02-04>
 
 Refactor global keybindings and add selective text folding function
