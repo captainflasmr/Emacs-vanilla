@@ -2039,6 +2039,8 @@ It doesn't define any keybindings. In comparison with `ada-mode',
   (let ((gc-cons-threshold most-positive-fixnum))
     (apply args)))
 
+(setq my/collect-flyspell-source-buffer nil)
+
 (defun my/collect-flyspell-errors ()
   "Collect all flyspell errors in the current buffer and display them in a separate buffer with clickable links."
   (interactive)
@@ -2046,7 +2048,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
   (let* ((source-buffer (current-buffer))
          (source-buffer-name (buffer-name))
          (error-list nil))
-    
+    (prin1 source-buffer)
     ;; Ensure the buffer is fully spell-checked
     (flyspell-buffer)
     
@@ -2084,8 +2086,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
                           source-buffer-name
                           (length error-list)))
           
-          ;; Use buffer-local variables to store the source buffer
-          (set (make-local-variable 'flyspell-source-buffer) source-buffer)
+          (setq my/collect-flyspell-source-buffer source-buffer)
           
           ;; Add all the errors with buttons
           (dolist (error-info error-list)
@@ -2112,21 +2113,44 @@ It doesn't define any keybindings. In comparison with `ada-mode',
           (insert (format "\nTotal: %d spelling errors found\n" (length error-list)))
           
           (goto-char (point-min))
-          (special-mode)
-          
+          (text-mode)
+
           ;; Use the buffer-local variable for the refresh command
           (local-set-key (kbd "g") 
                          (lambda () 
                            (interactive)
-                           (let ((buffer-to-check flyspell-source-buffer))
-                             (kill-buffer)
+                           (let ((buffer-to-check my/collect-flyspell-source-buffer))
                              (with-current-buffer buffer-to-check
-                               (collect-flyspell-errors)))))
+                               (my/collect-flyspell-errors)))))
           
           (local-set-key (kbd "q") 'quit-window)))
       
       (switch-to-buffer-other-window errors-buffer)
       (message "Found %d flyspell errors" (length error-list)))))
+
+;; For adding words directly from the source buffer
+(defun my/flyspell-add-word-to-dict ()
+  "Add the word at point to the personal dictionary."
+  (interactive)
+  (save-excursion
+    (let ((current-word (thing-at-point 'word t)))
+      (when current-word
+        (ispell-send-string (concat "*" current-word "\n"))
+        (ispell-send-string "#\n")
+        (when ispell-process
+          (accept-process-output ispell-process 0.2))
+        (message "Added '%s' to personal dictionary" current-word)
+        (pop-to-buffer my/collect-flyspell-source-buffer)
+        (my/collect-flyspell-errors)))))
+
+;; Bind this function to a key in text modes
+(add-hook 'text-mode-hook
+          (lambda ()
+            (local-set-key (kbd "C-c d") 'my/flyspell-add-word-to-dict)))
+
+(add-to-list 'display-buffer-alist
+             '("\\*Flyspell Errors\\*"
+               (display-buffer-reuse-window display-buffer-same-window)))
 
 (setq ispell-personal-dictionary (concat user-emacs-directory "Emacs-core/my-dictionary"))
 #+end_src
