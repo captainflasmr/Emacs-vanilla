@@ -1059,6 +1059,7 @@ Extends and customizes Org mode for document structuring, note-taking, and proje
         ("CANCELLED" . "#426b3e")))
 (setq org-goto-interface 'outline-path-completionp)
 (setq org-outline-path-complete-in-steps nil)
+(setq org-imenu-depth 1)
 #+end_src
 
 * org-agenda-core

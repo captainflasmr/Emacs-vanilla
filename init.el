@@ -682,6 +682,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
         ("CANCELLED" . "#426b3e")))
 (setq org-goto-interface 'outline-path-completionp)
 (setq org-outline-path-complete-in-steps nil)
+(setq org-imenu-depth 1)
 
 ;;
 ;; -> org-agenda-core
