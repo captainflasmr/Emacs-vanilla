@@ -97,6 +97,7 @@
 (global-set-key (kbd "M-s j") #'eval-defun)
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
 (global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
+(global-set-key (kbd "M-s g") #'my/grep)
 
 ;;
 ;; -> keybinding-core
