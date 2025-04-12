@@ -1701,7 +1701,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;;
 ;; -> core-configuration
 ;;
-(load-file "~/.emacs.d/Emacs-enhanced/init.el")
+(load-file "~/.emacs.d/Emacs-DIYer/init.el")
 
 ;;
 ;; -> dwim

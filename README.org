@@ -3,7 +3,7 @@
 #+options: toc:nil author:t title:t
 #+startup: showall
 #+todo: TODO DOING | DONE
-#+property: header-args :tangle ~/.emacs.d/Emacs-core/init.el
+#+property: header-args :tangle ~/.emacs.d/Emacs-vanilla/init.el
 
 #+begin_src emacs-lisp :exports none
 ;; -*- lexical-binding: t; -*-
@@ -11,7 +11,7 @@
 
 * Introduction
 
-*Emacs-core* is a stripped-down version of my primary Emacs configuration. It is designed to leverage only the default built-in features of the more recent versions of Emacs (v27.2 and later). This makes it ideal for virtual machines or scenarios where you need a fast, package-free Emacs setup that works out of the box on most recent systems.
+This is a stripped-down version of my primary Emacs configuration. It is designed to leverage only the default built-in features of the more recent versions of Emacs (v27.2 and later). This makes it ideal for virtual machines or scenarios where you need a fast, package-free Emacs setup that works out of the box on most recent systems.
 
 Supported Emacs versions:
 
@@ -2261,7 +2261,7 @@ The defun replacements which are loaded from the generated .el file which will b
 ;;
 ;; -> core-configuration
 ;;
-(load-file "~/.emacs.d/Emacs-enhanced/init.el")
+(load-file "~/.emacs.d/Emacs-DIYer/init.el")
 #+end_src
 
 * startup
