@@ -1,4 +1,4 @@
-#+title: Emacs Core
+#+title: Emacs vanilla
 #+author: James Dyer
 #+options: toc:nil author:t title:t
 #+startup: showall
@@ -243,7 +243,7 @@ xkbcomp keymap_with_sticky_modifiers.xkb $DISPLAY
 - A self-contained folder structure that encapsulates all necessary files:
   
   #+begin_src bash :tangle no 
-emacs-core/
+emacs-vanilla/
 ├── init.el                          # Main Emacs configuration file
 ├── keymap_with_sticky_modifiers.xkb # linux key configuration for ergonomic key remapping
 ├── wowee/                           # Windows autohotkey scripts for ergonomic key remapping
@@ -257,7 +257,7 @@ This directory can be zipped, copied, and unpacked on any machine to instantly s
 - Clone the repository:
 
   #+begin_src bash :tangle no
-git clone https://github.com/captainflasmr/Emacs-core ~/.emacs.d.core
+git clone https://github.com/captainflasmr/Emacs-vanilla ~/.emacs.d.vanilla
   #+end_src
 
 
@@ -2040,7 +2040,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
   (let ((gc-cons-threshold most-positive-fixnum))
     (apply args)))
 
-(setq ispell-personal-dictionary (concat user-emacs-directory "Emacs-core/my-dictionary"))
+(setq ispell-personal-dictionary (concat user-emacs-directory "Emacs-vanilla/my-dictionary"))
 #+end_src
 
 * image-dired
@@ -2278,7 +2278,7 @@ Functions to run
 
 * Testing
 
-Created an =emacs-core.desktop= file containing the following:
+Created an =emacs-vanilla.desktop= file containing the following:
 
 #+begin_src fundamental-mode :tangle no 
 [Desktop Entry]
