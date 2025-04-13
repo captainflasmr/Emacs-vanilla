@@ -46,7 +46,7 @@
 (define-key my-jump-keymap (kbd "k")
             (lambda () (interactive)
               (find-file (concat user-emacs-directory "emacs--core.org"))))
-(define-key my-jump-keymap (kbd "l") #'my/recentf-open)
+(define-key my-jump-keymap (kbd "l") #'my/load-theme)
 (define-key my-jump-keymap (kbd "m") #'customize-themes)
 (define-key my-jump-keymap (kbd "o") #'bookmark-jump)
 (define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
@@ -1504,7 +1504,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
   (let ((gc-cons-threshold most-positive-fixnum))
     (apply args)))
 
-(setq ispell-personal-dictionary (concat user-emacs-directory "Emacs-core/my-dictionary"))
+(setq ispell-personal-dictionary (concat user-emacs-directory "Emacs-vanilla/my-dictionary"))
 
 ;;
 ;; -> image-dired
