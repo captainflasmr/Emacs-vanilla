@@ -483,6 +483,7 @@ Turns on various modes like `global-font-lock-mode` for syntax highlighting and 
 ;;
 ;; -> modes-core
 ;;
+(tooltip-mode -1)
 (column-number-mode 1)
 (desktop-save-mode -1)
 (display-time-mode -1)
@@ -513,6 +514,8 @@ This broad category includes a wide range of `setq` configurations that modify t
 ;;
 ;; -> setqs-core
 ;;
+(setq mouse-highlight nil)
+(setq show-help-function nil)
 (setq custom-safe-themes t)
 (setq enable-local-variables :all)
 (setq frame-title-format "%f")
@@ -1072,7 +1075,7 @@ Customizes the Org Agenda for a personalized task management and calendar view, 
 ;; -> org-agenda-core
 ;;
 (with-eval-after-load 'org-agenda
-  (setq org-agenda-include-diary nil)
+  (setq org-agenda-include-diary t)
   (setq org-agenda-show-all-dates t)
   (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
   (setq org-agenda-custom-commands

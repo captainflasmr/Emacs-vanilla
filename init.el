@@ -155,6 +155,7 @@
 ;;
 ;; -> modes-core
 ;;
+(tooltip-mode -1)
 (column-number-mode 1)
 (desktop-save-mode -1)
 (display-time-mode -1)
@@ -173,6 +174,8 @@
 ;;
 ;; -> setqs-core
 ;;
+(setq mouse-highlight nil)
+(setq show-help-function nil)
 (setq custom-safe-themes t)
 (setq enable-local-variables :all)
 (setq frame-title-format "%f")
@@ -689,7 +692,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 ;; -> org-agenda-core
 ;;
 (with-eval-after-load 'org-agenda
-  (setq org-agenda-include-diary nil)
+  (setq org-agenda-include-diary t)
   (setq org-agenda-show-all-dates t)
   (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
   (setq org-agenda-custom-commands
