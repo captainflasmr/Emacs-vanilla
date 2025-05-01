@@ -526,6 +526,17 @@ Lightens dark themes by 20%, darkens light themes by 5%."
     (push 'hline rows)
     (cons header rows)))
 
+(defun my/html-flush-divs ()
+  "Flush the divs in export to improve on Confluence import"
+  (interactive)
+  (let* ((org-file (buffer-file-name))
+         (html-file (concat (file-name-sans-extension org-file) ".html")))
+    (with-temp-buffer
+      (insert-file-contents html-file)
+      (goto-char (point-min))
+      (flush-lines "</?div.*>?")
+      (write-region (point-min) (point-max) html-file))))
+
 (defun my/html-promote-headers ()
   "Promote all headers in the HTML file by one level (e.g., h2 -> h1, h3 -> h2, etc.), accounting for attributes."
   (interactive)
@@ -1685,7 +1696,8 @@ It doesn't define any keybindings. In comparison with `ada-mode',
       (?w (progn
             (org-html-export-to-html)
             (my/html-promote-headers)
-            (my/html-org-table-highlight)))
+            (my/html-org-table-highlight)
+            (my/html-flush-divs)))
       (?d (progn
             (org-odt-export-to-odt)
             (async-shell-command
