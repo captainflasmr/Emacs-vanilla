@@ -143,7 +143,7 @@
 (global-set-key (kbd "M-o") #'bookmark-jump)
 (global-set-key (kbd "M-m") #'split-window-vertically)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
-(global-set-key (kbd "M-z") #'my/comment-or-uncomment)
+(global-set-key (kbd "C-c U") #'my/disk-space-query)
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
@@ -628,8 +628,6 @@ Lightens dark themes by 20%, darkens light themes by 5%."
       (insert (shell-command-to-string "df -h"))
       (display-buffer output-buffer))))
 
-(global-set-key (kbd "<f8>") 'my/disk-space-query)
-
 ;;
 ;; -> window-positioning-core
 ;;
@@ -747,6 +745,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
   (define-key dired-mode-map (kbd "C") 'dired-copy-file)
   (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
   (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
+  (define-key dired-mode-map (kbd "C-c U") 'my/disk-space-query)
   (define-key dired-mode-map (kbd "C-c i") 'my/image-dired-sort)
   (define-key dired-mode-map (kbd "b") 'my/dired-file-to-org-link)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
