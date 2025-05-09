@@ -372,13 +372,13 @@ For very dark backgrounds, ensures a minimum visible difference."
          (factor (/ (+ 100 percent) 100.0))
          (min-increment 4096)  ; minimum increment for very dark colors
          (new-rgb (mapcar (lambda (x)
-                           (if (> percent 0)
-                               ;; When lightening, ensure minimum increment
-                               (max (+ x min-increment)
-                                    (round (* x factor)))
-                               ;; When darkening, just use factor
-                               (max 0 (round (* x factor)))))
-                         rgb)))
+                            (if (> percent 0)
+                                ;; When lightening, ensure minimum increment
+                                (max (+ x min-increment)
+                                     (round (* x factor)))
+                              ;; When darkening, just use factor
+                              (max 0 (round (* x factor)))))
+                          rgb)))
     (apply 'format "#%02x%02x%02x" (mapcar (lambda (x) (/ x 256)) new-rgb))))
 
 (defun set-simple-hl-line ()
@@ -392,8 +392,8 @@ Lightens dark themes by 20%, darkens light themes by 5%."
     (let* ((bg (face-background 'default))
            (is-dark (not (string-greaterp bg "#888888")))
            (adjusted-bg (if is-dark
-                           (adjust-color bg 20)
-                         (adjust-color bg -5))))
+                            (adjust-color bg 20)
+                          (adjust-color bg -5))))
       (custom-set-faces
        `(hl-line ((t (:background ,adjusted-bg))))))))
 
@@ -612,11 +612,11 @@ Lightens dark themes by 20%, darkens light themes by 5%."
     (cons header rows)))
 
 (defun my/kill-ring-save (beg end flash)
-   (interactive (if (use-region-p)
-                    (list (region-beginning) (region-end) nil)
-                  (list (line-beginning-position)
-                        (line-beginning-position 2) 'flash)))
-   (kill-ring-save beg end))
+  (interactive (if (use-region-p)
+                   (list (region-beginning) (region-end) nil)
+                 (list (line-beginning-position)
+                       (line-beginning-position 2) 'flash)))
+  (kill-ring-save beg end))
 (global-set-key [remap kill-ring-save] 'my/kill-ring-save)
 
 (defun my/disk-space-query ()
@@ -815,7 +815,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
                     (nil "^;;[[:space:]]+-> \\(.*\\)$" 1)
                     ;; Match function definitions
                     (nil "^\\s-*(defun\\s-+\\([^( \t\n]+\\)" 1)
-                   ))
+                    ))
             (imenu-add-menubar-index)))
 
 (add-hook 'conf-space-mode-hook
@@ -831,6 +831,59 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (recentf-mode 1)
 (setq recentf-max-menu-items 200)
 (setq recentf-max-saved-items 200)
+
+;;
+;; -> isearch-core
+;;
+(defvar flex-isearch-group-size 2
+  "Number of initial characters to group together for more accurate flex searching.")
+
+(defun flex-isearch-regexp-compile (string &optional _lax)
+  "Convert a search STRING to a flexible regexp.
+The first `flex-isearch-group-size` chars of each word are matched literally,
+and the following chars are matched flexibly.
+Only add a word boundary if the string starts with a word character."
+  (let* ((parts (split-string string " " t))
+         (compile-part
+          (lambda (part)
+            (let* ((len (length part))
+                   (group-size (min flex-isearch-group-size len))
+                   (grouped (substring part 0 group-size))
+                   (rest (substring part group-size)))
+              (concat
+               (regexp-quote grouped)
+               (mapconcat (lambda (char)
+                            (format "[^%s\n]*%s"
+                                    (regexp-quote (char-to-string char))
+                                    (regexp-quote (char-to-string char))))
+                          rest
+                          "")
+               "[^-_[:alnum:]\n]*"))))
+         (regexp-body (mapconcat compile-part parts "[^-_[:alnum:]\n]+")))
+    ;; Only add word boundary if the first char is a word character
+    (if (string-match-p "\\`[[:alnum:]_]" string)
+        (concat "\\b" regexp-body)
+      regexp-body)))
+
+(defun flex-isearch-search-fun ()
+  "Return the appropriate search function for flex searching."
+  (if isearch-forward 'flex-isearch-forward 'flex-isearch-backward))
+
+(defun flex-isearch-forward (string &optional bound noerror count)
+  "Flex search forward for STRING."
+  (let ((regexp (flex-isearch-regexp-compile string)))
+    (re-search-forward regexp bound noerror count)))
+
+(defun flex-isearch-backward (string &optional bound noerror count)
+  "Flex search backward for STRING."
+  (let ((regexp (flex-isearch-regexp-compile string)))
+    (re-search-backward regexp bound noerror count)))
+
+;; Set the search functions for isearch
+(setq isearch-search-fun-function #'flex-isearch-search-fun)
+
+;; Important: Set this function so isearch-occur and related commands will work
+(setq search-default-mode #'flex-isearch-regexp-compile)
 
 ;;
 ;; -> modeline-core
@@ -863,9 +916,9 @@ Lightens dark themes by 20%, darkens light themes by 5%."
                         (if (string= state "edited")
                             (propertize
                              (format ":%s " state) 'face '(:inherit bold :inverse-video nil))
-                           (propertize
-                            (format " ") 'face '(:inverse-video nil))
-                           ))))))
+                          (propertize
+                           (format " ") 'face '(:inverse-video nil))
+                          ))))))
                'mode-line-position
                'mode-line-modes
                'mode-line-misc-info
@@ -994,7 +1047,7 @@ With directories under project root using find."
 [s] shell
 [a] ansi-term"
 
-                'face 'minibuffer-prompt))))
+               'face 'minibuffer-prompt))))
     (pcase key
       (?e (call-interactively 'my/shell-create))
       (?s (call-interactively 'shell))
@@ -1690,7 +1743,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
                "--- Export Commands [q] Quit: ---
 [w] Export to HTML (with table highlighting)
 [d] Export to DOCX (via ODT)"
-                'face 'minibuffer-prompt))))
+               'face 'minibuffer-prompt))))
     (pcase key
       (?w (progn
             (org-html-export-to-html)
