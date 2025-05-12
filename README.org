@@ -1303,6 +1303,13 @@ Only add a word boundary if the string starts with a word character."
 
 ;; Important: Set this function so isearch-occur and related commands will work
 (setq search-default-mode #'flex-isearch-regexp-compile)
+
+(defadvice isearch-exit (after dired-enter-directory-or-file activate)
+  "In dired mode, enter directory or open file after isearch."
+  (when (eq major-mode 'dired-mode)
+    (let ((file (dired-get-file-for-visit)))
+      (when file
+        (dired-find-file)))))
 #+end_src
 
 * modeline-core
