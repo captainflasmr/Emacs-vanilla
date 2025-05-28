@@ -97,7 +97,7 @@
 (global-set-key (kbd "M-s j") #'eval-defun)
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
 (global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
-(global-set-key (kbd "M-s g") #'my/grep)
+(global-set-key (kbd "M-s /") #'my/grep)
 
 ;;
 ;; -> keybinding-core
@@ -669,6 +669,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 ;;
 ;; -> org-core
 ;;
+(setq org-table-convert-region-max-lines 9999)
 (setq org-src-tab-acts-natively t)
 (setq org-log-done t)
 (setq org-export-with-sub-superscripts nil)
@@ -1692,7 +1693,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
   (progn
     (defvar my/dwim-convert-commands
       '("ConvertNoSpace" "AudioConvert" "AudioInfo" "AudioNormalise"
-        "MoveFile"
+        "MoveFile" "PictureFixWhatsApp"
         "AudioTrimSilence" "PictureAutoColour" "PictureConvert"
         "PictureCrush" "PictureFrompdf" "PictureInfo" "PictureMontage"
         "PictureOrganise" "PictureCrop" "PictureRotateFlip" "PictureEmail"

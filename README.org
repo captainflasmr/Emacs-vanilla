@@ -413,7 +413,7 @@ Configures a sparse keymap for miscellaneous actions like evaluating expressions
 (global-set-key (kbd "M-s j") #'eval-defun)
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
 (global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
-(global-set-key (kbd "M-s g") #'my/grep)
+(global-set-key (kbd "M-s /") #'my/grep)
 #+end_src
 
 * keybinding-core
@@ -1046,6 +1046,7 @@ Extends and customizes Org mode for document structuring, note-taking, and proje
 ;;
 ;; -> org-core
 ;;
+(setq org-table-convert-region-max-lines 9999)
 (setq org-src-tab-acts-natively t)
 (setq org-log-done t)
 (setq org-export-with-sub-superscripts nil)
@@ -2246,7 +2247,7 @@ Demonstrates "Do What I Mean" functionalities custom to Emacs, streamlining oper
   (progn
     (defvar my/dwim-convert-commands
       '("ConvertNoSpace" "AudioConvert" "AudioInfo" "AudioNormalise"
-        "MoveFile"
+        "MoveFile" "PictureFixWhatsApp"
         "AudioTrimSilence" "PictureAutoColour" "PictureConvert"
         "PictureCrush" "PictureFrompdf" "PictureInfo" "PictureMontage"
         "PictureOrganise" "PictureCrop" "PictureRotateFlip" "PictureEmail"
