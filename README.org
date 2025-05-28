@@ -2163,7 +2163,7 @@ Customizes the behaviour and appearance of Image-Dired, the image management ext
     (let ((w (selected-window)))
       (delete-other-windows)
       (revert-buffer)
-      (image-dired ".")
+      (image-dired default-directory)
       (let ((idw (selected-window)))
         (select-window w)
         (dired-unmark-all-marks)

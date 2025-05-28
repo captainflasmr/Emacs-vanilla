@@ -1615,7 +1615,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
     (let ((w (selected-window)))
       (delete-other-windows)
       (revert-buffer)
-      (image-dired ".")
+      (image-dired default-directory)
       (let ((idw (selected-window)))
         (select-window w)
         (dired-unmark-all-marks)
