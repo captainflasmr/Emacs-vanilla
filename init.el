@@ -40,7 +40,6 @@
             (lambda ()
               (interactive)
               (find-file (expand-file-name "init.el" user-emacs-directory))))
-(define-key my-jump-keymap (kbd "f") #'my/find-file)
 (define-key my-jump-keymap (kbd "g") (lambda () (interactive) (find-file "~/.config")))
 (define-key my-jump-keymap (kbd "h") (lambda () (interactive) (find-file "~")))
 (define-key my-jump-keymap (kbd "j") (lambda () (interactive) (find-file "~/DCIM/content/aaa--todo.org")))
@@ -97,7 +96,8 @@
 (global-set-key (kbd "M-s j") #'eval-defun)
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
 (global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
-(global-set-key (kbd "M-s /") #'my/grep)
+(global-set-key (kbd "M-s /") #'my/find-file)
+(global-set-key (kbd "M-s p") #'my/grep)
 
 ;;
 ;; -> keybinding-core
@@ -1693,11 +1693,10 @@ It doesn't define any keybindings. In comparison with `ada-mode',
   (progn
     (defvar my/dwim-convert-commands
       '("ConvertNoSpace" "AudioConvert" "AudioInfo" "AudioNormalise"
-        "MoveFile" "PictureFixWhatsApp"
         "AudioTrimSilence" "PictureAutoColour" "PictureConvert"
         "PictureCrush" "PictureFrompdf" "PictureInfo" "PictureMontage"
         "PictureOrganise" "PictureCrop" "PictureRotateFlip" "PictureEmail"
-        "PictureUpdateFromCreateDate"
+        "PictureUpdateFromCreateDate" "VideoTag2XMP"
         "PictureRotateLeft" "PictureRotateRight" "PictureScale"
         "PictureUpscale" "PictureGetText" "PictureOrientation"
         "PictureUpdateToCreateDate" "VideoConcat" "VideoConvert" "VideoConvertToGif"
@@ -1710,19 +1709,23 @@ It doesn't define any keybindings. In comparison with `ada-mode',
         "OtherTagDate" "VideoRemoveFlips")
       "List of commands for dwim-convert.")
 
+    (defvar my/org-dired-marked-files nil
+      "Stores the current dired marked files.")
+
     (defun my/read-lines (file-path)
       "Return a list of lines of a file at FILE-PATH."
       (with-temp-buffer
         (insert-file-contents file-path)
         (split-string (buffer-string) "\n" t)))
-    
-    (defun my/dwim-convert-generic (command)
+
+    (defun my/dwim-convert-generic-menu (command)
       "Execute a dwim-shell-command-on-marked-files with the given COMMAND."
-      (let* ((unique-text-file "~/bin/category-list-uniq.txt")
+      (let* ((unique-text-file "/home/jdyer/bin/category-list-uniq.txt")
              (user-selection nil)
-             (files (dired-get-marked-files nil current-prefix-arg))
+             (files my/org-dired-marked-files)
              (command-and-files (concat command " " (mapconcat 'identity files " "))))
-        (when (string= command "PictureTag")
+        (when (or (string= command "PictureTag")
+                  (string= command "VideoTag2XMP"))
           (setq user-selection (completing-read "Choose an option: "
                                                 (my/read-lines unique-text-file)
                                                 nil t)))
@@ -1730,15 +1733,143 @@ It doesn't define any keybindings. In comparison with `ada-mode',
                                  (concat command " " user-selection " " (mapconcat 'identity files " "))
                                (concat command " " (mapconcat 'identity files " ")))
                              "*convert*")))
-    
-    (defun my/dwim-convert-with-selection ()
+    ;; (save-buffers-kill-terminal))
+
+    (defun my/dwim-convert-with-selection-files-command (files-string chosen-command)
       "Prompt user to choose command and execute dwim-shell-command-on-marked-files."
       (interactive)
+      (setq my/org-dired-marked-files (split-string files-string ";" t))
+      (my/dwim-convert-generic-menu chosen-command))
+
+    (defun my/dwim-convert-with-selection-files (files-string)
+      "Prompt user to choose command and execute dwim-shell-command-on-marked-files."
+      (interactive)
+      (setq my/org-dired-marked-files (split-string files-string ";" t))
       (let ((chosen-command (completing-read "Choose command: "
                                              my/dwim-convert-commands)))
-        (my/dwim-convert-generic chosen-command)))
+        (my/dwim-convert-generic-menu chosen-command)))
     
-    (global-set-key (kbd "C-c v") 'my/dwim-convert-with-selection)))
+    (global-set-key (kbd "C-c v")
+                    (lambda ()
+                      (interactive)
+                      (let ((files (my/get-files-from-context)))
+                        (when files
+                          (let ((files-string (mapconcat 'identity files ";")))
+                            (my/dwim-convert-with-selection-files files-string))))))))t
+
+(defun my/image-dired-get-original-files ()
+  "Get original file paths from image-dired marked thumbnails or current thumbnail."
+  (let ((files '())
+        (continue t))
+    (save-excursion
+      (goto-char (point-min))
+      ;; Move to first image if not already on one
+      (condition-case nil
+          (unless (image-dired-image-at-point-p)
+            (image-dired-forward-image))
+        (error nil))
+      
+      ;; Collect all marked files
+      (while (and continue
+                  (condition-case nil
+                      (image-dired-image-at-point-p)
+                    (error nil)))
+        (when (condition-case nil
+                  (image-dired-thumb-file-marked-p)
+                (error nil))
+          (let ((orig-file (condition-case nil
+                               (image-dired-original-file-name)
+                             (error nil))))
+            (when orig-file
+              (push orig-file files))))
+        ;; Move to next image, stop if we can't move forward
+        (let ((current-pos (point)))
+          (condition-case nil
+              (image-dired-forward-image)
+            (error nil))
+          ;; If we didn't move, we're at the end
+          (when (= current-pos (point))
+            (setq continue nil)))))
+    
+    ;; If no marked files found, get current file
+    (when (and (null files) 
+               (condition-case nil
+                   (image-dired-image-at-point-p)
+                 (error nil)))
+      (let ((orig-file (condition-case nil
+                           (image-dired-original-file-name)
+                         (error nil))))
+        (when orig-file
+          (push orig-file files))))
+    
+    (nreverse files)))
+
+(defun my/get-files-from-context ()
+  "Get files based on current context (dired, image-dired, etc.)"
+  (cond
+   ;; In image-dired thumbnail mode
+   ((eq major-mode 'image-dired-thumbnail-mode)
+    (my/image-dired-get-original-files))
+   
+   ;; In dired mode
+   ((eq major-mode 'dired-mode)
+    (dired-get-marked-files))
+   
+   ;; In image-dired display mode
+   ((eq major-mode 'image-dired-display-image-mode)
+    (list (image-dired-original-file-name)))
+   
+   ;; Default: try to get current file
+   (t
+    (when buffer-file-name
+      (list buffer-file-name)))))
+
+(defun my/universal-picture-tag ()
+  "Tag pictures from any context (dired or image-dired)."
+  (interactive)
+  (let ((files (my/get-files-from-context)))
+    (if files
+        (let ((files-string (mapconcat 'identity files ";")))
+          (my/dwim-convert-with-selection-files-command files-string "PictureTag"))
+      (message "No files found to tag"))))
+
+(defun my/universal-picture-tag-rename ()
+  "Tag and rename pictures from any context (dired or image-dired)."
+  (interactive)
+  (let ((files (my/get-files-from-context)))
+    (if files
+        (let ((files-string (mapconcat 'identity files ";")))
+          (my/dwim-convert-with-selection-files-command files-string "PictureTag")
+          (my/dwim-convert-with-selection-files-command files-string "PictureTagRename"))
+      (message "No files found to tag and rename"))))
+
+;; Set up keybindings for both dired and image-dired
+(defun my/setup-picture-keybindings ()
+  "Set up consistent keybindings for picture operations."
+  (local-set-key (kbd "C-c t") 'my/universal-picture-tag)
+  (local-set-key (kbd "C-c r") 'my/universal-picture-tag-rename))
+
+;; Apply to both modes
+(add-hook 'dired-mode-hook 'my/setup-picture-keybindings)
+(add-hook 'image-dired-thumbnail-mode-hook 'my/setup-picture-keybindings)
+
+;; Optional: Add menu items
+(defun my/add-picture-menu-items ()
+  "Add picture tagging items to the menu."
+  (when (featurep 'easymenu)
+    (easy-menu-add-item
+     nil '("Tools")
+     ["Tag Pictures" my/universal-picture-tag
+      :help "Tag selected pictures"]
+     "Games")
+    (easy-menu-add-item
+     nil '("Tools")
+     ["Tag and Rename Pictures" my/universal-picture-tag-rename
+      :help "Tag and rename selected pictures"]
+     "Games")))
+
+(add-hook 'dired-mode-hook 'my/add-picture-menu-items)
+(add-hook 'image-dired-thumbnail-mode-hook 'my/add-picture-menu-items)
 
 ;;
 ;; -> publishing-core
