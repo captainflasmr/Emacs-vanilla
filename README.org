@@ -722,12 +722,17 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
     (if (file-directory-p current-dir)
         (let ((output-buffer-name "*dired-du*"))
           (with-current-buffer (get-buffer-create output-buffer-name)
-            (erase-buffer)) ; Clear the buffer before running the command
-          (async-shell-command
-           (format "du -hc --max-depth=1 %s && echo && echo 'File counts per subdirectory:' && find %s -maxdepth 2 -type d -exec sh -c 'echo -n \"{}: \"; find \"{}\" -type f | wc -l' \\;"
-                   (shell-quote-argument current-dir)
-                   (shell-quote-argument current-dir))
-           output-buffer-name))
+            (erase-buffer)
+            (let* ((command (format "du -hc --max-depth=1 %s && echo && echo 'File counts per subdirectory:' && find %s -maxdepth 2 -type d -exec sh -c 'echo -n \"{}: \"; find \"{}\" -type f | wc -l' \\;"
+                                    (shell-quote-argument current-dir)
+                                    (shell-quote-argument current-dir)))
+                   (process (start-process-shell-command "dired-du" output-buffer-name command)))
+              (set-process-sentinel process 
+                                    (lambda (proc event)
+                                      (when (string-match "finished" event)
+                                        (with-current-buffer output-buffer-name
+                                          (goto-char (point-min))))))
+              (pop-to-buffer output-buffer-name))))
       (message "The current point is not a directory."))))
 
 (defun adjust-color (color percent)
@@ -987,11 +992,17 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (defun my/disk-space-query ()
   "Run 'df -h' and display the output in a new buffer."
   (interactive)
-  (let ((output-buffer (get-buffer-create "*Disk Space*")))
-    (with-current-buffer output-buffer
+  (let ((output-buffer-name "*Disk Space*"))
+    (with-current-buffer (get-buffer-create output-buffer-name)
       (erase-buffer)
-      (insert (shell-command-to-string "df -h"))
-      (display-buffer output-buffer))))
+      (let* ((command "df -h")
+             (process (start-process-shell-command "disk-space" output-buffer-name command)))
+        (set-process-sentinel process 
+                              (lambda (proc event)
+                                (when (string-match "finished" event)
+                                  (with-current-buffer output-buffer-name
+                                    (goto-char (point-min))))))
+        (pop-to-buffer output-buffer-name)))))
 
 #+end_src
 
