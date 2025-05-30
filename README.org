@@ -2122,6 +2122,10 @@ It doesn't define any keybindings. In comparison with `ada-mode',
     (apply args)))
 
 (setq ispell-personal-dictionary (concat user-emacs-directory "Emacs-vanilla/my-dictionary"))
+
+(define-key help-map (kbd "=") #'describe-char)
+(define-key help-map (kbd "j") #'describe-face)
+(define-key help-map (kbd "-") #'describe-keymap)
 #+end_src
 
 * image-dired
@@ -2178,7 +2182,7 @@ Customizes the behaviour and appearance of Image-Dired, the image management ext
 (setq image-dired-thumbs-per-row 999)
 (setq image-dired-thumb-relief 0)
 (setq image-dired-thumb-margin 5)
-(setq image-dired-thumb-size 120)
+(setq image-dired-thumb-size 200)
 
 (defun my/image-save-as ()
   "Save the current image buffer as a new file."

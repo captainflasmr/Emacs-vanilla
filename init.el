@@ -1580,6 +1580,10 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 
 (setq ispell-personal-dictionary (concat user-emacs-directory "Emacs-vanilla/my-dictionary"))
 
+(define-key help-map (kbd "=") #'describe-char)
+(define-key help-map (kbd "j") #'describe-face)
+(define-key help-map (kbd "-") #'describe-keymap)
+
 ;;
 ;; -> image-dired
 ;;
@@ -1629,7 +1633,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 (setq image-dired-thumbs-per-row 999)
 (setq image-dired-thumb-relief 0)
 (setq image-dired-thumb-margin 5)
-(setq image-dired-thumb-size 120)
+(setq image-dired-thumb-size 200)
 
 (defun my/image-save-as ()
   "Save the current image buffer as a new file."
@@ -1724,8 +1728,8 @@ It doesn't define any keybindings. In comparison with `ada-mode',
              (user-selection nil)
              (files my/org-dired-marked-files)
              (command-and-files (concat command " " (mapconcat 'identity files " "))))
-        (when (or (string= command "PictureTag")
-                  (string= command "VideoTag2XMP"))
+        (prin1 files)
+        (when (string= command "PictureTag")
           (setq user-selection (completing-read "Choose an option: "
                                                 (my/read-lines unique-text-file)
                                                 nil t)))
