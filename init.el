@@ -1644,7 +1644,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 (setq image-dired-thumbs-per-row 999)
 (setq image-dired-thumb-relief 0)
 (setq image-dired-thumb-margin 5)
-(setq image-dired-thumb-size 200)
+(setq image-dired-thumb-size 150)
 
 (defun my/image-save-as ()
   "Save the current image buffer as a new file."
