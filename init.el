@@ -127,7 +127,7 @@
 (global-set-key (kbd "C-x v e") 'vc-ediff)
 (global-set-key (kbd "C-x x g") #'revert-buffer)
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
-(global-set-key (kbd "C-z") #'my/comment-or-uncomment)
+(global-set-key (kbd "C-z") #'save-buffer)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
 (global-set-key (kbd "M-a") #'insert-register)
 (global-set-key (kbd "M-0") 'delete-window)
@@ -771,6 +771,14 @@ Lightens dark themes by 20%, darkens light themes by 5%."
                    (and (derived-mode-p 'dired-mode)
                         (not (eq win (selected-window)))))))))
     (select-window dest-window)))
+
+(defadvice dired-sort-toggle-or-edit (after dired-sort-move-to-first-file activate)
+  "Move point to the first file or directory after sorting, skipping . and .."
+  (goto-char (point-min))
+  (dired-next-line 2)  ;; Skip past header and move to first entry
+  (while (and (not (eobp))
+              (looking-at-p ".*\\.\\.?$"))  ;; Check if line is . or ..
+    (dired-next-line 1)))
 
 (advice-add 'dired-do-copy :after (lambda (&rest _) (my-dired-switch-to-destination)))
 (advice-add 'dired-do-rename :after (lambda (&rest _) (my-dired-switch-to-destination)))
