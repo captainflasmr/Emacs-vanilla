@@ -918,8 +918,9 @@ Only add a word boundary if the string starts with a word character."
 (setq-default mode-line-format
               (list
                '(:eval (if (and (buffer-file-name) (buffer-modified-p))
-                           (propertize " * " 'face
-                                       '(:background "#ff0000" :foreground "#ffffff"))
+                           "**"
+                         ;; (propertize "*" 'face
+                         ;;             '(:background "#ff0000" :foreground "#ffffff"))
                          ""))
                '(:eval
                  (format "%s" (abbreviate-file-name default-directory)))
@@ -941,14 +942,18 @@ Only add a word boundary if the string starts with a word character."
                       (when state
                         (if (string= state "edited")
                             (propertize
-                             (format ":%s " state) 'face '(:inherit bold :inverse-video nil))
+                             "* " 'face '(:inherit bold :inverse-video nil))
+                          ;; (propertize
+                          ;; (format ":%s " state) 'face '(:inherit bold :inverse-video nil))
                           (propertize
                            (format " ") 'face '(:inverse-video nil))
                           ))))))
+               '(:eval (format "%d " (point)))
                'mode-line-position
+               ;; '(:eval (my-filtered-minor-modes))               
                'mode-line-modes
-               'mode-line-misc-info
-               '(:eval (format "%d" (point)))))
+               ;; '(:eval (format "%s " (symbol-name major-mode)))
+               'mode-line-misc-info))
 
 ;;
 ;; -> grep-core
