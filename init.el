@@ -955,6 +955,8 @@ Only add a word boundary if the string starts with a word character."
                ;; '(:eval (format "%s " (symbol-name major-mode)))
                'mode-line-misc-info))
 
+(setq mode-line-compact t)
+
 ;;
 ;; -> grep-core
 ;;
