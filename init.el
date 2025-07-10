@@ -129,6 +129,7 @@
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "C-z") #'save-buffer)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
+(global-set-key (kbd "C-1") 'delete-other-windows)
 (global-set-key (kbd "M-0") 'delete-window)
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-2") #'split-window-vertically)
@@ -1296,38 +1297,60 @@ Kill    [5] CigiDummyIG     [6] CigiMiniHost       [7] CigiMiniHostCSharp [k] Al
       ;; Default Invalid Key
       (_ (message "Invalid key: %c" key)))))
 
-(global-set-key (kbd "M-RET") #'build-menu)
-
 ;;
 ;; coding menu
 ;;
+(defun dotnet-run-command (command buffer-name)
+  "Run a dotnet COMMAND in a new async shell BUFFER-NAME."
+  (let ((default-directory (project-root (project-current t))))
+    (async-shell-command command buffer-name)))
+
+(defun dotnet-project-menu ()
+  "Interactive menu for building and managing any .NET project in the current directory."
+  (interactive)
+  (let ((key (read-key
+              (propertize
+               "------- .NET Project Menu [q] Quit -------
+Build    [b] Project [0] Rebuild
+Clean    [c] Clean Project
+Restore  [R] Restore Dependencies
+Run      [m] Run Project"
+               'face 'minibuffer-prompt))))
+    (pcase key
+      (?b (dotnet-run-command "dotnet build" "*Dotnet Build*"))
+      (?0 (dotnet-run-command "dotnet build --no-incremental" "*Dotnet Rebuild*"))
+      (?c (dotnet-run-command "dotnet clean" "*Dotnet Clean*"))
+      (?R (dotnet-run-command "dotnet restore" "*Dotnet Restore*"))
+      (?m (dotnet-run-command "dotnet run" "*Dotnet Run*"))
+      (?q (message "Quit .NET Project Menu."))
+      (?\C-g (message "Quit .NET Project Menu."))
+      (_ (message "Invalid key: %c" key)))))
+
 (defun code-menu ()
   "Menu format code ."
   (interactive)
   (let ((key (read-key
               (propertize
                "------- Coding [q] Quit: -------
-Action  [f] Toggle Flycheck      [d] Show diagnostics
-Eglot   [e] Eglot & Flymake      [u] Undo Eglot/Flymake   [h] Stop Eglot
-Xref    [x] xref-find-references [n] xref-find-defintions [p] xref-go-back
-Eldoc   [l] eldoc toggle         [c] eldoc-doc-buffer
-Ada     [o] Other File"
+Coding  [L] Enable [l] Disable
+Flymake [F] Toggle [d] Diagnostics [S] Show
+Eldoc   [E] Toggle [e] Buffer
+Ada     [o] Other"
                'face 'minibuffer-prompt))))
     (pcase key
       ;; Actions
-      (?f (call-interactively 'flymake-mode))
+      (?F (call-interactively 'flymake-mode))
       (?d (flymake-show-buffer-diagnostics))
+      (?S (progn
+            (if flymake-show-diagnostics-at-end-of-line
+                (setq flymake-show-diagnostics-at-end-of-line nil)
+              (setq flymake-show-diagnostics-at-end-of-line t))))
       ;; Eglot
-      (?e (progn (call-interactively 'eglot) (flymake-mode 1)))
-      (?u (progn (eglot-shutdown-all) (flymake-mode -1)))
-      (?h (eglot-shutdown-all))
-      ;; Xref
-      (?x (call-interactively 'xref-find-references))
-      (?n (call-interactively 'xref-find-definitions))
-      (?p (call-interactively 'xref-go-back))
+      (?L (progn (call-interactively 'eglot) (flymake-mode 1)))
+      (?l (progn (eglot-shutdown-all) (flymake-mode -1)))
       ;; Eldoc
-      (?l (global-eldoc-mode 'toggle))
-      (?c (call-interactively 'eldoc-doc-buffer))
+      (?E (global-eldoc-mode 'toggle))
+      (?e (call-interactively 'eldoc-doc-buffer))
       ;; Ada
       (?o (ada-light-other-file))
       ;; Quit
@@ -1336,7 +1359,24 @@ Ada     [o] Other File"
       ;; Default Invalid Key
       (_ (message "Invalid key: %c" key)))))
 
-(global-set-key (kbd "M-c") #'code-menu)
+(defun top-code-menu ()
+  "Menu format code ."
+  (interactive)
+  (let ((key (read-key
+              (propertize
+               "------- Coding [q] Quit: -------
+[a] code [s] build [d] dotnet [f] custom"
+               'face 'minibuffer-prompt))))
+    (pcase key
+      (?a (code-menu))
+      (?s (build-menu))
+      (?d (dotnet-project-menu))
+      (?f (build-menu))
+      (?q (message "Quit Build menu."))
+      (?\C-g (message "Quit Build menu."))
+      (_ (message "Invalid key: %c" key)))))
+
+(global-set-key (kbd "M-RET") #'top-code-menu)
 
 (global-set-key (kbd "C-c f") 'my/selective-display-fold)
 
