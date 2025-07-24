@@ -144,6 +144,7 @@
 (global-set-key (kbd "M-m") #'split-window-vertically)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
+(global-set-key (kbd "M-z") #'visual-line-mode)
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
@@ -1775,7 +1776,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
         "VideoRotate" "VideoRotateLeft" "VideoRotateRight" "VideoShrink"
         "VideoSlowDown" "VideoSpeedUp" "VideoZoom" "WhatsAppConvert"
         "PictureCorrect" "Picture2pdf" "PictureTag" "PictureTagRename"
-        "OtherTagDate" "VideoRemoveFlips")
+        "OtherTagDate" "VideoRemoveFlips" "PictureFixWhatsApp")
       "List of commands for dwim-convert.")
 
     (defvar my/org-dired-marked-files nil
@@ -1824,7 +1825,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
                       (let ((files (my/get-files-from-context)))
                         (when files
                           (let ((files-string (mapconcat 'identity files ";")))
-                            (my/dwim-convert-with-selection-files files-string))))))))t
+                            (my/dwim-convert-with-selection-files files-string))))))))
 
 (defun my/image-dired-get-original-files ()
   "Get original file paths from image-dired marked thumbnails or current thumbnail."
