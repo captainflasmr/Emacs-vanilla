@@ -97,7 +97,7 @@
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
 (global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
 (global-set-key (kbd "M-s /") #'my/find-file)
-(global-set-key (kbd "M-s p") #'my/grep)
+(global-set-key (kbd "M-s '") #'my/grep)
 
 ;;
 ;; -> keybinding-core
@@ -134,17 +134,23 @@
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-2") #'split-window-vertically)
 (global-set-key (kbd "M-3") #'split-window-horizontally)
+(global-set-key (kbd "C-0") 'delete-window)
+(global-set-key (kbd "C-1") #'delete-other-windows)
+(global-set-key (kbd "C-2") #'split-window-vertically)
+(global-set-key (kbd "C-3") #'split-window-horizontally)
 (global-set-key (kbd "M-e") #'dired-jump)
 (global-set-key (kbd "M-g i") #'imenu)
 (global-set-key (kbd "M-g o") #'org-goto)
 (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
-(global-set-key (kbd "M-o") #'bookmark-jump)
-(global-set-key (kbd "M-m") #'split-window-vertically)
+(global-set-key (kbd "M-o") #'other-window)
+(global-set-key (kbd "M-m") #'bookmark-jump)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
 (global-set-key (kbd "M-z") #'visual-line-mode)
+(global-set-key (kbd "M-#") #'my/sync-ui-accent-color)
+(global-set-key (kbd "M-]") #'my/load-theme)
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
@@ -901,10 +907,10 @@ Only add a word boundary if the string starts with a word character."
     (re-search-backward regexp bound noerror count)))
 
 ;; Set the search functions for isearch
-(setq isearch-search-fun-function #'flex-isearch-search-fun)
+;; (setq isearch-search-fun-function #'flex-isearch-search-fun)
 
 ;; Important: Set this function so isearch-occur and related commands will work
-(setq search-default-mode #'flex-isearch-regexp-compile)
+;; (setq search-default-mode #'flex-isearch-regexp-compile)
 
 (defadvice isearch-exit (after dired-enter-directory-or-file activate)
   "In dired mode, enter directory or open file after isearch."
