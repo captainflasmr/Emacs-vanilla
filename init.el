@@ -144,13 +144,13 @@
 (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
-(global-set-key (kbd "M-o") #'other-window)
 (global-set-key (kbd "M-m") #'bookmark-jump)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
 (global-set-key (kbd "M-z") #'visual-line-mode)
 (global-set-key (kbd "M-#") #'my/sync-ui-accent-color)
 (global-set-key (kbd "M-]") #'my/load-theme)
+(global-set-key (kbd "M-o") #'my/fido-recentf)
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
@@ -855,9 +855,18 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 ;;
 ;; -> recentf-core
 ;;
+(save-place-mode 1)
 (recentf-mode 1)
-(setq recentf-max-menu-items 200)
-(setq recentf-max-saved-items 200)
+(setq recentf-max-menu-items 10)
+(setq recentf-max-saved-items 10)
+
+(defun my/fido-recentf (arg)
+  "Use fido to select from recently opened files.
+With universal argument, use the traditional recentf-open-files interface."
+  (interactive "P")
+  (if arg
+      (recentf-open-files)
+    (find-file (completing-read "Recent file: " recentf-list nil t nil 'recentf-list))))
 
 ;;
 ;; -> isearch-core
