@@ -1353,7 +1353,7 @@ Only add a word boundary if the string starts with a word character."
 
 Customizes the modeline for displaying active modes, buffer names, or other context-sensitive information, improving the feedback and control available at a glance.
 
-#+begin_src elisp
+#+begin_src elisp :tangle no
 ;;
 ;; -> modeline-core
 ;;
@@ -1510,6 +1510,15 @@ Defining very specific indentation and highlight guides
 ;;
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 4)
+
+(defun indent-whole-buffer ()
+  "Indent the entire buffer without affecting point or mark."
+  (interactive)
+  (save-excursion
+    (save-restriction
+      (indent-region (point-min) (point-max)))))
+
+(global-set-key (kbd "C-c i") 'indent-whole-buffer)
 #+end_src
 
 * shell-core

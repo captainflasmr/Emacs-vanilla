@@ -929,52 +929,6 @@ Only add a word boundary if the string starts with a word character."
         (dired-find-file)))))
 
 ;;
-;; -> modeline-core
-;;
-
-(setq-default mode-line-format
-              (list
-               '(:eval (if (and (buffer-file-name) (buffer-modified-p))
-                           "**"
-                         ;; (propertize "*" 'face
-                         ;;             '(:background "#ff0000" :foreground "#ffffff"))
-                         ""))
-               '(:eval
-                 (format "%s" (abbreviate-file-name default-directory)))
-               '(:eval
-                 (if (not (equal major-mode 'dired-mode))
-                     (format "%s " (replace-regexp-in-string "<[^>]+>$" "" (buffer-name)))
-                   " "))
-               '(:eval
-                 (when vc-mode
-                   (let* ((backend (vc-backend (buffer-file-name)))
-                          (branch (substring-no-properties vc-mode (+ (length (symbol-name backend)) 2)))
-                          (state (vc-state (buffer-file-name))))
-                     (concat
-                      (propertize
-                       (format "%s:%s"
-                               backend
-                               branch)
-                       'face '(:inherit bold))
-                      (when state
-                        (if (string= state "edited")
-                            (propertize
-                             "* " 'face '(:inherit bold :inverse-video nil))
-                          ;; (propertize
-                          ;; (format ":%s " state) 'face '(:inherit bold :inverse-video nil))
-                          (propertize
-                           (format " ") 'face '(:inverse-video nil))
-                          ))))))
-               '(:eval (format "%d " (point)))
-               'mode-line-position
-               ;; '(:eval (my-filtered-minor-modes))               
-               'mode-line-modes
-               ;; '(:eval (format "%s " (symbol-name major-mode)))
-               'mode-line-misc-info))
-
-(setq mode-line-compact t)
-
-;;
 ;; -> grep-core
 ;;
 (eval-after-load 'grep
@@ -1048,6 +1002,15 @@ With directories under project root using find."
 ;;
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 4)
+
+(defun indent-whole-buffer ()
+  "Indent the entire buffer without affecting point or mark."
+  (interactive)
+  (save-excursion
+    (save-restriction
+      (indent-region (point-min) (point-max)))))
+
+(global-set-key (kbd "C-c i") 'indent-whole-buffer)
 
 ;;
 ;; -> shell-core
