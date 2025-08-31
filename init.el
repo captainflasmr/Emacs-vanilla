@@ -22,7 +22,8 @@
 ;;
 ;; -> modeline-completion-core
 ;;
-(fido-mode 1)
+;; (fido-mode 1)
+(fido-vertical-mode 1)
 (define-key icomplete-minibuffer-map (kbd "M-RET") 'my-icomplete-exit-minibuffer-with-input)
 (setq icomplete-compute-delay 0)
 (setq icomplete-show-matches-on-no-input t)
