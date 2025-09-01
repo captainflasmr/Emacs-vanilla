@@ -1906,6 +1906,97 @@ F5 again will unset 'selective-display' by setting it to 0."
       (set-selective-display 0)
     (set-selective-display (or level (1+ (current-column))))))
 
+(defun concatenate-project-files (root-dir output-file &optional exclude-patterns)
+  "Traverse ROOT-DIR recursively and concatenate all text files into OUTPUT-FILE.
+Each file is prefixed with a header showing its relative path.
+EXCLUDE-PATTERNS is an optional list of regex patterns to exclude files/directories."
+  (interactive "DRoot directory: \nFOutput file: ")
+  (let ((default-exclude '("\\.git/" "node_modules/" "\\.DS_Store" "\\.pyc$" "\\.o$" "\\.so$" "\\.gitconfig"
+                           "\\.jpg$" "\\.jpeg$" "\\.png$" "\\.gif$" "\\.pdf$" "\\.zip$" "\\.csproj" "\\.gitignore"
+                           "\\.tar$" "\\.gz$" "\\.exe$" "\\.dll$" "\\.class$")))
+    (setq exclude-patterns (append default-exclude exclude-patterns))
+    
+    (with-temp-buffer
+      (insert (format "=== PROJECT CONCATENATION ===\n"))
+      (insert (format "Root Directory: %s\n" root-dir))
+      (insert (format "Generated: %s\n\n" (current-time-string)))
+      
+      (let ((file-count 0))
+        (dolist (file (concatenate-project-files--get-text-files root-dir exclude-patterns))
+          (let ((relative-path (file-relative-name file root-dir)))
+            (insert (format "\n" ))
+            (insert (format "=== FILE: %s ===\n" relative-path))
+            (insert (format "\n"))
+            
+            (condition-case err
+                (progn
+                  (insert-file-contents file)
+                  (goto-char (point-max))
+                  (insert "\n")
+                  (setq file-count (1+ file-count)))
+              (error 
+               (insert (format "ERROR: Could not read file - %s\n" (error-message-string err)))))))
+        
+        (insert (format "\n=== END OF CONCATENATION ===\n"))
+        (insert (format "Total files processed: %d\n" file-count)))
+      
+      (write-region (point-min) (point-max) output-file)
+      (message "Concatenated %d files from %s to %s" 
+               (length (concatenate-project-files--get-text-files root-dir exclude-patterns))
+               root-dir output-file))))
+
+(defun concatenate-project-files--get-text-files (dir exclude-patterns)
+  "Get all text files in DIR recursively, excluding files matching EXCLUDE-PATTERNS."
+  (let ((files '()))
+    (dolist (file (directory-files-recursively dir ".*" nil))
+      (unless (concatenate-project-files--should-exclude-p file exclude-patterns)
+        (when (concatenate-project-files--is-text-file-p file)
+          (push file files))))
+    (sort files 'string<)))
+
+(defun concatenate-project-files--should-exclude-p (file exclude-patterns)
+  "Check if FILE should be excluded based on EXCLUDE-PATTERNS."
+  (catch 'excluded
+    (dolist (pattern exclude-patterns)
+      (when (string-match pattern file)
+        (throw 'excluded t)))
+    nil))
+
+(defun concatenate-project-files--is-text-file-p (file)
+  "Check if FILE is likely a text file by examining its content."
+  (and (file-regular-p file)
+       (file-readable-p file)
+       (> (nth 7 (file-attributes file)) 0) ; file size > 0
+       (condition-case nil
+           (with-temp-buffer
+             (insert-file-contents file nil 0 1024) ; read first 1KB
+             (not (string-match-p "[\000-\010\016-\037]" (buffer-string))))
+         (error nil))))
+
+;; Convenience function for git projects
+(defun concatenate-git-project (git-root output-file)
+  "Concatenate all text files in a git project, respecting .gitignore patterns."
+  (interactive "DGit project root: \nFOutput file: ")
+  (let ((gitignore-patterns (concatenate-project-files--parse-gitignore 
+                             (expand-file-name ".gitignore" git-root))))
+    (concatenate-project-files git-root output-file gitignore-patterns)))
+
+(defun concatenate-project-files--parse-gitignore (gitignore-file)
+  "Parse .gitignore file and return list of regex patterns."
+  (when (file-exists-p gitignore-file)
+    (with-temp-buffer
+      (insert-file-contents gitignore-file)
+      (let ((patterns '()))
+        (goto-char (point-min))
+        (while (not (eobp))
+          (let ((line (string-trim (thing-at-point 'line t))))
+            (when (and (> (length line) 0)
+                       (not (string-prefix-p "#" line)))
+              ;; Convert gitignore pattern to regex
+              (let ((pattern (replace-regexp-in-string "\\*" ".*" line)))
+                (push pattern patterns))))
+          (forward-line 1))
+        patterns))))
 #+end_src
 
 * ada-core
