@@ -316,6 +316,15 @@ Setup for both vanilla modeline.
 ;;
 ;; (fido-mode 1)
 (fido-vertical-mode 1)
+(custom-set-faces
+  '(icomplete-first-match
+    ((t (:foreground "#7c7c75" :background "#3a3a3a" :weight bold))))
+  '(icomplete-selected-match
+    ((t (:foreground "#ffffff" :background "#5f87af" :weight bold))))
+  '(completions-common-part
+    ((t (:foreground "#87ceeb"))))
+  '(completions-first-difference
+    ((t (:foreground "#ffb6c1")))))
 (define-key icomplete-minibuffer-map (kbd "M-RET") 'my-icomplete-exit-minibuffer-with-input)
 (setq icomplete-compute-delay 0)
 (setq icomplete-show-matches-on-no-input t)
@@ -1881,13 +1890,13 @@ Ada     [o] Other"
   (let ((key (read-key
               (propertize
                "------- Coding [q] Quit: -------
-[a] code [s] build [d] dotnet [f] custom"
+[a] code [d] vc-dir [n] dotnet [m] custom"
                'face 'minibuffer-prompt))))
     (pcase key
       (?a (code-menu))
-      (?s (build-menu))
-      (?d (dotnet-project-menu))
-      (?f (build-menu))
+      (?d (vc-dir (project-root-safe)))
+      (?n (dotnet-project-menu))
+      (?m (build-menu))
       (?q (message "Quit Build menu."))
       (?\C-g (message "Quit Build menu."))
       (_ (message "Invalid key: %c" key)))))
@@ -2307,6 +2316,14 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 (define-key help-map (kbd "=") #'describe-char)
 (define-key help-map (kbd "j") #'describe-face)
 (define-key help-map (kbd "-") #'describe-keymap)
+
+(defun show-file-path ()
+  "Show the full path of the current buffer's file in the minibuffer."
+  (interactive)
+  (message (buffer-file-name)))
+
+(global-set-key (kbd "C-c p") 'show-file-path)
+
 #+end_src
 
 * image-dired
