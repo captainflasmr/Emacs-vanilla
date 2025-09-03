@@ -308,14 +308,44 @@ Simple abbrev completion
 
 * modeline-completion-core
 
-Setup for both vanilla modeline.
+Now fido-mode, note the having to add advice to overried/set up the completion as by default fido-mode comes with flex.
+
+#+begin_src elisp :tangle no
+;;
+;; -> modeline-completion-core
+;;
+(defun my-fido-completion-styles-advice (&rest _args)
+  "Override completion styles after fido setup."
+  (when (and fido-mode (icomplete-simple-completing-p))
+    (setq-local completion-styles '(substring basic partial-completion))))
+
+(advice-add 'icomplete--fido-mode-setup :after #'my-fido-completion-styles-advice)
+
+(fido-vertical-mode 1)
+#+end_src
+
+Now for the old icomplete, lets see if I can get used to this!
 
 #+begin_src elisp
 ;;
 ;; -> modeline-completion-core
 ;;
-;; (fido-mode 1)
-(fido-vertical-mode 1)
+(icomplete-vertical-mode 1)
+
+(setq completion-ignore-case t)
+(setq read-file-name-completion-ignore-case t)
+(setq read-buffer-completion-ignore-case t)
+
+(with-eval-after-load 'icomplete
+  (setq completion-styles '(substring basic partial-completion emacs22)))
+#+end_src
+
+Now the generic completing-read stuff
+
+#+begin_src elisp
+;;
+;; -> modeline-completion-core
+;;
 (custom-set-faces
   '(icomplete-first-match
     ((t (:foreground "#7c7c75" :background "#3a3a3a" :weight bold))))
