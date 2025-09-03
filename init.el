@@ -24,6 +24,7 @@
 ;;
 (icomplete-vertical-mode 1)
 
+(setq icomplete-scroll t)
 (setq completion-ignore-case t)
 (setq read-file-name-completion-ignore-case t)
 (setq read-buffer-completion-ignore-case t)
