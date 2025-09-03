@@ -22,8 +22,18 @@
 ;;
 ;; -> modeline-completion-core
 ;;
-;; (fido-mode 1)
-(fido-vertical-mode 1)
+(icomplete-vertical-mode 1)
+
+(setq completion-ignore-case t)
+(setq read-file-name-completion-ignore-case t)
+(setq read-buffer-completion-ignore-case t)
+
+(with-eval-after-load 'icomplete
+  (setq completion-styles '(substring basic partial-completion emacs22)))
+
+;;
+;; -> modeline-completion-core
+;;
 (custom-set-faces
   '(icomplete-first-match
     ((t (:foreground "#7c7c75" :background "#3a3a3a" :weight bold))))
