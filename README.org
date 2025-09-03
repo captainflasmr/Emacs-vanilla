@@ -310,7 +310,7 @@ Simple abbrev completion
 
 Now fido-mode, note the having to add advice to overried/set up the completion as by default fido-mode comes with flex.
 
-#+begin_src elisp :tangle no
+#+begin_src elisp
 ;;
 ;; -> modeline-completion-core
 ;;
@@ -326,7 +326,7 @@ Now fido-mode, note the having to add advice to overried/set up the completion a
 
 Now for the old icomplete, lets see if I can get used to this!
 
-#+begin_src elisp
+#+begin_src elisp :tangle no
 ;;
 ;; -> modeline-completion-core
 ;;

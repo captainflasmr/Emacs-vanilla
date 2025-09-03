@@ -22,15 +22,14 @@
 ;;
 ;; -> modeline-completion-core
 ;;
-(icomplete-vertical-mode 1)
+(defun my-fido-completion-styles-advice (&rest _args)
+  "Override completion styles after fido setup."
+  (when (and fido-mode (icomplete-simple-completing-p))
+    (setq-local completion-styles '(substring basic partial-completion))))
 
-(setq icomplete-scroll t)
-(setq completion-ignore-case t)
-(setq read-file-name-completion-ignore-case t)
-(setq read-buffer-completion-ignore-case t)
+(advice-add 'icomplete--fido-mode-setup :after #'my-fido-completion-styles-advice)
 
-(with-eval-after-load 'icomplete
-  (setq completion-styles '(substring basic partial-completion emacs22)))
+(fido-vertical-mode 1)
 
 ;;
 ;; -> modeline-completion-core
