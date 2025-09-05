@@ -19,6 +19,12 @@
         try-expand-dabbrev-all-buffers try-expand-dabbrev-from-kill
         try-complete-lisp-symbol-partially try-complete-lisp-symbol))
 
+(setq completion-category-overrides
+      '((project-file (styles substring basic partial-completion))
+        (file (styles substring basic partial-completion))
+        (buffer (styles substring basic partial-completion))
+        (command (styles substring basic partial-completion))))
+
 ;;
 ;; -> modeline-completion-core
 ;;
@@ -735,6 +741,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (setq org-goto-interface 'outline-path-completionp)
 (setq org-outline-path-complete-in-steps nil)
 (setq org-imenu-depth 1)
+(setq imenu-flatten t)
 
 ;;
 ;; -> org-agenda-core
