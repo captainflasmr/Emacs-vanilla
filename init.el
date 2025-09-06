@@ -73,8 +73,6 @@
             (lambda () (interactive)
               (find-file (concat user-emacs-directory "emacs--core.org"))))
 (define-key my-jump-keymap (kbd "l") #'my/load-theme)
-(define-key my-jump-keymap (kbd "m") #'customize-themes)
-(define-key my-jump-keymap (kbd "o") #'bookmark-jump)
 (define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
 (define-key my-jump-keymap (kbd "s") (lambda () (interactive) (find-file "~/source")))
 (define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "~/DCIM/content/")))
@@ -99,27 +97,21 @@
 (define-key my-win-keymap (kbd "g") #'global-hl-line-mode)
 (define-key my-win-keymap (kbd "h") #'font-lock-update)
 (define-key my-win-keymap (kbd "l") #'my/sync-ui-accent-color)
-(define-key my-win-keymap (kbd "m") #'my/load-theme)
 (define-key my-win-keymap (kbd "n") #'display-line-numbers-mode)
 (define-key my-win-keymap (kbd "o") #'toggle-centered-buffer)
 (define-key my-win-keymap (kbd "p") #'variable-pitch-mode)
 (define-key my-win-keymap (kbd "q") #'toggle-menu-bar-mode-from-frame)
 (define-key my-win-keymap (kbd "r") #'my/rainbow-mode)
-(define-key my-win-keymap (kbd "s") #'my/toggle-internal-border-width)
 (define-key my-win-keymap (kbd "u") #'set-cursor-color)
 (define-key my-win-keymap (kbd "U") #'set-foreground-color)
 (define-key my-win-keymap (kbd "B") #'set-background-color)
-(define-key my-win-keymap (kbd "v") #'visual-line-mode)
 
 ;;
 ;; -> keys-other-core
 ;;
-(global-set-key (kbd "M-s ,") #'my/mark-line)
-(global-set-key (kbd "M-H") #'my/mark-line)
 (global-set-key (kbd "M-s =") #'ediff-buffers)
 (global-set-key (kbd "M-s +") #'ediff-regions-linewise)
 (global-set-key (kbd "M-h") #'my/mark-block)
-(global-set-key (kbd "M-s j") #'eval-defun)
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
 (global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
 (global-set-key (kbd "M-s /") #'my/find-file)
@@ -149,7 +141,6 @@
 (global-set-key (kbd "C-c j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
 (global-set-key (kbd "C-c k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
 (global-set-key (kbd "C-x l") #'scroll-lock-mode)
-(global-set-key (kbd "C-x s") #'save-buffer)
 (global-set-key (kbd "C-x v e") 'vc-ediff)
 (global-set-key (kbd "C-x x g") #'revert-buffer)
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
@@ -167,16 +158,16 @@
 (global-set-key (kbd "M-e") #'dired-jump)
 (global-set-key (kbd "M-g i") #'imenu)
 (global-set-key (kbd "M-g o") #'org-goto)
-(global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
 (global-set-key (kbd "M-o") #'bookmark-jump)
 (global-set-key (kbd "M-m") #'my/fido-recentf)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
+(global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
 (global-set-key (kbd "M-z") #'visual-line-mode)
-(global-set-key (kbd "M-#") #'my/sync-ui-accent-color)
-(global-set-key (kbd "M-]") #'my/load-theme)
+(global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
+(global-set-key (kbd "M-s u") #'my/org-promote-all-headings)
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
@@ -318,18 +309,6 @@
       (copy-file file new-file))
     (dired-revert)))
 
-(defun my/mark-line ()
-  "Mark the current line, handling Eshell prompt if in Eshell."
-  (interactive)
-  (if (derived-mode-p 'eshell-mode)
-      (let ((prompt-end (marker-position eshell-last-output-end)))
-        (goto-char prompt-end)
-        (push-mark (point) nil t)
-        (end-of-line))
-    (beginning-of-line)
-    (push-mark (point) nil t)
-    (end-of-line)))
-
 (defun my/mark-block ()
   "Marking a block of text surrounded by a newline."
   (interactive)
@@ -442,138 +421,6 @@ Lightens dark themes by 20%, darkens light themes by 5%."
     (dolist (item custom-enabled-themes)
       (disable-theme item))
     (load-theme (intern theme) t)))
-
-(defvar highlight-rules
-  '((th . (("TODO" . "#999")))
-    (td . (("\\&gt" . "#bbb")
-           ("-\\&gt" . "#ccc")
-           ("- " . "#ddd")
-           ("- - - - " . "#eee")
-           ("- - - - - - - - " . "#fff")
-           ("TODO" . "#fdd")
-           ("DOING" . "#ddf")
-           ("DONE" . "#dfd"))))
-  "Alist of elements ('th or 'td) and associated keywords/colors for row highlighting.")
-
-(defun apply-row-style (row-start row-attributes color)
-  "Apply a background COLOR to the row starting at ROW-START with ROW-ATTRIBUTES."
-  (goto-char row-start)
-  (kill-line)
-  (insert (format "<tr%s style=\"background: %s\">\n" row-attributes color)))
-
-(defun highlight-row-by-rules (row-start row-end row-attributes element)
-  "Highlight a row based on ELEMENT ('th or 'td) keyword rules within ROW-START to ROW-END."
-  (let ((rules (cdr (assoc element highlight-rules))))
-    (dolist (rule rules)
-      (let ((keyword (car rule))
-            (color (cdr rule)))
-        (when (save-excursion
-                (and (re-search-forward (format "<%s.*>%s.*</%s>" element keyword element) row-end t)
-                     (goto-char row-start)))
-          (apply-row-style row-start row-attributes color))))))
-
-(defun my/html-org-table-highlight ()
-  "Open the exported HTML file, find tables with specific classes,
-                                                        and add background styles to rows containing keywords in <td> or <th> elements."
-  (interactive)
-  (let* ((org-file (buffer-file-name))
-         (html-file (concat (file-name-sans-extension org-file) ".html")))
-    (with-temp-buffer
-      (insert-file-contents html-file)
-      (goto-char (point-min))
-      (while (re-search-forward "<table.*>" nil t)
-        (let ((table-start (point))
-              (table-end (save-excursion
-                           (when (re-search-forward "</table>" nil t)
-                             (point)))))
-          (when table-end
-            (save-restriction
-              (narrow-to-region table-start table-end)
-              (goto-char (point-min))
-              (while (re-search-forward "<tr\\(.*\\)>" nil t)
-                (let ((row-start (match-beginning 0))
-                      (row-attributes (match-string 1))
-                      (row-end (save-excursion (search-forward "</tr>"))))
-                  (highlight-row-by-rules row-start row-end row-attributes 'th)
-                  (highlight-row-by-rules row-start row-end row-attributes 'td)))))))
-      (write-region (point-min) (point-max) html-file))))
-
-(defun my/format-to-table (&optional match properties-to-display)
-  "Format Org headings into a structured alist, optionally filtered by MATCH
-  and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"))."
-  (interactive)
-  (let ((rows '())
-        (header '("TODO" "Tags" "Title" "Comments")) ;; Start without "Properties"
-        (max-level 0))
-    (save-excursion
-      (goto-char (point-min))
-      (when match (re-search-forward (format "\\*%s\\*$" (regexp-quote match)) nil t))
-      ;; Add property names to the header dynamically
-      (setq header (append header properties-to-display))
-      (org-map-entries
-       (lambda ()
-         (let* ((entry (org-element-at-point))
-                (heading (org-get-heading t t t t))
-                (level (org-outline-level))
-                (tags (remove "noexport" (org-get-tags)))
-                (todo (org-get-todo-state))
-                (vis-indent "- ")
-                (contents "")
-                (all-properties (org-entry-properties))
-                (filtered-properties
-                 (mapcar (lambda (prop)
-                           (if (cdr (assoc prop all-properties))
-                               (cdr (assoc prop all-properties))
-                             ""))
-                         properties-to-display)))
-           (prin1 properties-to-display)
-           (prin1 all-properties)
-           (prin1 filtered-properties)
-           (org-end-of-meta-data nil)
-           (skip-chars-forward " \n\t")
-           (when (eq (org-element-type (org-element-at-point)) 'paragraph)
-             (let ((start (point)))
-               (org-next-visible-heading 1)
-               (setq contents (buffer-substring-no-properties start (point)))
-               (dolist (pattern '("^#\\+begin.*" "^#\\+end.*" "\n+"))
-                 (setq contents (replace-regexp-in-string pattern
-                                                          (if (string= pattern "\n+") " " "")
-                                                          (string-trim contents))))))
-           (setq max-level (max max-level level))
-           (push (append
-                  (list
-                   (or todo "")
-                   (string-join tags ":")
-                   (cond ((= level 1)
-                          (concat "> " heading))
-                         ((= level 2)
-                          (concat "> " heading))
-                         ((= level 3)
-                          (concat "*> " heading "*"))
-                         ((= level 4)
-                          (concat "*" heading "*"))
-                         (t
-                          (concat "/"
-                                  (mapconcat (lambda (_) vis-indent)
-                                             (make-list (* (- level 4) 1) "") "") heading "/")))
-                   (or contents ""))
-                  filtered-properties)
-                 rows)))
-       nil (when match 'tree)))
-    (setq rows (reverse rows))
-    (push 'hline rows)
-    (cons header rows)))
-
-(defun my/html-flush-divs ()
-  "Flush the divs in export to improve on Confluence import"
-  (interactive)
-  (let* ((org-file (buffer-file-name))
-         (html-file (concat (file-name-sans-extension org-file) ".html")))
-    (with-temp-buffer
-      (insert-file-contents html-file)
-      (goto-char (point-min))
-      (flush-lines "</?div.*>?")
-      (write-region (point-min) (point-max) html-file))))
 
 (defun my/html-promote-headers ()
   "Promote all headers in the HTML file by one level (e.g., h2 -> h1, h3 -> h2, etc.), accounting for attributes."
@@ -894,66 +741,6 @@ With universal argument, use the traditional recentf-open-files interface."
   (if arg
       (recentf-open-files)
     (find-file (completing-read "Recent file: " recentf-list nil t nil 'recentf-list))))
-
-;;
-;; -> isearch-core
-;;
-(defvar flex-isearch-group-size 2
-  "Number of initial characters to group together for more accurate flex searching.")
-
-(defun flex-isearch-regexp-compile (string &optional _lax)
-  "Convert a search STRING to a flexible regexp.
-The first `flex-isearch-group-size` chars of each word are matched literally,
-and the following chars are matched flexibly.
-Only add a word boundary if the string starts with a word character."
-  (let* ((parts (split-string string " " t))
-         (compile-part
-          (lambda (part)
-            (let* ((len (length part))
-                   (group-size (min flex-isearch-group-size len))
-                   (grouped (substring part 0 group-size))
-                   (rest (substring part group-size)))
-              (concat
-               (regexp-quote grouped)
-               (mapconcat (lambda (char)
-                            (format "[^%s\n]*%s"
-                                    (regexp-quote (char-to-string char))
-                                    (regexp-quote (char-to-string char))))
-                          rest
-                          "")
-               "[^-_[:alnum:]\n]*"))))
-         (regexp-body (mapconcat compile-part parts "[^-_[:alnum:]\n]+")))
-    ;; Only add word boundary if the first char is a word character
-    (if (string-match-p "\\`[[:alnum:]_]" string)
-        (concat "\\b" regexp-body)
-      regexp-body)))
-
-(defun flex-isearch-search-fun ()
-  "Return the appropriate search function for flex searching."
-  (if isearch-forward 'flex-isearch-forward 'flex-isearch-backward))
-
-(defun flex-isearch-forward (string &optional bound noerror count)
-  "Flex search forward for STRING."
-  (let ((regexp (flex-isearch-regexp-compile string)))
-    (re-search-forward regexp bound noerror count)))
-
-(defun flex-isearch-backward (string &optional bound noerror count)
-  "Flex search backward for STRING."
-  (let ((regexp (flex-isearch-regexp-compile string)))
-    (re-search-backward regexp bound noerror count)))
-
-;; Set the search functions for isearch
-;; (setq isearch-search-fun-function #'flex-isearch-search-fun)
-
-;; Important: Set this function so isearch-occur and related commands will work
-;; (setq search-default-mode #'flex-isearch-regexp-compile)
-
-(defadvice isearch-exit (after dired-enter-directory-or-file activate)
-  "In dired mode, enter directory or open file after isearch."
-  (when (eq major-mode 'dired-mode)
-    (let ((file (dired-get-file-for-visit)))
-      (when file
-        (dired-find-file)))))
 
 ;;
 ;; -> grep-core
@@ -1692,10 +1479,6 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 ;;
 ;; -> development-core
 ;;
-(global-set-key (kbd "C-c t") 'toggle-centered-buffer)
-(global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
-(global-set-key (kbd "M-s u") #'my/org-promote-all-headings)
-
 (defun my-icomplete-copy-candidate ()
   "Copy the current Icomplete candidate to the kill ring."
   (interactive)
@@ -1706,28 +1489,28 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 
 (define-key minibuffer-local-completion-map (kbd "C-c ,") 'my-icomplete-copy-candidate)
 
-(defun prot/keyboard-quit-dwim ()
-  "Do-What-I-Mean behaviour for a general `keyboard-quit'.
-    The generic `keyboard-quit' does not do the expected thing when
-    the minibuffer is open.  Whereas we want it to close the
-    minibuffer, even without explicitly focusing it.
-    The DWIM behaviour of this command is as follows:
-    - When the region is active, disable it.
-    - When a minibuffer is open, but not focused, close the minibuffer.
-    - When the Completions buffer is selected, close it.
-    - In every other case use the regular `keyboard-quit'."
-  (interactive)
-  (cond
-   ((region-active-p)
-    (keyboard-quit))
-   ((derived-mode-p 'completion-list-mode)
-    (delete-completion-window))
-   ((> (minibuffer-depth) 0)
-    (abort-recursive-edit))
-   (t
-    (keyboard-quit))))
+;; (defun prot/keyboard-quit-dwim ()
+;;   "Do-What-I-Mean behaviour for a general `keyboard-quit'.
+;;     The generic `keyboard-quit' does not do the expected thing when
+;;     the minibuffer is open.  Whereas we want it to close the
+;;     minibuffer, even without explicitly focusing it.
+;;     The DWIM behaviour of this command is as follows:
+;;     - When the region is active, disable it.
+;;     - When a minibuffer is open, but not focused, close the minibuffer.
+;;     - When the Completions buffer is selected, close it.
+;;     - In every other case use the regular `keyboard-quit'."
+;;   (interactive)
+;;   (cond
+;;    ((region-active-p)
+;;     (keyboard-quit))
+;;    ((derived-mode-p 'completion-list-mode)
+;;     (delete-completion-window))
+;;    ((> (minibuffer-depth) 0)
+;;     (abort-recursive-edit))
+;;    (t
+;;     (keyboard-quit))))
 
-(define-key global-map (kbd "C-g") #'prot/keyboard-quit-dwim)
+;; (define-key global-map (kbd "C-g") #'prot/keyboard-quit-dwim)
 
 (add-to-list 'display-buffer-alist
              '("\\*my-rg-results"
