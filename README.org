@@ -905,6 +905,131 @@ Lightens dark themes by 20%, darkens light themes by 5%."
                                     (goto-char (point-min))))))
         (pop-to-buffer output-buffer-name)))))
 
+(defvar highlight-rules
+  '((th . (("TODO" . "#999")))
+    (td . (("\\&gt" . "#bbb")
+           ("-\\&gt" . "#ccc")
+           ("- " . "#ddd")
+           ("- - - - " . "#eee")
+           ("- - - - - - - - " . "#fff")
+           ("HDR" . "#ffd")
+           ("TODO" . "#fdd")
+           ("DOING" . "#ddf")
+           ("DONE" . "#dfd"))))
+  "Alist of elements ('th or 'td) and associated keywords/colors for row highlighting.")
+
+(defun apply-row-style (row-start row-attributes color)
+  "Apply a background COLOR to the row starting at ROW-START with ROW-ATTRIBUTES."
+  (goto-char row-start)
+  (kill-line)
+  (insert (format "<tr%s style=\"background: %s\">\n" row-attributes color)))
+
+(defun highlight-row-by-rules (row-start row-end row-attributes element)
+  "Highlight a row based on ELEMENT ('th or 'td) keyword rules within ROW-START to ROW-END."
+  (let ((rules (cdr (assoc element highlight-rules))))
+    (dolist (rule rules)
+      (let ((keyword (car rule))
+            (color (cdr rule)))
+        (when (save-excursion
+                (and (re-search-forward (format "<%s.*>%s.*</%s>" element keyword element) row-end t)
+                     (goto-char row-start)))
+          (apply-row-style row-start row-attributes color))))))
+
+(defun my/html-org-table-highlight ()
+  "Open the exported HTML file, find tables with specific classes,
+                                                        and add background styles to rows containing keywords in <td> or <th> elements."
+  (interactive)
+  (let* ((org-file (buffer-file-name))
+         (html-file (concat (file-name-sans-extension org-file) ".html")))
+    (with-temp-buffer
+      (insert-file-contents html-file)
+      (goto-char (point-min))
+      (while (re-search-forward "<table.*>" nil t)
+        (let ((table-start (point))
+              (table-end (save-excursion
+                           (when (re-search-forward "</table>" nil t)
+                             (point)))))
+          (when table-end
+            (save-restriction
+              (narrow-to-region table-start table-end)
+              (goto-char (point-min))
+              (while (re-search-forward "<tr\\(.*\\)>" nil t)
+                (let ((row-start (match-beginning 0))
+                      (row-attributes (match-string 1))
+                      (row-end (save-excursion (search-forward "</tr>"))))
+                  (highlight-row-by-rules row-start row-end row-attributes 'th)
+                  (highlight-row-by-rules row-start row-end row-attributes 'td)))))))
+      (write-region (point-min) (point-max) html-file))))
+
+(defun my/html-flush-divs ()
+  "Flush the divs in export to improve on Confluence import"
+  (interactive)
+  (let* ((org-file (buffer-file-name))
+         (html-file (concat (file-name-sans-extension org-file) ".html")))
+    (with-temp-buffer
+      (insert-file-contents html-file)
+      (goto-char (point-min))
+      (flush-lines "</?div.*>?")
+      (write-region (point-min) (point-max) html-file))))
+
+(defun my/format-to-table (&optional match properties-to-display)
+  "Format Org headings into a structured alist, optionally filtered by MATCH
+   and displaying only specified PROPERTIES-TO-DISPLAY (e.g., '(\"ID\" \"PRIORITY\"))."
+  (interactive)
+  (let ((rows '())
+        (header (list "TODO" "Tags" "Title" "Contents" "Properties")))
+    
+      (org-map-entries
+       (lambda ()
+         (let* ((heading (org-get-heading t t t t))  ; Clean heading without TODO/tags
+                (level (org-outline-level))
+                (tags (org-get-tags))
+                (todo (org-get-todo-state))
+                (properties (org-entry-properties))
+                (contents ""))
+           
+           ;; Extract first paragraph content
+           (save-excursion
+             (org-end-of-meta-data t)
+             (when (looking-at-p "[ \t]*[^*\n]") ; Not another heading
+               (let ((start (point)))
+                 (forward-paragraph)
+                 (setq contents (string-trim 
+                               (replace-regexp-in-string 
+                                "[ \t\n]+" " " 
+                                (buffer-substring-no-properties start (point))))))))
+           
+           ;; Format title with indentation
+           (let ((formatted-title 
+                  (concat (mapconcat (lambda (_) " - ") (make-list (- level 2) nil) "")
+                         (cond ((= level 1) "▶ ")
+                               ((= level 2) "▷ ")
+                               (t "• "))
+                         heading))
+                 ;; Filter properties
+                 (filtered-props
+                  (if properties-to-display
+                      (string-join
+                       (delq nil
+                             (mapcar (lambda (prop)
+                                       (let ((val (cdr (assoc prop properties))))
+                                         (when val (format "%s:%s" prop val))))
+                                     properties-to-display))
+                       " ")
+                    "")))
+             
+             (push (list (or todo "")
+                         (if tags (string-join tags ":") "")
+                         formatted-title
+                         contents
+                         filtered-props)
+                   rows))))
+       match)
+    
+    (when rows
+      (setq rows (reverse rows))
+      (push 'hline rows))
+    (cons header rows)))
 #+end_src
 
 * window-positioning-core
