@@ -35,7 +35,9 @@
 
 (advice-add 'icomplete--fido-mode-setup :after #'my-fido-completion-styles-advice)
 
-(fido-vertical-mode 1)
+(if (fboundp 'fido-vertical-mode)
+    (fido-vertical-mode 1)
+  (fido-mode 1))
 
 ;;
 ;; -> modeline-completion-core

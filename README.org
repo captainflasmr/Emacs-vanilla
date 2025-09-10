@@ -327,7 +327,9 @@ Now fido-mode, note the having to add advice to overried/set up the completion a
 
 (advice-add 'icomplete--fido-mode-setup :after #'my-fido-completion-styles-advice)
 
-(fido-vertical-mode 1)
+(if (fboundp 'fido-vertical-mode)
+    (fido-vertical-mode 1)
+  (fido-mode 1))
 #+end_src
 
 Now for the old icomplete, lets see if I can get used to this!
@@ -336,7 +338,9 @@ Now for the old icomplete, lets see if I can get used to this!
 ;;
 ;; -> modeline-completion-core
 ;;
-(icomplete-vertical-mode 1)
+(if (fboundp 'icomplete-vertical-mode)
+    (icomplete-vertical-mode 1)
+  (fido-mode 1))
 
 (setq icomplete-scroll t)
 (setq completion-ignore-case t)
