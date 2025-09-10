@@ -51,7 +51,6 @@
     ((t (:foreground "#87ceeb"))))
   '(completions-first-difference
     ((t (:foreground "#ffb6c1")))))
-(define-key icomplete-minibuffer-map (kbd "M-RET") 'my-icomplete-exit-minibuffer-with-input)
 (setq icomplete-compute-delay 0)
 (setq icomplete-show-matches-on-no-input t)
 
@@ -1616,29 +1615,6 @@ It doesn't define any keybindings. In comparison with `ada-mode',
       (abort-recursive-edit))))
 
 (define-key minibuffer-local-completion-map (kbd "C-c ,") 'my-icomplete-copy-candidate)
-
-;; (defun prot/keyboard-quit-dwim ()
-;;   "Do-What-I-Mean behaviour for a general `keyboard-quit'.
-;;     The generic `keyboard-quit' does not do the expected thing when
-;;     the minibuffer is open.  Whereas we want it to close the
-;;     minibuffer, even without explicitly focusing it.
-;;     The DWIM behaviour of this command is as follows:
-;;     - When the region is active, disable it.
-;;     - When a minibuffer is open, but not focused, close the minibuffer.
-;;     - When the Completions buffer is selected, close it.
-;;     - In every other case use the regular `keyboard-quit'."
-;;   (interactive)
-;;   (cond
-;;    ((region-active-p)
-;;     (keyboard-quit))
-;;    ((derived-mode-p 'completion-list-mode)
-;;     (delete-completion-window))
-;;    ((> (minibuffer-depth) 0)
-;;     (abort-recursive-edit))
-;;    (t
-;;     (keyboard-quit))))
-
-;; (define-key global-map (kbd "C-g") #'prot/keyboard-quit-dwim)
 
 (add-to-list 'display-buffer-alist
              '("\\*my-rg-results"
