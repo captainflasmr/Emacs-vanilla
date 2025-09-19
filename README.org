@@ -811,6 +811,17 @@ Lightens dark themes by 20%, darkens light themes by 5%."
       (disable-theme item))
     (load-theme (intern theme) t)))
 
+(defun my/html-flush-divs ()
+  "Flush the divs in export to improve on Confluence import"
+  (interactive)
+  (let* ((org-file (buffer-file-name))
+         (html-file (concat (file-name-sans-extension org-file) ".html")))
+    (with-temp-buffer
+      (insert-file-contents html-file)
+      (goto-char (point-min))
+      (flush-lines "</?div.*>?")
+      (write-region (point-min) (point-max) html-file))))
+
 (defun my/html-promote-headers ()
   "Promote all headers in the HTML file by one level (e.g., h2 -> h1, h3 -> h2, etc.), accounting for attributes."
   (interactive)
