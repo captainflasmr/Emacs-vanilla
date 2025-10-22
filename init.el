@@ -736,7 +736,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
   (setq org-agenda-show-all-dates t)
   (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
   (setq org-agenda-custom-commands
-        '(("m" "Month View" agenda ""
+        '(("j" "Month View" agenda ""
            ((org-agenda-start-day "today")
             (org-agenda-span 30)
             (org-agenda-time-grid nil)))))
