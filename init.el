@@ -726,6 +726,9 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (setq org-goto-interface 'outline-path-completionp)
 (setq org-outline-path-complete-in-steps nil)
 (setq org-imenu-depth 1)
+(with-eval-after-load 'org
+  (define-key org-mode-map (kbd "C-'") #'nil)
+  (define-key org-mode-map (kbd "C-,") #'nil))
 (setq imenu-flatten t)
 
 ;;
