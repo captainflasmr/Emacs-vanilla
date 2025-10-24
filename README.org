@@ -1126,6 +1126,9 @@ Extends and customizes Org mode for document structuring, note-taking, and proje
 (setq org-goto-interface 'outline-path-completionp)
 (setq org-outline-path-complete-in-steps nil)
 (setq org-imenu-depth 1)
+(with-eval-after-load 'org
+  (define-key org-mode-map (kbd "C-'") #'nil)
+  (define-key org-mode-map (kbd "C-,") #'nil))
 (setq imenu-flatten t)
 #+end_src
 
@@ -1142,7 +1145,7 @@ Customizes the Org Agenda for a personalized task management and calendar view, 
   (setq org-agenda-show-all-dates t)
   (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
   (setq org-agenda-custom-commands
-        '(("j" "Month View" agenda ""
+        '(("m" "Month View" agenda ""
            ((org-agenda-start-day "today")
             (org-agenda-span 30)
             (org-agenda-time-grid nil)))))
