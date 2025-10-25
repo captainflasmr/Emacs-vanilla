@@ -1299,11 +1299,10 @@ Ada     [o] Other"
   (let ((key (read-key
               (propertize
                "------- Coding [q] Quit: -------
-[a] code [d] vc-dir [n] dotnet [m] custom"
+[a] code [n] dotnet [m] custom"
                'face 'minibuffer-prompt))))
     (pcase key
       (?a (code-menu))
-      (?d (vc-dir (project-root-safe)))
       (?n (dotnet-project-menu))
       (?m (build-menu))
       (?q (message "Quit Build menu."))
