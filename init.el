@@ -1065,18 +1065,6 @@ With directories under project root using find."
 (setq tab-bar-show 1)
 
 ;;
-;; -> linux-specific-core
-;;
-(when (eq system-type 'gnu/linux)
-  (custom-theme-set-faces
-   'user
-   '(variable-pitch ((t (:family "DejaVu Sans" :height 120 :weight normal))))
-   '(fixed-pitch ((t ( :family "Source Code Pro" :height 110)))))
-  (setq font-general "MonoSpace 12")
-  (set-frame-font font-general nil t)
-  (add-to-list 'default-frame-alist `(font . ,font-general)))
-
-;;
 ;; -> programming-core
 ;;
 ;;
