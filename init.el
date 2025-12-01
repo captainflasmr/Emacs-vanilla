@@ -1564,7 +1564,7 @@ It doesn't define any keybindings. In comparison with `ada-mode',
         "VideoReplaceVideoAudio" "VideoRescale" "VideoReverse"
         "VideoRotate" "VideoRotateLeft" "VideoRotateRight" "VideoShrink"
         "VideoSlowDown" "VideoSpeedUp" "VideoZoom" "WhatsAppConvert"
-        "PictureCorrect" "Picture2pdf" "PictureTag" "PictureTagRename"
+        "PictureCorrect" "Picture2pdf" "PictureTag" "PictureTagRename" "PictureTagAndRenameEmacs"
         "OtherTagDate" "VideoRemoveFlips" "PictureFixWhatsApp")
       "List of commands for dwim-convert.")
 
@@ -1702,11 +1702,39 @@ It doesn't define any keybindings. In comparison with `ada-mode',
           (my/dwim-convert-with-selection-files-command files-string "PictureTagRename"))
       (message "No files found to tag and rename"))))
 
+(defun my/picture-tag-rename-and-update ()
+  "Run PictureTag, PictureTagRename, and PictureUpdateFromCreateDate in sequence."
+  (interactive)
+  (let* ((files (my/get-files-from-context))
+         (files-string (when files (mapconcat 'identity files ";"))))
+    (if files-string
+        (progn
+          ;; First, tag the pictures
+          (message "Step 1/3: Tagging pictures...")
+          (my/dwim-convert-with-selection-files-command files-string "PictureTag")
+          (sit-for 1)  ; Brief pause between operations
+          
+          ;; Then rename based on tags
+          (message "Step 2/3: Renaming pictures...")
+          (my/dwim-convert-with-selection-files-command files-string "PictureUpdateFromCreateDate")
+
+          (sit-for 1)
+          
+          ;; Finally update dates
+          (message "Step 3/3: Updating dates from CreateDate...")
+          (my/dwim-convert-with-selection-files-command files-string "PictureTagRename")
+          
+          (message "All operations completed!"))
+      (message "No files found to process"))))
+
+(global-set-key (kbd "C-c t") 'my/picture-tag-rename-and-update)
+
 ;; Set up keybindings for both dired and image-dired
 (defun my/setup-picture-keybindings ()
   "Set up consistent keybindings for picture operations."
-  (local-set-key (kbd "C-c t") 'my/universal-picture-tag)
-  (local-set-key (kbd "C-c r") 'my/universal-picture-tag-rename))
+  (local-set-key (kbd "C-c t") 'my/picture-tag-rename-and-update))
+  ;; (local-set-key (kbd "C-c r") 'my/universal-picture-tag-rename)
+  ;; (local-set-key (kbd "C-c T") 'my/picture-tag-rename-and-update))
 
 ;; Apply to both modes
 (add-hook 'dired-mode-hook 'my/setup-picture-keybindings)
