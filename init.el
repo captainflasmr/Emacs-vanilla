@@ -7,6 +7,7 @@
 (require 'grep)
 (require 'bookmark)
 (require 'dired)
+(require 'ox-md)
 
 ;;
 ;; -> completion-core
