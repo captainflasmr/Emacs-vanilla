@@ -1728,14 +1728,12 @@ It doesn't define any keybindings. In comparison with `ada-mode',
           (message "All operations completed!"))
       (message "No files found to process"))))
 
-(global-set-key (kbd "C-c t") 'my/picture-tag-rename-and-update)
+(global-set-key (kbd "C-t t") 'my/picture-tag-rename-and-update)
 
 ;; Set up keybindings for both dired and image-dired
 (defun my/setup-picture-keybindings ()
   "Set up consistent keybindings for picture operations."
-  (local-set-key (kbd "C-c t") 'my/picture-tag-rename-and-update))
-  ;; (local-set-key (kbd "C-c r") 'my/universal-picture-tag-rename)
-  ;; (local-set-key (kbd "C-c T") 'my/picture-tag-rename-and-update))
+  (local-set-key (kbd "C-t t") 'my/picture-tag-rename-and-update))
 
 ;; Apply to both modes
 (add-hook 'dired-mode-hook 'my/setup-picture-keybindings)
