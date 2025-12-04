@@ -781,7 +781,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
   (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
   (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
   (define-key dired-mode-map (kbd "C-c U") 'my/disk-space-query)
-  (define-key dired-mode-map (kbd "C-c i") 'my/image-dired-sort)
+  (define-key dired-mode-map (kbd "C-t d") 'my/image-dired-sort)
   (define-key dired-mode-map (kbd "b") 'my/dired-file-to-org-link)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
 
