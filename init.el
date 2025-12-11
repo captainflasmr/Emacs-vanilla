@@ -695,6 +695,10 @@ Lightens dark themes by 20%, darkens light themes by 5%."
              '("\\*Messages" display-buffer-same-window))
 (add-to-list 'display-buffer-alist
              '("\\*Process" display-buffer-same-window))
+(add-to-list 'display-buffer-alist
+             '("\\*vc-dir\\*"
+               (display-buffer-same-window)))
+(setq kill-buffer-query-functions nil)
 
 ;;
 ;; -> org-core

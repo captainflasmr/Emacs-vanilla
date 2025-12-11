@@ -1089,6 +1089,10 @@ Configures rules and behaviours for display-buffer functions to control how new 
              '("\\*Messages" display-buffer-same-window))
 (add-to-list 'display-buffer-alist
              '("\\*Process" display-buffer-same-window))
+(add-to-list 'display-buffer-alist
+             '("\\*vc-dir\\*"
+               (display-buffer-same-window)))
+(setq kill-buffer-query-functions nil)
 #+end_src
 
 * org-core
