@@ -118,6 +118,7 @@
 (global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
 (global-set-key (kbd "M-s /") #'my/find-file)
 (global-set-key (kbd "M-s '") #'my/grep)
+(global-set-key (kbd "C-c g") #'my/grep)
 
 ;;
 ;; -> keybinding-core

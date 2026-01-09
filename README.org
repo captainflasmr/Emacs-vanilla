@@ -457,6 +457,7 @@ Configures a sparse keymap for miscellaneous actions like evaluating expressions
 (global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
 (global-set-key (kbd "M-s /") #'my/find-file)
 (global-set-key (kbd "M-s '") #'my/grep)
+(global-set-key (kbd "C-c g") #'my/grep)
 
 #+end_src
 
