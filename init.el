@@ -74,7 +74,7 @@
 (define-key my-jump-keymap (kbd "k")
             (lambda () (interactive)
               (find-file (concat user-emacs-directory "emacs--core.org"))))
-(define-key my-jump-keymap (kbd "l") #'my/load-theme)
+(define-key my-jump-keymap (kbd "l") #'my/fido-recentf)
 (define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
 (define-key my-jump-keymap (kbd "s") (lambda () (interactive) (find-file "~/source")))
 (define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "~/DCIM/content/")))
@@ -116,8 +116,7 @@
 (global-set-key (kbd "M-h") #'my/mark-block)
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
 (global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
-(global-set-key (kbd "M-s /") #'my/find-file)
-(global-set-key (kbd "M-s '") #'my/grep)
+(global-set-key (kbd "C-c f") #'my/find-file)
 (global-set-key (kbd "C-c g") #'my/grep)
 
 ;;
@@ -164,7 +163,7 @@
 (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
 (global-set-key (kbd "M-o") #'bookmark-jump)
-(global-set-key (kbd "M-m") #'my/fido-recentf)
+(global-set-key (kbd "M-m") #'my/load-theme)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
@@ -1101,7 +1100,7 @@ With directories under project root using find."
 
 (setq vc-handled-backends '(SVN Git))
 
-(global-set-key (kbd "C-c f") 'my/selective-display-fold)
+(global-set-key (kbd "M-s f") 'my/selective-display-fold)
 
 (defun my/selective-display-fold (&optional level)
   "Fold text indented same of more than the cursor.
