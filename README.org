@@ -468,13 +468,17 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 ;;
 ;; -> keybinding-core
 ;;
-(global-set-key (kbd "C-M-l") (lambda () (interactive)
+(global-set-key (kbd "C-M-h") 'windmove-left)
+(global-set-key (kbd "C-M-l") 'windmove-right)
+(global-set-key (kbd "C-M-j") 'windmove-down)
+(global-set-key (kbd "C-M-k") 'windmove-up)
+(global-set-key (kbd "M-L") (lambda () (interactive)
                                 (my/adaptive-resize t -2)))
-(global-set-key (kbd "C-M-h") (lambda () (interactive)
+(global-set-key (kbd "M-H") (lambda () (interactive)
                                 (my/adaptive-resize t 2)))
-(global-set-key (kbd "C-M-j") (lambda () (interactive)
+(global-set-key (kbd "M-J") (lambda () (interactive)
                                 (my/adaptive-resize nil -1)))
-(global-set-key (kbd "C-M-k") (lambda () (interactive)
+(global-set-key (kbd "M-K") (lambda () (interactive)
                                 (my/adaptive-resize nil 1)))
 (global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
