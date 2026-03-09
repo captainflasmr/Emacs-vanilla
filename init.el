@@ -87,6 +87,124 @@
 (add-hook 'text-mode-hook 'visual-line-mode)
 
 ;;
+;; -> eldoc-box-core
+;;
+(defvar my/eldoc-box--child-frame nil
+  "Holds the current eldoc child frame, if any.")
+
+(defun my/eldoc-box--make-frame ()
+  "Show eldoc documentation in a child frame near point."
+  (interactive)
+  (when (frame-live-p my/eldoc-box--child-frame)
+    (delete-frame my/eldoc-box--child-frame))
+  (let* ((parent (selected-frame))
+         (origin-major-mode major-mode)
+         (buffer (eldoc-doc-buffer))
+         (line-count (with-current-buffer buffer
+                       (count-lines (point-min) (point-max))))
+         (desired-lines (min 20 (max 0 line-count)))
+         (frame (make-frame
+                 `((parent-frame . ,parent)
+                   (no-accept-focus . t)
+                   (no-focus-on-map . t)
+                   (internal-border-width . 1)
+                   (undecorated . t)
+                   (fullscreen . nil)
+                   (left . ,(+ (window-pixel-left)
+                               (car (posn-x-y (posn-at-point)))))
+                   (top . ,(+ (cdr (posn-x-y (posn-at-point)))
+                              (frame-char-height)))
+                   (width . 60)
+                   (height . ,desired-lines)
+                   (minibuffer . nil)
+                   (visibility . nil)
+                   (desktop-dont-save . t)
+                   (right-fringe . 0)
+                   (left-fringe . 0)
+                   (menu-bar-lines . 0)
+                   (tool-bar-lines . 0)
+                   (tab-bar-lines . 0)
+                   (line-spacing . 0)
+                   (unsplittable . t)
+                   (cursor-type . nil)
+                   (mouse-wheel-frame . nil)
+                   (no-other-frame . t)
+                   (inhibit-double-buffering . t)
+                   (drag-internal-border . t)
+                   (no-special-glyphs . t)
+                   (name . "my-eldoc-box")))))
+
+    (with-current-buffer buffer
+      (when (memq origin-major-mode
+                  '(typescript-ts-mode tsx-ts-mode js-ts-mode))
+        (ignore-errors (markdown-ts-mode) (font-lock-ensure)))
+      (when (memq origin-major-mode '(go-ts-mode))
+        (ignore-errors (go-ts-mode) (font-lock-ensure)))
+      (when (memq origin-major-mode '(rust-ts-mode))
+        (ignore-errors (rust-ts-mode) (font-lock-ensure)))
+      (ignore-errors (flymake-mode -1))
+      (visual-line-mode 1)
+      (display-line-numbers-mode -1))
+
+    (walk-windows
+     (lambda (win)
+       (when (eq (window-frame win) frame)
+         (set-window-parameter win 'mode-line-format 'none)
+         (set-window-parameter win 'header-line-format 'none))
+       nil frame))
+
+    (set-window-buffer (frame-root-window frame) buffer)
+    (set-frame-parameter frame 'visibility t)
+
+    (let* ((bg (face-background 'default nil parent))
+           (rgb (color-name-to-rgb bg))
+           (darker (apply #'color-rgb-to-hex
+                          (mapcar (lambda (c) (* 0.9 c)) rgb))))
+      (set-frame-parameter frame 'background-color darker)
+      (with-current-buffer buffer
+        (face-remap-add-relative 'default `(:background ,darker))))
+
+    (setq my/eldoc-box--child-frame frame)
+    (my/eldoc-box--enable-auto-close)
+
+    (let ((key (read-key "Eldoc Box: q(uit) / o(pen) doc in window")))
+      (cond
+       ((equal key ?q)
+        (my/eldoc-box--delete-frame))
+       ((equal key ?o)
+        (my/eldoc-box--delete-frame)
+        (run-with-idle-timer 0.05 nil
+                             (lambda () (eldoc-doc-buffer t))))
+       (t
+        (my/eldoc-box--delete-frame))))
+
+    frame))
+
+(defun my/eldoc-box--delete-frame ()
+  "Close the eldoc child frame."
+  (interactive)
+  (when (frame-live-p my/eldoc-box--child-frame)
+    (delete-frame my/eldoc-box--child-frame)
+    (setq my/eldoc-box--child-frame nil)))
+
+(defvar my/eldoc-box--last-point nil
+  "Stores the last known position of point to detect movement.")
+
+(defun my/eldoc-box--maybe-close-frame ()
+  "Close the eldoc child frame if point has moved."
+  (when (and my/eldoc-box--child-frame
+             (frame-live-p my/eldoc-box--child-frame)
+             (not (equal my/eldoc-box--last-point (point))))
+    (my/eldoc-box--delete-frame)))
+
+(defun my/eldoc-box--enable-auto-close ()
+  "Enable automatic closing of eldoc box when point moves."
+  (setq my/eldoc-box--last-point (point))
+  (add-hook 'post-command-hook #'my/eldoc-box--maybe-close-frame))
+
+(global-set-key (kbd "C-c h") #'my/eldoc-box--make-frame)
+
+;;
 ;; -> keys-visual-core
 ;;
 (defvar my-win-keymap (make-sparse-keymap))
