@@ -538,6 +538,686 @@ Displays eldoc documentation in a child frame positioned near point.  Supports s
 (global-set-key (kbd "C-c h") #'my/eldoc-box--make-frame)
 #+end_src
 
+* container-core
+
+Container management UI for Docker and Podman.  Provides tabulated list views
+for containers, images, and volumes, plus a transient menu for compose
+operations and container actions.  Inspired by emacs-solo-container.
+
+Keybindings in list buffers: =n/p= navigate, =m= mark, =M= unmark all,
+=s/S/r= stop/start/restart, =D= remove, =o= logs, =e= shell, =w= copy ID,
+=g= refresh, =i= images, =v= volumes, =?= menu.
+
+#+begin_src elisp
+;;
+;; -> container-core
+;;
+(require 'transient)
+(require 'project)
+
+(defvar my/container-backend 'docker
+  "Container backend: \\='docker or \\='podman.")
+
+(defvar my/container-profile 'dev
+  "Profile: \\='prod or \\='dev.")
+
+(defvar my/container-confirm nil
+  "When non-nil, prompt to edit commands before running.")
+
+(defvar my/container-force nil
+  "When non-nil, use --force on remove operations.")
+
+(defvar my/container--process nil)
+
+(defvar my/container--active-list nil
+  "Currently active list: \\='containers, \\='images, \\='volumes, or nil.")
+
+(defvar my/container--marked-ids nil
+  "List of marked entry IDs in the current list.")
+
+(defun my/container-toggle-backend ()
+  "Toggle between Docker and Podman."
+  (interactive)
+  (setq my/container-backend
+        (if (eq my/container-backend 'docker) 'podman 'docker))
+  (message "Backend: %s" my/container-backend))
+
+(defun my/container-toggle-profile ()
+  "Toggle between prod and dev profiles."
+  (interactive)
+  (setq my/container-profile
+        (if (eq my/container-profile 'prod) 'dev 'prod))
+  (message "Profile: %s (%s)" my/container-profile
+           (if (eq my/container-profile 'prod)
+               "Dockerfile / docker-compose.yml"
+             "Dockerfile.dev / docker-compose-dev.yml")))
+
+(defun my/container-toggle-confirm ()
+  "Toggle command confirmation."
+  (interactive)
+  (setq my/container-confirm (not my/container-confirm))
+  (message "Confirm: %s" (if my/container-confirm "ON" "OFF")))
+
+(defun my/container-toggle-force ()
+  "Toggle --force on remove operations."
+  (interactive)
+  (setq my/container-force (not my/container-force))
+  (message "Force: %s" (if my/container-force "ON" "OFF")))
+
+(defun my/container--command ()
+  "Return the container backend command string."
+  (symbol-name my/container-backend))
+
+(defun my/container--compose-command ()
+  "Return the compose command string."
+  (format "%s compose" (my/container--command)))
+
+(defun my/container--project-root ()
+  "Return the project root or default-directory."
+  (if-let* ((proj (project-current)))
+      (project-root proj)
+    default-directory))
+
+(defun my/container--project-name ()
+  "Return the base name of the current project or buffer."
+  (let* ((project (project-current))
+         (name (if project
+                   (file-name-nondirectory
+                    (directory-file-name (project-root project)))
+                 (file-name-base
+                  (or buffer-file-name default-directory)))))
+    (downcase name)))
+
+(defun my/container--dockerfile ()
+  "Return the appropriate Dockerfile based on profile."
+  (let ((base (my/container--project-name)))
+    (pcase my/container-profile
+      ('prod (or (car (file-expand-wildcards
+                       (format "%s.Dockerfile" base)))
+                 "Dockerfile"))
+      ('dev  (or (car (file-expand-wildcards
+                       (format "%s.Dockerfile.dev" base)))
+                 "Dockerfile.dev")))))
+
+(defun my/container--compose-file ()
+  "Return the appropriate compose file based on profile."
+  (let ((root (my/container--project-root))
+        (base (my/container--project-name)))
+    (pcase my/container-profile
+      ('prod (or (car (file-expand-wildcards
+                       (format "%s.docker-compose.yml" base)))
+                 (concat root "docker-compose.yml")))
+      ('dev  (or (car (file-expand-wildcards
+                       (format "%s.docker-compose-dev.yml" base)))
+                 (concat root "docker-compose-dev.yml"))))))
+
+(defun my/container--has-dockerfile-p ()
+  "Return non-nil if a Dockerfile exists in the project."
+  (file-exists-p
+   (expand-file-name (my/container--dockerfile)
+                     (my/container--project-root))))
+
+(defun my/container--has-compose-file-p ()
+  "Return non-nil if a compose file exists in the project."
+  (file-exists-p (my/container--compose-file)))
+
+(defun my/container--run-to-buffer (cmd-template)
+  "Run CMD-TEMPLATE in *container-output* side buffer."
+  (let* ((final-cmd (if my/container-confirm
+                        (read-shell-command "Command: " cmd-template)
+                      cmd-template))
+         (buf (get-buffer-create "*container-output*")))
+    (unless my/container-confirm
+      (message "Running: %s" final-cmd))
+    (with-current-buffer buf
+      (setq buffer-read-only nil)
+      (erase-buffer)
+      (comint-mode)
+      (ansi-color-for-comint-mode-on))
+    (setq my/container--process
+          (start-process-shell-command "container" buf final-cmd))
+    (set-process-filter my/container--process 'comint-output-filter)
+    (display-buffer buf '(display-buffer-in-side-window
+                          . ((side . bottom)
+                             (window-height . 0.35))))))
+
+(defun my/container--run-compose (args)
+  "Run a compose command with ARGS."
+  (my/container--run-to-buffer
+   (format "%s -f %s %s"
+           (my/container--compose-command)
+           (my/container--compose-file)
+           args)))
+
+(defvar-keymap my/container-list-mode-map
+  :doc "Keymap for container list mode."
+  "n"   #'next-line
+  "p"   #'previous-line
+  "m"   #'my/container-mark
+  "M"   #'my/container-unmark-all
+  "s"   #'my/container-act-stop
+  "S"   #'my/container-act-start
+  "r"   #'my/container-act-restart
+  "D"   #'my/container-act-remove
+  "o"   #'my/container-act-logs
+  "e"   #'my/container-act-shell
+  "w"   #'my/container-act-copy-id
+  "g"   #'my/container-list
+  "i"   #'my/container-images
+  "v"   #'my/container-volumes
+  "?"   #'my/container-menu)
+
+(define-derived-mode my/container-list-mode tabulated-list-mode "Containers"
+  "Major mode for managing containers.
+\\{my/container-list-mode-map}"
+  (setq tabulated-list-format [("ID" 12 t)
+                               ("Name" 25 t)
+                               ("Image" 30 t)
+                               ("Status" 25 t)
+                               ("Ports" 25 t)]
+        tabulated-list-padding 2)
+  (tabulated-list-init-header)
+  (hl-line-mode 1))
+
+(defun my/container--get-id ()
+  "Get container ID at point, or prompt if not in list."
+  (if (eq major-mode 'my/container-list-mode)
+      (let ((entry (tabulated-list-get-entry)))
+        (if entry (string-trim (aref entry 0))
+          (user-error "No container at point")))
+    (read-string "Container ID/name: ")))
+
+(defun my/container--get-name ()
+  "Get container name at point."
+  (when (eq major-mode 'my/container-list-mode)
+    (let ((entry (tabulated-list-get-entry)))
+      (when entry (string-trim (aref entry 1))))))
+
+(defun my/container--selected-ids ()
+  "Return marked IDs, or a list with just the ID at point."
+  (or my/container--marked-ids
+      (when (derived-mode-p 'tabulated-list-mode)
+        (let ((id (tabulated-list-get-id)))
+          (when id (list id))))))
+
+(defun my/container--multiple-marked-p ()
+  "Return non-nil when more than one entry is marked."
+  (> (length my/container--marked-ids) 1))
+
+(defun my/container-mark ()
+  "Toggle mark on entry at point and move to next line."
+  (interactive)
+  (when (derived-mode-p 'tabulated-list-mode)
+    (let ((id (tabulated-list-get-id)))
+      (when id
+        (if (member id my/container--marked-ids)
+            (progn
+              (setq my/container--marked-ids
+                    (delete id my/container--marked-ids))
+              (tabulated-list-put-tag "  "))
+          (push id my/container--marked-ids)
+          (tabulated-list-put-tag "* "))
+        (forward-line 1)))))
+
+(defun my/container-unmark-all ()
+  "Unmark all entries."
+  (interactive)
+  (when (derived-mode-p 'tabulated-list-mode)
+    (setq my/container--marked-ids nil)
+    (save-excursion
+      (goto-char (point-min))
+      (while (not (eobp))
+        (tabulated-list-put-tag "  ")
+        (forward-line 1)))))
+
+(defun my/container-list ()
+  "List containers in an interactive tabulated buffer."
+  (interactive)
+  (setq my/container--active-list 'containers
+        my/container--marked-ids nil)
+  (let* ((cmd (format "%s ps -a --format '{{.ID}}\\t{{.Names}}\\t{{.Image}}\\t{{.Status}}\\t{{.Ports}}'"
+                      (my/container--command)))
+         (output (shell-command-to-string cmd))
+         (lines (split-string (string-trim output) "\n" t))
+         (entries (mapcar (lambda (line)
+                            (let ((fields (split-string line "\t")))
+                              (while (< (length fields) 5)
+                                (setq fields (append fields '(""))))
+                              (list (nth 0 fields)
+                                    (vconcat (seq-take fields 5)))))
+                          lines)))
+    (with-current-buffer (get-buffer-create "*containers*")
+      (let ((pos (point)))
+        (my/container-list-mode)
+        (setq tabulated-list-entries entries)
+        (tabulated-list-print t)
+        (goto-char (min pos (point-max))))
+      (switch-to-buffer (current-buffer)))))
+
+(defun my/container--act (action)
+  "Run ACTION on selected containers, refresh list."
+  (let* ((ids (my/container--selected-ids))
+         (id-str (string-join ids " "))
+         (cmd (format "%s %s %s"
+                      (my/container--command) action id-str)))
+    (if my/container-confirm
+        (my/container--run-to-buffer cmd)
+      (message "%s %s..." action id-str)
+      (let ((output (string-trim (shell-command-to-string cmd))))
+        (message "%s: %s" action output))
+      (setq my/container--marked-ids nil)
+      (when (derived-mode-p 'my/container-list-mode)
+        (my/container-list)))))
+
+(defun my/container-act-start ()
+  "Start selected containers."
+  (interactive) (my/container--act "start"))
+
+(defun my/container-act-stop ()
+  "Stop selected containers."
+  (interactive) (my/container--act "stop"))
+
+(defun my/container-act-restart ()
+  "Restart selected containers."
+  (interactive) (my/container--act "restart"))
+
+(defun my/container-act-remove ()
+  "Remove selected containers (with confirmation)."
+  (interactive)
+  (let* ((ids (my/container--selected-ids))
+         (count (length ids))
+         (label (if (= count 1)
+                    (or (my/container--get-name) (car ids))
+                  (format "%d containers" count))))
+    (when (y-or-n-p
+           (format "%s %s? "
+                   (if my/container-force "Force remove" "Remove")
+                   label))
+      (my/container--act
+       (if my/container-force "rm --force" "rm")))))
+
+(defun my/container-act-logs ()
+  "Stream logs for container at point."
+  (interactive)
+  (let* ((id (my/container--get-id))
+         (name (or (my/container--get-name) id))
+         (cmd (format "%s logs -f %s"
+                      (my/container--command) id))
+         (final-cmd (if my/container-confirm
+                        (read-shell-command "Command: " cmd)
+                      cmd))
+         (buf (get-buffer-create
+               (format "*container-logs-%s*" name))))
+    (unless my/container-confirm
+      (message "Running: %s" final-cmd))
+    (with-current-buffer buf
+      (setq buffer-read-only nil)
+      (erase-buffer)
+      (comint-mode)
+      (ansi-color-for-comint-mode-on))
+    (setq my/container--process
+          (start-process-shell-command
+           "container-logs" buf final-cmd))
+    (set-process-filter my/container--process
+                        'comint-output-filter)
+    (display-buffer buf '(display-buffer-in-direction
+                          . ((direction . right)
+                             (window-width . 0.5))))))
+
+(defun my/container-act-shell ()
+  "Open a shell in the container at point."
+  (interactive)
+  (let* ((id (my/container--get-id))
+         (name (or (my/container--get-name) id))
+         (shell (read-string "Shell: " "/bin/sh"))
+         (buf-name (format "*container-shell-%s*" name)))
+    (if (get-buffer buf-name)
+        (switch-to-buffer buf-name)
+      (let ((buf (make-term
+                  (format "container-shell-%s" name)
+                  (my/container--command)
+                  nil "exec" "-it" id shell)))
+        (switch-to-buffer buf)
+        (term-mode)
+        (term-char-mode)))))
+
+(defun my/container-act-copy-id ()
+  "Copy selected IDs to kill ring."
+  (interactive)
+  (let* ((ids (or (my/container--selected-ids)
+                  (list (read-string "ID to copy: "))))
+         (str (string-join ids " ")))
+    (kill-new str)
+    (message "Copied: %s" str)))
+
+(defun my/container-nav-next ()
+  "Move to next entry."
+  (interactive)
+  (when (derived-mode-p 'tabulated-list-mode)
+    (forward-line 1)))
+
+(defun my/container-nav-prev ()
+  "Move to previous entry."
+  (interactive)
+  (when (derived-mode-p 'tabulated-list-mode)
+    (forward-line -1)))
+
+;; --- Images ---
+
+(defvar-keymap my/container-image-mode-map
+  :doc "Keymap for container image list mode."
+  "n"   #'next-line
+  "p"   #'previous-line
+  "m"   #'my/container-mark
+  "M"   #'my/container-unmark-all
+  "D"   #'my/container-image-remove
+  "w"   #'my/container-image-copy-id
+  "g"   #'my/container-images
+  "l"   #'my/container-list
+  "v"   #'my/container-volumes
+  "?"   #'my/container-menu)
+
+(define-derived-mode my/container-image-mode tabulated-list-mode "Images"
+  "Major mode for managing container images.
+\\{my/container-image-mode-map}"
+  (setq tabulated-list-format [("ID" 12 t)
+                               ("Repository" 35 t)
+                               ("Tag" 15 t)
+                               ("Size" 12 t)]
+        tabulated-list-padding 2)
+  (tabulated-list-init-header)
+  (hl-line-mode 1))
+
+(defun my/container-images ()
+  "List images in an interactive tabulated buffer."
+  (interactive)
+  (setq my/container--active-list 'images
+        my/container--marked-ids nil)
+  (let* ((cmd (format "%s images --format '{{.ID}}\\t{{.Repository}}\\t{{.Tag}}\\t{{.Size}}'"
+                      (my/container--command)))
+         (output (shell-command-to-string cmd))
+         (lines (split-string (string-trim output) "\n" t))
+         (entries (mapcar (lambda (line)
+                            (let ((fields (split-string line "\t")))
+                              (while (< (length fields) 4)
+                                (setq fields (append fields '(""))))
+                              (list (nth 0 fields)
+                                    (vconcat (seq-take fields 4)))))
+                          lines)))
+    (with-current-buffer (get-buffer-create "*container-images*")
+      (my/container-image-mode)
+      (setq tabulated-list-entries entries)
+      (tabulated-list-print t)
+      (goto-char (point-min))
+      (switch-to-buffer (current-buffer)))))
+
+(defun my/container-image-remove ()
+  "Remove selected images."
+  (interactive)
+  (let* ((ids (my/container--selected-ids))
+         (count (length ids))
+         (label (if (= count 1)
+                    (let ((entry (tabulated-list-get-entry)))
+                      (format "%s:%s"
+                              (string-trim (aref entry 1))
+                              (string-trim (aref entry 2))))
+                  (format "%d images" count))))
+    (when (y-or-n-p
+           (format "%s %s? "
+                   (if my/container-force "Force remove" "Remove")
+                   label))
+      (message "%s"
+               (string-trim
+                (shell-command-to-string
+                 (format "%s rmi %s %s" (my/container--command)
+                         (if my/container-force "--force" "")
+                         (string-join ids " ")))))
+      (setq my/container--marked-ids nil)
+      (my/container-images))))
+
+(defun my/container-image-copy-id ()
+  "Copy image ID at point to kill ring."
+  (interactive)
+  (let* ((entry (tabulated-list-get-entry))
+         (id (string-trim (aref entry 0))))
+    (kill-new id)
+    (message "Copied: %s" id)))
+
+;; --- Volumes ---
+
+(defvar-keymap my/container-volume-mode-map
+  :doc "Keymap for container volume list mode."
+  "n"   #'next-line
+  "p"   #'previous-line
+  "m"   #'my/container-mark
+  "M"   #'my/container-unmark-all
+  "D"   #'my/container-volume-remove
+  "w"   #'my/container-volume-copy-name
+  "RET" #'my/container-volume-inspect
+  "g"   #'my/container-volumes
+  "l"   #'my/container-list
+  "i"   #'my/container-images
+  "?"   #'my/container-menu)
+
+(define-derived-mode my/container-volume-mode tabulated-list-mode "Volumes"
+  "Major mode for managing container volumes.
+\\{my/container-volume-mode-map}"
+  (setq tabulated-list-format [("Name" 45 t)
+                               ("Driver" 15 t)
+                               ("Mountpoint" 50 t)]
+        tabulated-list-padding 2)
+  (tabulated-list-init-header)
+  (hl-line-mode 1))
+
+(defun my/container-volumes ()
+  "List volumes in an interactive tabulated buffer."
+  (interactive)
+  (setq my/container--active-list 'volumes
+        my/container--marked-ids nil)
+  (let* ((cmd (format "%s volume ls --format '{{.Name}}\\t{{.Driver}}\\t{{.Mountpoint}}'"
+                      (my/container--command)))
+         (output (shell-command-to-string cmd))
+         (lines (split-string (string-trim output) "\n" t))
+         (entries (mapcar (lambda (line)
+                            (let ((fields (split-string line "\t")))
+                              (while (< (length fields) 3)
+                                (setq fields (append fields '(""))))
+                              (list (nth 0 fields)
+                                    (vconcat (seq-take fields 3)))))
+                          lines)))
+    (with-current-buffer (get-buffer-create "*container-volumes*")
+      (my/container-volume-mode)
+      (setq tabulated-list-entries entries)
+      (tabulated-list-print t)
+      (goto-char (point-min))
+      (switch-to-buffer (current-buffer)))))
+
+(defun my/container--volume-name-at-point ()
+  "Get volume name at point."
+  (let ((entry (tabulated-list-get-entry)))
+    (if entry (string-trim (aref entry 0))
+      (user-error "No volume at point"))))
+
+(defun my/container-volume-remove ()
+  "Remove selected volumes."
+  (interactive)
+  (let* ((ids (my/container--selected-ids))
+         (count (length ids))
+         (label (if (= count 1) (car ids)
+                  (format "%d volumes" count))))
+    (when (y-or-n-p
+           (format "%s %s? "
+                   (if my/container-force "Force remove" "Remove")
+                   label))
+      (message "%s"
+               (string-trim
+                (shell-command-to-string
+                 (format "%s volume rm %s %s"
+                         (my/container--command)
+                         (if my/container-force "--force" "")
+                         (string-join ids " ")))))
+      (setq my/container--marked-ids nil)
+      (my/container-volumes))))
+
+(defun my/container-volume-copy-name ()
+  "Copy volume name at point to kill ring."
+  (interactive)
+  (let ((name (my/container--volume-name-at-point)))
+    (kill-new name)
+    (message "Copied: %s" name)))
+
+(defun my/container-volume-inspect ()
+  "Inspect volume at point in output buffer."
+  (interactive)
+  (let ((name (my/container--volume-name-at-point)))
+    (my/container--run-to-buffer
+     (format "%s volume inspect %s"
+             (my/container--command) name))))
+
+;; --- Build / Run / Compose ---
+
+(defun my/container-build-image ()
+  "Build an image from Dockerfile."
+  (interactive)
+  (my/container--run-to-buffer
+   (format "%s build -f %s -t TAG ."
+           (my/container--command) (my/container--dockerfile))))
+
+(defun my/container-pull-image ()
+  "Pull a container image."
+  (interactive)
+  (my/container--run-to-buffer
+   (format "%s pull " (my/container--command))))
+
+(defun my/container-run-new ()
+  "Run a new container."
+  (interactive)
+  (my/container--run-to-buffer
+   (format "%s run -it --rm -p 3500:3500 "
+           (my/container--command))))
+
+(defun my/container-compose-up ()
+  (interactive) (my/container--run-compose "up -d"))
+(defun my/container-compose-down ()
+  (interactive) (my/container--run-compose "down"))
+(defun my/container-compose-logs ()
+  (interactive) (my/container--run-compose "logs -f"))
+(defun my/container-compose-ps ()
+  (interactive) (my/container--run-compose "ps"))
+(defun my/container-compose-build ()
+  (interactive) (my/container--run-compose "build"))
+(defun my/container-compose-restart ()
+  (interactive) (my/container--run-compose "restart"))
+
+(defun my/container-kill-output ()
+  "Kill the *container-output* buffer."
+  (interactive)
+  (let ((buf (get-buffer "*container-output*")))
+    (when buf (delete-windows-on buf) (kill-buffer buf))))
+
+(defun my/container--in-container-list-p ()
+  (eq my/container--active-list 'containers))
+
+(defun my/container--in-image-list-p ()
+  (eq my/container--active-list 'images))
+
+(defun my/container--in-volume-list-p ()
+  (eq my/container--active-list 'volumes))
+
+;; --- Transient Menu ---
+
+(transient-define-prefix my/container-menu ()
+  "Container and Compose management menu."
+  :refresh-suffixes t
+  [["Settings"
+    ("b" (lambda ()
+           (format "Backend (%s)" my/container-backend))
+     my/container-toggle-backend :transient t)
+    ("f" (lambda ()
+           (format "Profile (%s)" my/container-profile))
+     my/container-toggle-profile :transient t)
+    ("!" (lambda ()
+           (format "Confirm (%s)"
+                   (if my/container-confirm "ON" "OFF")))
+     my/container-toggle-confirm :transient t)
+    ("F" (lambda ()
+           (format "Force rm (%s)"
+                   (if my/container-force "ON" "OFF")))
+     my/container-toggle-force :transient t)]
+   ["Browse"
+    ("l" "Containers" my/container-list :transient t)
+    ("i" "Images" my/container-images :transient t)
+    ("v" "Volumes" my/container-volumes :transient t)]
+   ["Navigate / Mark"
+    ("n" "Next" my/container-nav-next :transient t)
+    ("p" "Prev" my/container-nav-prev :transient t)
+    ("m" "Mark" my/container-mark :transient t)
+    ("M" "Unmark all" my/container-unmark-all :transient t)
+    ("w" "Copy ID" my/container-act-copy-id :transient t)]]
+  [["Container(s)"
+    ("s" "Stop" my/container-act-stop
+     :transient t
+     :inapt-if-not my/container--in-container-list-p)
+    ("S" "Start" my/container-act-start
+     :transient t
+     :inapt-if-not my/container--in-container-list-p)
+    ("r" "Restart" my/container-act-restart
+     :transient t
+     :inapt-if-not my/container--in-container-list-p)
+    ("D" "Remove" my/container-act-remove
+     :transient t
+     :inapt-if-not my/container--in-container-list-p)
+    ("o" "Logs" my/container-act-logs
+     :transient t
+     :inapt-if-not my/container--in-container-list-p
+     :inapt-if my/container--multiple-marked-p)
+    ("e" "Shell" my/container-act-shell
+     :inapt-if-not my/container--in-container-list-p
+     :inapt-if my/container--multiple-marked-p)]
+   ["Image(s)"
+    ("R" "Remove" my/container-image-remove
+     :transient t
+     :inapt-if-not my/container--in-image-list-p)]
+   ["Volume(s)"
+    ("X" "Remove" my/container-volume-remove
+     :transient t
+     :inapt-if-not my/container--in-volume-list-p)
+    ("O" "Inspect" my/container-volume-inspect
+     :transient t
+     :inapt-if-not my/container--in-volume-list-p
+     :inapt-if my/container--multiple-marked-p)]]
+  [["Run"
+    ("N" "New container" my/container-run-new :transient t)
+    ("P" "Pull image" my/container-pull-image :transient t)
+    ("B" "Build image" my/container-build-image
+     :transient t
+     :inapt-if-not my/container--has-dockerfile-p)]
+   ["Compose"
+    ("u" "Up" my/container-compose-up
+     :transient t
+     :inapt-if-not my/container--has-compose-file-p)
+    ("d" "Down" my/container-compose-down
+     :transient t
+     :inapt-if-not my/container--has-compose-file-p)
+    ("c" "PS" my/container-compose-ps
+     :transient t
+     :inapt-if-not my/container--has-compose-file-p)
+    ("C" "Build" my/container-compose-build
+     :transient t
+     :inapt-if-not my/container--has-compose-file-p)
+    ("x" "Restart" my/container-compose-restart
+     :transient t
+     :inapt-if-not my/container--has-compose-file-p)
+    ("G" "Logs" my/container-compose-logs
+     :transient t
+     :inapt-if-not my/container--has-compose-file-p)]
+   [""
+    ("k" "Kill output" my/container-kill-output :transient t)
+    ("q" "Quit" transient-quit-one)]])
+
+(global-set-key (kbd "C-c D") #'my/container-menu)
+#+end_src
+
 * keys-visual-core
 
 Sets up keybindings for quickly toggling visual features like font, theme, line numbers, and other window displays.
