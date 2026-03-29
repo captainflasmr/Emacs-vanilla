@@ -548,7 +548,7 @@ Keybindings in list buffers: =n/p= navigate, =m= mark, =M= unmark all,
 =s/S/r= stop/start/restart, =D= remove, =o= logs, =e= shell, =w= copy ID,
 =g= refresh, =i= images, =v= volumes, =?= menu.
 
-#+begin_src elisp
+#+begin_src elisp :tangle no
 ;;
 ;; -> container-core
 ;;
@@ -2421,7 +2421,7 @@ Curates configurations specific to Linux, making adjustments for paths, fonts, a
 
 (setq vc-handled-backends '(SVN Git))
 
-(global-set-key (kbd "M-s f") 'my/selective-display-fold)
+(global-set-key (kbd "C-c l") 'my/selective-display-fold)
 
 (defun my/selective-display-fold (&optional level)
   "Fold text indented same of more than the cursor.
@@ -3006,51 +3006,8 @@ Demonstrates "Do What I Mean" functionalities custom to Emacs, streamlining oper
                             (my/dwim-convert-with-selection-files files-string))))))))
 
 (defun my/image-dired-get-original-files ()
-  "Get original file paths from image-dired marked thumbnails or current thumbnail."
-  (let ((files '())
-        (continue t))
-    (save-excursion
-      (goto-char (point-min))
-      ;; Move to first image if not already on one
-      (condition-case nil
-          (unless (image-dired-image-at-point-p)
-            (image-dired-forward-image))
-        (error nil))
-      
-      ;; Collect all marked files
-      (while (and continue
-                  (condition-case nil
-                      (image-dired-image-at-point-p)
-                    (error nil)))
-        (when (condition-case nil
-                  (image-dired-thumb-file-marked-p)
-                (error nil))
-          (let ((orig-file (condition-case nil
-                               (image-dired-original-file-name)
-                             (error nil))))
-            (when orig-file
-              (push orig-file files))))
-        ;; Move to next image, stop if we can't move forward
-        (let ((current-pos (point)))
-          (condition-case nil
-              (image-dired-forward-image)
-            (error nil))
-          ;; If we didn't move, we're at the end
-          (when (= current-pos (point))
-            (setq continue nil)))))
-    
-    ;; If no marked files found, get current file
-    (when (and (null files) 
-               (condition-case nil
-                   (image-dired-image-at-point-p)
-                 (error nil)))
-      (let ((orig-file (condition-case nil
-                           (image-dired-original-file-name)
-                         (error nil))))
-        (when orig-file
-          (push orig-file files))))
-    
-    (nreverse files)))
+    "Get original file paths from image-dired marked thumbnails or current thumbnail."
+    (dired-image-thumbnail-get-marked))
 
 (defun my/get-files-from-context ()
   "Get files based on current context (dired, image-dired, etc.)"
