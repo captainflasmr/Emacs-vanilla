@@ -54,6 +54,8 @@
     ((t (:foreground "#ffb6c1")))))
 (setq icomplete-compute-delay 0)
 (setq icomplete-show-matches-on-no-input t)
+(define-key icomplete-minibuffer-map (kbd "C-n") 'icomplete-forward-completions)
+(define-key icomplete-minibuffer-map (kbd "C-p") 'icomplete-backward-completions)
 
 ;;
 ;; -> keys-navigation-core
