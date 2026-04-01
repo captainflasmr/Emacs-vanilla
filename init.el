@@ -1060,7 +1060,7 @@ With universal argument, use the traditional recentf-open-files interface."
         (project-root project))
     ;; Compatibility for Emacs < 29
     (when-let ((project (project-current)))
-      (cdr (project-roots project)))))
+      (car (project-roots project)))))
 
 (defun my/project-create-compilation-search-path ()
   "Populate the 'compilation-search-path' variable.

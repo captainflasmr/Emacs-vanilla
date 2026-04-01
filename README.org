@@ -2212,7 +2212,7 @@ Customizes Emacs's project management features for handling multiple projects, d
         (project-root project))
     ;; Compatibility for Emacs < 29
     (when-let ((project (project-current)))
-      (cdr (project-roots project)))))
+      (car (project-roots project)))))
 
 (defun my/project-create-compilation-search-path ()
   "Populate the 'compilation-search-path' variable.
