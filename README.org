@@ -204,11 +204,38 @@ It is often advantageous to use *external tools* that are optimized for specific
 
 - Cross-Platform Key Remapping: Accompanying the Emacs configuration directory are external scripts to enforce ergonomic system-wide keybindings for more efficient Emacs usage:
 
-*** *Windows / wowee*:
-    
-Note that this is present as a submodule leveraging https://github.com/captainflasmr/wowee which are AutoHotKey scripts that allow easy key remapping and also Emacs type key commands across Windows.
+*** *Windows / PowerToys*:
 
-The idea here is that the keys are mapped through AutoHotKey and then Sticky Keys are natively enable to give a nice ergonomic experience through Emacs.
+Microsoft PowerToys provides a built-in Keyboard Manager for key remapping without third-party scripting.
+
+**** Remappings
+
+- CapsLock → Ctrl
+- Right Alt → Ctrl
+
+**** Instructions for use
+
+1. Install PowerToys from the Microsoft Store or https://github.com/microsoft/PowerToys
+2. Open PowerToys Settings → Keyboard Manager → Enable Keyboard Manager
+3. Click *Remap a key* and add:
+   - =Caps Lock= → =Ctrl (Left)=
+   - =Alt (Right)= → =Ctrl (Left)=
+4. Click OK to apply
+
+**** Sticky Keys
+
+Windows has built-in Sticky Keys support:
+
+1. Open Settings → Accessibility → Keyboard (or press Shift 5 times)
+2. Turn on *Sticky Keys*
+3. Recommended settings:
+   - Enable *Lock modifier keys when pressed twice in a row*
+   - Disable *Turn off Sticky Keys when two keys are pressed at the same time* (otherwise normal key chords will deactivate it)
+   - Disable the shortcut sound if preferred
+
+*** *Windows / wowee (alternative)*:
+
+As an alternative to PowerToys, the =wowee= submodule leverages https://github.com/captainflasmr/wowee which provides AutoHotKey scripts for key remapping and Emacs-style key commands across Windows.
 
 **** Remappings
 
@@ -218,12 +245,12 @@ The idea here is that the keys are mapped through AutoHotKey and then Sticky Key
 
 **** Instructions for use
 
-1. **Install AutoHotKey**: Download and install AutoHotKey from [AutoHotKey's official website](https://www.autohotkey.com/).
-2. **Run WOWEE**: Double-click on the `wowee.ahk` script to start WOWEE. Once running, Emacs commands will be available in your Windows environment.
-3. **Quit WOWEE**: To quit WOWEE, right-click the AutoHotKey icon in the task tray and select "Exit."
+1. Install AutoHotKey from https://www.autohotkey.com/
+2. Double-click on the =wowee.ahk= script to start WOWEE
+3. To quit, right-click the AutoHotKey icon in the task tray and select "Exit"
     
-*** *Linux (X11/Wayland)*:
-    
+*** *Linux (X11)*:
+
 Includes custom *xkb* configuration files to enable similar ergonomic key remappings:
 
 **** Remappings
@@ -238,14 +265,61 @@ Includes custom *xkb* configuration files to enable similar ergonomic key remapp
 xkbcomp keymap_with_sticky_modifiers.xkb $DISPLAY
 #+end_src
 
+*** *Linux (Wayland / SwayWM)*:
+
+Sway supports loading a custom XKB file directly:
+
+#+begin_src conf :tangle no
+input type:keyboard {
+    events enabled
+    xkb_layout gb
+    repeat_delay 350
+    repeat_rate 40
+    xkb_file $HOME/.emacs.d/Emacs-vanilla/keymap_with_sticky_modifiers.xkb
+}
+#+end_src
+
+*** *QEMU VM Guest (GNOME Wayland)*:
+
+Host XKB settings do not pass through SPICE or VNC display protocols to the guest since keyboard input is sent as raw scancodes. The remappings must be configured inside the guest VM separately.
+
+A setup script is provided for GNOME Wayland guests:
+
+**** Remappings
+
+- CapsLock → Ctrl (via =ctrl:nocaps=)
+- Right Alt → Ctrl (via =ctrl:ralt_rctrl=)
+- Sticky Keys (via GNOME accessibility)
+- GB keyboard layout
+
+**** Instructions for use
+
+Copy and run the script inside the VM:
+
+#+begin_src bash :tangle no
+qvm scp <name> setup-vm-keyboard.sh :/home/$USER/
+qvm ssh <name> -- bash setup-vm-keyboard.sh
+#+end_src
+
+Or run the gsettings commands manually:
+
+#+begin_src bash :tangle no
+gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'gb')]"
+gsettings set org.gnome.desktop.input-sources xkb-options "['ctrl:nocaps','ctrl:ralt_rctrl']"
+gsettings set org.gnome.desktop.a11y.keyboard stickykeys-enable true
+#+end_src
+
+Log out and back in for changes to take effect.
+
 ** Portable Directory Structure
 
 - A self-contained folder structure that encapsulates all necessary files:
   
-  #+begin_src bash :tangle no 
+  #+begin_src bash :tangle no
 emacs-vanilla/
 ├── init.el                          # Main Emacs configuration file
-├── keymap_with_sticky_modifiers.xkb # linux key configuration for ergonomic key remapping
+├── keymap_with_sticky_modifiers.xkb # Linux key configuration for X11/Wayland
+├── setup-vm-keyboard.sh             # Keyboard setup script for GNOME VM guests
 ├── wowee/                           # Windows autohotkey scripts for ergonomic key remapping
 └── README.org                       # Literate setup guide and readme
   #+end_src
