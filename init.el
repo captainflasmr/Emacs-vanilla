@@ -1857,10 +1857,14 @@ The gh release list format is: TITLE\\tLATEST\\tTAG\\tDATE."
 TAG is the release tag, TITLE is the release title,
 NOTES is the release notes text, and FILES is a list of file paths to attach."
   (interactive
-   (let* ((tag (read-string "Release tag (e.g. v1.0): "))
+   (let* ((default-file (when (derived-mode-p 'dired-mode)
+                          (dired-get-filename nil t)))
+          (tag (read-string "Release tag (e.g. v1.0): "))
           (title (read-string "Release title: " tag))
           (notes (read-string "Release notes: " ""))
-          (files-str (read-string "Files to attach (space-separated, empty for none): "))
+          (files-str (read-string "Files to attach (space-separated, empty for none): "
+                                  (when default-file
+                                    (file-name-nondirectory default-file))))
           (files (if (string-empty-p files-str) nil (split-string files-str))))
      (list tag title notes files)))
   (my/gh-release--ensure-gh)
@@ -1941,12 +1945,7 @@ NOTES is the release notes text, and FILES is a list of file paths to attach."
                'face 'minibuffer-prompt))))
     (pcase key
       (?l (my/gh-release-list))
-      (?c (my/gh-release-create
-           (read-string "Release tag (e.g. v1.0): ")
-           (read-string "Release title: ")
-           (read-string "Release notes: ")
-           (let ((f (read-string "Files (space-separated, empty for none): ")))
-             (if (string-empty-p f) nil (split-string f)))))
+      (?c (call-interactively #'my/gh-release-create))
       (?v (my/gh-release-view))
       (?e (my/gh-release-edit))
       (?b (my/gh-release-browse))
