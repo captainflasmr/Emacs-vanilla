@@ -6,7 +6,7 @@ INSTALL_ROOT="$HOME/emacs-versions"
 
 # Build dependencies for different distributions
 ARCH_BUILD_DEPS="base-devel gtk2 gtk3 libxpm libjpeg-turbo libpng libtiff giflib libxml2 gnutls librsvg"
-SLES_BUILD_DEPS="gcc gcc-c++ make automake gtk2-devel gtk3-devel libXpm-devel libjpeg8-devel libpng16-devel libtiff-devel giflib-devel libxml2-devel gnutls-devel cairo-devel harfbuzz-devel librsvg-devel"
+SLES_BUILD_DEPS="gcc gcc-c++ make automake texinfo gtk2-devel gtk3-devel libXpm-devel libjpeg8-devel libpng16-devel libtiff-devel giflib-devel libxml2-devel gnutls-devel cairo-devel harfbuzz-devel librsvg-devel"
 
 # 27.2 2021-03-25
 # 28.2 2022-09-12

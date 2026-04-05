@@ -10,6 +10,17 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-04-05>
+
+Add GitHub release management via gh CLI
+
+- Introduce `gh-release-core` section with full release lifecycle management
+- Add `my/gh-release-list` to list releases in a dedicated buffer with single-key bindings
+- Add `my/gh-release-create` for creating releases with file attachments (async)
+- Add `my/gh-release-view`, `my/gh-release-browse`, `my/gh-release-edit`, `my/gh-release-delete`, `my/gh-release-download` commands
+- Add `my/gh-release-menu` read-key menu bound to `C-c G`
+- Add `my/gh-release-mode` special-mode with keybindings for the release list buffer
+
 ** <2025-03-13>
 
 Added flyspell error collection

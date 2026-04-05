@@ -30,6 +30,17 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2026-04-05>
+
+Add GitHub release management via gh CLI
+
+- Introduce `gh-release-core` section with full release lifecycle management
+- Add `my/gh-release-list` to list releases in a dedicated buffer with single-key bindings
+- Add `my/gh-release-create` for creating releases with file attachments (async)
+- Add `my/gh-release-view`, `my/gh-release-browse`, `my/gh-release-edit`, `my/gh-release-delete`, `my/gh-release-download` commands
+- Add `my/gh-release-menu` read-key menu bound to `C-c G`
+- Add `my/gh-release-mode` special-mode with keybindings for the release list buffer
+
 ** <2025-03-13>
 
 Added flyspell error collection
@@ -278,6 +289,16 @@ input type:keyboard {
     xkb_file $HOME/.emacs.d/Emacs-vanilla/keymap_with_sticky_modifiers.xkb
 }
 #+end_src
+
+**** SPICE and SwayWM keyboard shortcuts
+
+When using SPICE (via =spicy=), the client requests keyboard shortcut inhibition from sway, which causes host bindings (e.g. =Super+u= to switch desktops) to be sent to the guest instead. Add this to your sway config to prevent it:
+
+#+begin_src conf :tangle no
+for_window [app_id="spicy"] shortcuts_inhibitor disable
+#+end_src
+
+Reload sway (=swaymsg reload=) and restart the SPICE viewer for the change to take effect.
 
 *** *QEMU VM Guest (GNOME Wayland)*:
 
@@ -3213,6 +3234,223 @@ A soft wrapper around the Emacs basic publishing mechanism for my own exporting 
       (_ (message "Invalid key: %c" key)))))
 
 (global-set-key (kbd "C-c e") 'my/export-menu)
+#+end_src
+
+* gh-release-core
+
+GitHub release management using the =gh= CLI. Provides listing, creating, deleting, viewing, downloading, and editing releases from within Emacs without any external packages.
+
+#+begin_src elisp
+;;
+;; -> gh-release-core
+;;
+(defvar my/gh-release-buffer "*GitHub Releases*"
+  "Buffer name for displaying GitHub releases.")
+
+(defun my/gh-release--ensure-gh ()
+  "Check that gh CLI is available."
+  (unless (executable-find "gh")
+    (user-error "GitHub CLI (gh) not found in PATH")))
+
+(defun my/gh-release--ensure-repo ()
+  "Check that we are in a git repo."
+  (unless (locate-dominating-file default-directory ".git")
+    (user-error "Not in a git repository")))
+
+(defun my/gh-release--tag-at-point ()
+  "Extract the release tag from the current line.
+The gh release list format is: TITLE\\tLATEST\\tTAG\\tDATE."
+  (let ((line (buffer-substring-no-properties
+               (line-beginning-position) (line-end-position))))
+    (let ((fields (split-string line "\t")))
+      (when (>= (length fields) 3)
+        (string-trim (nth 2 fields))))))
+
+(defun my/gh-release-list ()
+  "List GitHub releases for the current repository."
+  (interactive)
+  (my/gh-release--ensure-gh)
+  (my/gh-release--ensure-repo)
+  (let ((default-directory (locate-dominating-file default-directory ".git")))
+    (with-current-buffer (get-buffer-create my/gh-release-buffer)
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert (propertize "GitHub Releases" 'face 'bold) "\n")
+        (insert (propertize (format "Repository: %s\n\n"
+                                    (string-trim
+                                     (shell-command-to-string
+                                      "gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || git remote get-url origin")))
+                            'face 'font-lock-comment-face))
+        (let ((output (shell-command-to-string
+                       "gh release list --limit 30 2>&1")))
+          (if (string-match-p "no releases" output)
+              (insert "No releases found.\n")
+            (insert output)))
+        (goto-char (point-min)))
+      (my/gh-release-mode)
+      (pop-to-buffer (current-buffer)))))
+
+(defun my/gh-release-browse ()
+  "Open the release at point in a browser."
+  (interactive)
+  (let ((tag (my/gh-release--tag-at-point)))
+    (if tag
+        (shell-command (format "gh release view %s --web" (shell-quote-argument tag)))
+      (user-error "No release tag found on this line"))))
+
+(defun my/gh-release-view ()
+  "View release details at point in a buffer."
+  (interactive)
+  (let ((tag (my/gh-release--tag-at-point)))
+    (if tag
+        (let* ((default-directory (locate-dominating-file default-directory ".git"))
+               (output (shell-command-to-string
+                        (format "gh release view %s 2>&1" (shell-quote-argument tag)))))
+          (with-current-buffer (get-buffer-create "*GitHub Release View*")
+            (let ((inhibit-read-only t))
+              (erase-buffer)
+              (insert output)
+              (goto-char (point-min)))
+            (special-mode)
+            (pop-to-buffer (current-buffer))))
+      (user-error "No release tag found on this line"))))
+
+(defun my/gh-release-delete ()
+  "Delete the release at point after confirmation."
+  (interactive)
+  (let ((tag (my/gh-release--tag-at-point)))
+    (if tag
+        (when (yes-or-no-p (format "Delete release %s? " tag))
+          (message "Deleting release %s..." tag)
+          (shell-command-to-string
+           (format "gh release delete %s --yes --cleanup-tag 2>&1"
+                   (shell-quote-argument tag)))
+          (message "Deleted release %s" tag)
+          (my/gh-release-list))
+      (user-error "No release tag found on this line"))))
+
+(defun my/gh-release-create (tag title notes files)
+  "Create a new GitHub release.
+TAG is the release tag, TITLE is the release title,
+NOTES is the release notes text, and FILES is a list of file paths to attach."
+  (interactive
+   (let* ((tag (read-string "Release tag (e.g. v1.0): "))
+          (title (read-string "Release title: " tag))
+          (notes (read-string "Release notes: " ""))
+          (files-str (read-string "Files to attach (space-separated, empty for none): "))
+          (files (if (string-empty-p files-str) nil (split-string files-str))))
+     (list tag title notes files)))
+  (my/gh-release--ensure-gh)
+  (my/gh-release--ensure-repo)
+  (let* ((default-directory (locate-dominating-file default-directory ".git"))
+         (file-args (mapconcat (lambda (f) (shell-quote-argument (expand-file-name f)))
+                               files " "))
+         (cmd (format "gh release create %s --title %s --notes %s %s 2>&1"
+                      (shell-quote-argument tag)
+                      (shell-quote-argument title)
+                      (shell-quote-argument notes)
+                      file-args))
+         (output-buffer "*gh-release-create*"))
+    (message "Creating release %s..." tag)
+    (with-current-buffer (get-buffer-create output-buffer)
+      (erase-buffer))
+    (set-process-sentinel
+     (start-process-shell-command "gh-release-create" output-buffer cmd)
+     (lambda (proc event)
+       (when (string-match "finished" event)
+         (message "Release %s created successfully" tag)
+         (when (get-buffer my/gh-release-buffer)
+           (my/gh-release-list)))))))
+
+(defun my/gh-release-download ()
+  "Download assets from the release at point."
+  (interactive)
+  (let ((tag (my/gh-release--tag-at-point)))
+    (if tag
+        (let* ((default-directory (locate-dominating-file default-directory ".git"))
+               (dir (read-directory-name "Download to: " default-directory)))
+          (message "Downloading assets for %s..." tag)
+          (set-process-sentinel
+           (start-process-shell-command
+            "gh-release-download" "*gh-release-download*"
+            (format "gh release download %s --dir %s 2>&1"
+                    (shell-quote-argument tag)
+                    (shell-quote-argument dir)))
+           (lambda (proc event)
+             (when (string-match "finished" event)
+               (message "Download complete for %s" tag)))))
+      (user-error "No release tag found on this line"))))
+
+(defun my/gh-release-edit ()
+  "Edit the release at point (title and notes)."
+  (interactive)
+  (let ((tag (my/gh-release--tag-at-point)))
+    (if tag
+        (let* ((default-directory (locate-dominating-file default-directory ".git"))
+               (title (read-string "New title (empty to keep): "))
+               (notes (read-string "New notes (empty to keep): "))
+               (args (concat
+                      (unless (string-empty-p title)
+                        (format " --title %s" (shell-quote-argument title)))
+                      (unless (string-empty-p notes)
+                        (format " --notes %s" (shell-quote-argument notes))))))
+          (when (string-empty-p args)
+            (user-error "Nothing to change"))
+          (shell-command-to-string
+           (format "gh release edit %s%s 2>&1" (shell-quote-argument tag) args))
+          (message "Updated release %s" tag)
+          (when (get-buffer my/gh-release-buffer)
+            (my/gh-release-list)))
+      (user-error "No release tag found on this line"))))
+
+(defun my/gh-release-menu ()
+  "Menu for GitHub release commands."
+  (interactive)
+  (my/gh-release--ensure-gh)
+  (my/gh-release--ensure-repo)
+  (let ((key (read-key
+              (propertize
+               "--- GitHub Releases [q] Quit: ---
+[l] List Releases    [c] Create Release
+[v] View Details     [e] Edit Release
+[b] Browse in Browser[d] Delete Release
+[w] Download Assets"
+               'face 'minibuffer-prompt))))
+    (pcase key
+      (?l (my/gh-release-list))
+      (?c (my/gh-release-create
+           (read-string "Release tag (e.g. v1.0): ")
+           (read-string "Release title: ")
+           (read-string "Release notes: ")
+           (let ((f (read-string "Files (space-separated, empty for none): ")))
+             (if (string-empty-p f) nil (split-string f)))))
+      (?v (my/gh-release-view))
+      (?e (my/gh-release-edit))
+      (?b (my/gh-release-browse))
+      (?d (my/gh-release-delete))
+      (?w (my/gh-release-download))
+      (?q (message "Quit GitHub Releases menu."))
+      (?\C-g (message "Quit GitHub Releases menu."))
+      (_ (message "Invalid key: %c" key)))))
+
+(defvar my/gh-release-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "q") #'quit-window)
+    (define-key map (kbd "c") #'my/gh-release-create)
+    (define-key map (kbd "d") #'my/gh-release-delete)
+    (define-key map (kbd "v") #'my/gh-release-view)
+    (define-key map (kbd "e") #'my/gh-release-edit)
+    (define-key map (kbd "w") #'my/gh-release-download)
+    (define-key map (kbd "g") #'my/gh-release-list)
+    (define-key map (kbd "b") #'my/gh-release-browse)
+    (define-key map (kbd "RET") #'my/gh-release-browse)
+    map))
+
+(define-derived-mode my/gh-release-mode special-mode "GH-Releases"
+  "Major mode for viewing GitHub releases.
+\\{my/gh-release-mode-map}")
+
+(global-set-key (kbd "C-c G") 'my/gh-release-menu)
 #+end_src
 
 * emacs-enhanced
