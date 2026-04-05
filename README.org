@@ -1584,8 +1584,8 @@ Defines a suite of custom functions to extend Emacs's functionality tailored to 
 
 (defun my/dired-duplicate-file (arg)
   "Duplicate a file from DIRED with an incremented number.
-                                If ARG is provided, it sets the counter."
-  (interactive "p")
+If ARG is provided, it sets the starting counter."
+  (interactive "P")
   (let* ((file (dired-get-file-for-visit))
          (dir (file-name-directory file))
          (name (file-name-nondirectory file))
@@ -1611,10 +1611,9 @@ Defines a suite of custom functions to extend Emacs's functionality tailored to 
   (re-search-backward "^[ \t]*\n" nil 1)
   (skip-chars-forward " \n\t")
   (when (not (region-active-p))
-    (push-mark))
+    (push-mark nil t t))
   (re-search-forward "^[ \t]*\n" nil 1)
-  (skip-chars-backward " \n\t")
-  (setq mark-active t))
+  (skip-chars-backward " \n\t"))
 ;;
 (defun my/repeat-history ()
   "Set up a transient keymap for navigating tab bar history."
@@ -1660,19 +1659,20 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
   (interactive)
   (let ((current-dir (dired-get-file-for-visit)))
     (if (file-directory-p current-dir)
-        (let ((output-buffer-name "*dired-du*"))
-          (with-current-buffer (get-buffer-create output-buffer-name)
+        (let ((buf (get-buffer-create "*dired-du*")))
+          (with-current-buffer buf
             (erase-buffer)
             (let* ((command (format "du -hc --max-depth=1 %s && echo && echo 'File counts per subdirectory:' && find %s -maxdepth 2 -type d -exec sh -c 'echo -n \"{}: \"; find \"{}\" -type f | wc -l' \\;"
                                     (shell-quote-argument current-dir)
                                     (shell-quote-argument current-dir)))
-                   (process (start-process-shell-command "dired-du" output-buffer-name command)))
-              (set-process-sentinel process 
-                                    (lambda (proc event)
+                   (process (start-process-shell-command "dired-du" buf command)))
+              (set-process-sentinel process
+                                    (lambda (_proc event)
                                       (when (string-match "finished" event)
-                                        (with-current-buffer output-buffer-name
-                                          (goto-char (point-min))))))
-              (pop-to-buffer output-buffer-name))))
+                                        (when (buffer-live-p buf)
+                                          (with-current-buffer buf
+                                            (goto-char (point-min)))))))
+              (pop-to-buffer buf))))
       (message "The current point is not a directory."))))
 
 (defun adjust-color (color percent)
@@ -1700,7 +1700,9 @@ Lightens dark themes by 20%, darkens light themes by 5%."
     (global-hl-line-mode 1))
   (when (facep 'hl-line)
     (let* ((bg (face-background 'default))
-           (is-dark (not (string-greaterp bg "#888888")))
+           (rgb (color-values bg))
+           (luminance (/ (+ (nth 0 rgb) (nth 1 rgb) (nth 2 rgb)) 3))
+           (is-dark (< luminance 32768))
            (adjusted-bg (if is-dark
                             (adjust-color bg 20)
                           (adjust-color bg -5))))
@@ -1738,22 +1740,12 @@ Lightens dark themes by 20%, darkens light themes by 5%."
     (with-temp-buffer
       (insert-file-contents html-file)
       (goto-char (point-min))
-      (let ((header-levels '("h1" "h2" "h3" "h4" "h5" "h6")))
-        (dolist (level header-levels)
-          (let* ((current-level (string-to-number (substring level 1)))
-                 (new-level (max 1 (1- current-level)))  ;; Promote but don't go below h1
-                 (open-tag-regex (format "<%s\\([^>]*\\)>" level))  ;; Regex for opening tag with attributes
-                 (close-tag-regex (format "</%s>" level))  ;; Regex for closing tag
-                 (new-open-tag (format "<h%d\\1>" new-level))  ;; Replacement for opening tag, preserving attributes
-                 (new-close-tag (format "</h%d>" new-level)))  ;; Replacement for closing tag
-            ;; Replace opening tags
-            (goto-char (point-min))
-            (while (re-search-forward open-tag-regex nil t)
-              (replace-match new-open-tag))
-            ;; Replace closing tags
-            (goto-char (point-min))
-            (while (re-search-forward close-tag-regex nil t)
-              (replace-match new-close-tag)))))
+      (while (re-search-forward "<\\(/\\)?h\\([2-6]\\)\\([^>]*\\)>" nil t)
+        (let* ((closing (match-string 1))
+               (level (string-to-number (match-string 2)))
+               (attrs (match-string 3))
+               (new-level (1- level)))
+          (replace-match (format "<%sh%d%s>" (or closing "") new-level (or attrs "")))))
       (write-region (point-min) (point-max) html-file))))
 
 (defun my/copy-buffer-to-kill-ring ()
@@ -1798,9 +1790,8 @@ Lightens dark themes by 20%, darkens light themes by 5%."
              (when (org-up-heading-safe) ;; Move to parent heading if it exists
                (setq parent (org-get-heading t t t t))))
            (when (member issue-tag (org-get-tags))
-             (setq rows (append rows (list (list (or todo "") title (or parent ""))))))))
+             (push (list (or todo "") title (or parent "")) rows))))
        nil 'file))
-    (setq rows (reverse rows))
     (push 'hline rows)
     (cons header rows)))
 
@@ -1843,8 +1834,8 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (defun my/apply-row-style (row-start row-attributes color)
   "Apply a background COLOR to the row starting at ROW-START with ROW-ATTRIBUTES."
   (goto-char row-start)
-  (kill-line)
-  (insert (format "<tr%s style=\"background: %s\">\n" row-attributes color)))
+  (delete-region (line-beginning-position) (line-end-position))
+  (insert (format "<tr%s style=\"background: %s\">" row-attributes color)))
 
 (defun my/highlight-row-by-rules (row-start row-end row-attributes element)
   "Highlight a row based on ELEMENT ('th or 'td) keyword rules within ROW-START to ROW-END."
@@ -1913,7 +1904,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
            
            ;; Format title with indentation
            (let ((formatted-title 
-                  (concat (mapconcat (lambda (_) " - ") (make-list (- level 2) nil) "")
+                  (concat (mapconcat (lambda (_) " - ") (make-list (max 0 (- level 2)) nil) "")
                          (cond ((= level 1) "▶ ")
                                ((= level 2) "▷ ")
                                (t "• "))
@@ -2367,13 +2358,19 @@ Demonstrates customizations for shell integration within Emacs, optimizing setti
  'org-babel-load-languages
  '((shell . t)))
 
+(defvar-local my/ansi-term--last-mode nil
+  "Cache of last known term mode to avoid redundant mode-line updates.")
+
 (defun ansi-term-update-mode-line ()
   "Update the mode-line to show whether `ansi-term` is in character or line mode."
-  (setq mode-name
-        (if (term-in-char-mode)
-            "Ansi-Term [Char]"
-          "Ansi-Term [Line]"))
-  (force-mode-line-update))
+  (let ((current-mode (term-in-char-mode)))
+    (unless (eq current-mode my/ansi-term--last-mode)
+      (setq my/ansi-term--last-mode current-mode)
+      (setq mode-name
+            (if current-mode
+                "Ansi-Term [Char]"
+              "Ansi-Term [Line]"))
+      (force-mode-line-update))))
 
 (defun enable-ansi-term-mode-line-indicator ()
   "Enable dynamic mode-line indicator for `ansi-term` modes."
