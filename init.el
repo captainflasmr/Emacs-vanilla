@@ -8,6 +8,7 @@
 (require 'bookmark)
 (require 'dired)
 (require 'ox-md)
+(require 'color)
 
 ;;
 ;; -> completion-core
@@ -187,7 +188,8 @@
   (interactive)
   (when (frame-live-p my/eldoc-box--child-frame)
     (delete-frame my/eldoc-box--child-frame)
-    (setq my/eldoc-box--child-frame nil)))
+    (setq my/eldoc-box--child-frame nil))
+  (remove-hook 'post-command-hook #'my/eldoc-box--maybe-close-frame))
 
 (defvar my/eldoc-box--last-point nil
   "Stores the last known position of point to detect movement.")
@@ -392,7 +394,7 @@
 ;;
 ;; -> defun-core
 ;;
-(defun save-macro (name)
+(defun my/save-macro (name)
   "Save a macro by NAME."
   (interactive "SName of the macro: ")
   (kmacro-name-last-macro name)
@@ -545,8 +547,10 @@ Lightens dark themes by 20%, darkens light themes by 5%."
     (load-theme (intern theme) t)))
 
 (defun my/html-flush-divs ()
-  "Flush the divs in export to improve on Confluence import"
+  "Flush the divs in export to improve on Confluence import."
   (interactive)
+  (unless (buffer-file-name)
+    (user-error "Buffer is not visiting a file"))
   (let* ((org-file (buffer-file-name))
          (html-file (concat (file-name-sans-extension org-file) ".html")))
     (with-temp-buffer
@@ -558,6 +562,8 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (defun my/html-promote-headers ()
   "Promote all headers in the HTML file by one level (e.g., h2 -> h1, h3 -> h2, etc.), accounting for attributes."
   (interactive)
+  (unless (buffer-file-name)
+    (user-error "Buffer is not visiting a file"))
   (let* ((org-file (buffer-file-name))
          (html-file (concat (file-name-sans-extension org-file) ".html")))
     (with-temp-buffer
@@ -652,7 +658,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
                                     (goto-char (point-min))))))
         (pop-to-buffer output-buffer-name)))))
 
-(defvar highlight-rules
+(defvar my/highlight-rules
   '((th . (("TODO" . "#999")))
     (td . (("\\&gt" . "#bbb")
            ("-\\&gt" . "#ccc")
@@ -665,27 +671,28 @@ Lightens dark themes by 20%, darkens light themes by 5%."
            ("DONE" . "#dfd"))))
   "Alist of elements ('th or 'td) and associated keywords/colors for row highlighting.")
 
-(defun apply-row-style (row-start row-attributes color)
+(defun my/apply-row-style (row-start row-attributes color)
   "Apply a background COLOR to the row starting at ROW-START with ROW-ATTRIBUTES."
   (goto-char row-start)
   (kill-line)
   (insert (format "<tr%s style=\"background: %s\">\n" row-attributes color)))
 
-(defun highlight-row-by-rules (row-start row-end row-attributes element)
+(defun my/highlight-row-by-rules (row-start row-end row-attributes element)
   "Highlight a row based on ELEMENT ('th or 'td) keyword rules within ROW-START to ROW-END."
-  (let ((rules (cdr (assoc element highlight-rules))))
+  (let ((rules (cdr (assoc element my/highlight-rules))))
     (dolist (rule rules)
       (let ((keyword (car rule))
             (color (cdr rule)))
         (when (save-excursion
                 (and (re-search-forward (format "<%s.*>%s.*</%s>" element keyword element) row-end t)
                      (goto-char row-start)))
-          (apply-row-style row-start row-attributes color))))))
+          (my/apply-row-style row-start row-attributes color))))))
 
 (defun my/html-org-table-highlight ()
-  "Open the exported HTML file, find tables with specific classes,
-                                                        and add background styles to rows containing keywords in <td> or <th> elements."
+  "Open the exported HTML file and add background styles to rows containing keywords."
   (interactive)
+  (unless (buffer-file-name)
+    (user-error "Buffer is not visiting a file"))
   (let* ((org-file (buffer-file-name))
          (html-file (concat (file-name-sans-extension org-file) ".html")))
     (with-temp-buffer
@@ -704,19 +711,8 @@ Lightens dark themes by 20%, darkens light themes by 5%."
                 (let ((row-start (match-beginning 0))
                       (row-attributes (match-string 1))
                       (row-end (save-excursion (search-forward "</tr>"))))
-                  (highlight-row-by-rules row-start row-end row-attributes 'th)
-                  (highlight-row-by-rules row-start row-end row-attributes 'td)))))))
-      (write-region (point-min) (point-max) html-file))))
-
-(defun my/html-flush-divs ()
-  "Flush the divs in export to improve on Confluence import"
-  (interactive)
-  (let* ((org-file (buffer-file-name))
-         (html-file (concat (file-name-sans-extension org-file) ".html")))
-    (with-temp-buffer
-      (insert-file-contents html-file)
-      (goto-char (point-min))
-      (flush-lines "</?div.*>?")
+                  (my/highlight-row-by-rules row-start row-end row-attributes 'th)
+                  (my/highlight-row-by-rules row-start row-end row-attributes 'td)))))))
       (write-region (point-min) (point-max) html-file))))
 
 (defun my/format-to-table (&optional match properties-to-display)
@@ -897,7 +893,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (setq dired-auto-revert-buffer t)
 (setq dired-confirm-shell-command nil)
 (setq dired-no-confirm t)
-(setq dired-deletion-confirmer '(lambda (x) t))
+(setq dired-deletion-confirmer (lambda (_x) t))
 (setq dired-recursive-deletes 'always)
 
 (with-eval-after-load 'dired
@@ -918,13 +914,15 @@ Lightens dark themes by 20%, darkens light themes by 5%."
                         (not (eq win (selected-window)))))))))
     (select-window dest-window)))
 
-(defadvice dired-sort-toggle-or-edit (after dired-sort-move-to-first-file activate)
+(defun my/dired-sort-move-to-first-file (&rest _)
   "Move point to the first file or directory after sorting, skipping . and .."
   (goto-char (point-min))
-  (dired-next-line 2)  ;; Skip past header and move to first entry
+  (dired-next-line 2)
   (while (and (not (eobp))
-              (looking-at-p ".*\\.\\.?$"))  ;; Check if line is . or ..
+              (looking-at-p ".*\\.\\.?$"))
     (dired-next-line 1)))
+
+(advice-add 'dired-sort-toggle-or-edit :after #'my/dired-sort-move-to-first-file)
 
 (advice-add 'dired-do-copy :after (lambda (&rest _) (my-dired-switch-to-destination)))
 (advice-add 'dired-do-rename :after (lambda (&rest _) (my-dired-switch-to-destination)))
@@ -947,9 +945,10 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (setq bookmark-set-fringe-mark nil)
 (setq bookmark-fringe-mark nil)
 
-(add-hook 'prog-mode-hook #'my/rainbow-mode)
-(add-hook 'org-mode-hook #'my/rainbow-mode)
-(add-hook 'conf-space-mode-hook #'my/rainbow-mode)
+(when (fboundp 'my/rainbow-mode)
+  (add-hook 'prog-mode-hook #'my/rainbow-mode)
+  (add-hook 'org-mode-hook #'my/rainbow-mode)
+  (add-hook 'conf-space-mode-hook #'my/rainbow-mode))
 
 ;;
 ;; -> imenu-core
@@ -961,7 +960,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
     (save-excursion
       (goto-char (point-min))
       (while (re-search-forward regex nil t)
-        (let ((name (s-trim (match-string 1)))
+        (let ((name (string-trim (match-string 1)))
               (pos (match-beginning 0)))
           (push (cons name (set-marker (make-marker) pos)) index-alist))))
     (setq imenu--index-alist (sort
@@ -1035,7 +1034,7 @@ With universal argument, use the traditional recentf-open-files interface."
 (setq compilation-scroll-output t)
 ;; ignore warnings
 (setq compilation-skip-threshold 2)
-(global-set-key (kbd "<f5>") 'my/project-compile)
+(global-set-key (kbd "<f5>") (if (fboundp 'project-compile) 'project-compile 'compile))
 
 ;;
 ;; -> diff-core
@@ -1043,7 +1042,8 @@ With universal argument, use the traditional recentf-open-files interface."
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
 (setq ediff-highlight-all-diffs t)
 (setq ediff-split-window-function 'split-window-horizontally)
-(add-hook 'ediff-prepare-buffer-hook #'outline-show-all)
+(add-hook 'ediff-prepare-buffer-hook
+          (if (fboundp 'outline-show-all) #'outline-show-all #'show-all))
 (add-hook 'ediff-prepare-buffer-hook (lambda () (visual-line-mode -1)))
 
 ;;
@@ -1102,7 +1102,7 @@ With directories under project root using find."
     (rename-buffer new-buffer-name t)))
 
 (setq eshell-scroll-to-bottom-on-input t)
-(setq-local tab-always-indent 'complete)
+(add-hook 'eshell-mode-hook (lambda () (setq-local tab-always-indent 'complete)))
 
 (org-babel-do-load-languages
  'org-babel-load-languages
@@ -1372,9 +1372,10 @@ The format is appropriate for `font-lock-keywords'.")
   ;; the case of '"': generic string delimiters only match other generic string
   ;; delimiters, but not ordinary quote characters (i.e., the double quote).
   (goto-char start)
-  (while-let ((pos (re-search-forward "'.'" end t)))
-    (put-text-property (- pos 3) (- pos 2) 'syntax-table '(15))
-    (put-text-property (- pos 1) pos 'syntax-table '(15))))
+  (let (pos)
+    (while (setq pos (re-search-forward "'.'" end t))
+      (put-text-property (- pos 3) (- pos 2) 'syntax-table '(15))
+      (put-text-property (- pos 1) pos 'syntax-table '(15)))))
 ;;
 (defvar ada-light-mode--imenu-rules
   `(("Functions"
@@ -1636,7 +1637,8 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 
 (defun my/image-dired-get-original-files ()
     "Get original file paths from image-dired marked thumbnails or current thumbnail."
-    (dired-image-thumbnail-get-marked))
+    (when (fboundp 'dired-image-thumbnail-get-marked)
+      (dired-image-thumbnail-get-marked)))
 
 (defun my/get-files-from-context ()
   "Get files based on current context (dired, image-dired, etc.)"
