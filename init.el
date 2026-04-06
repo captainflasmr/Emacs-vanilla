@@ -84,6 +84,20 @@
 (define-key my-jump-keymap (kbd "-") #'tab-close)
 (global-set-key (kbd "M-;") #'my/quick-window-jump)
 
+;; 1. First, rescue 'kill-region' by binding it to something else
+(global-set-key (kbd "C-x C-k") 'kill-region)
+
+;; 2. Clear out C-w to act as a prefix key instead 
+(global-unset-key (kbd "C-w"))
+(define-prefix-command 'my-window-map)
+(global-set-key (kbd "C-w") 'my-window-map)
+
+;; 3. Bind your hjkl keys
+(define-key my-window-map (kbd "h") 'windmove-left)
+(define-key my-window-map (kbd "j") 'windmove-down)
+(define-key my-window-map (kbd "k") 'windmove-up)
+(define-key my-window-map (kbd "l") 'windmove-right)
+
 ;;
 ;; -> keys-visual-core
 ;;
