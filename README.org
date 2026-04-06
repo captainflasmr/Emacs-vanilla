@@ -508,11 +508,37 @@ Defines custom keybindings for navigating through files and Emacs features like 
 (define-prefix-command 'my-window-map)
 (global-set-key (kbd "C-w") 'my-window-map)
 
-;; 3. Bind your hjkl keys
+;; 3. Bind your hjkl keys (vim C-w compatibility)
 (define-key my-window-map (kbd "h") 'windmove-left)
 (define-key my-window-map (kbd "j") 'windmove-down)
 (define-key my-window-map (kbd "k") 'windmove-up)
 (define-key my-window-map (kbd "l") 'windmove-right)
+
+;; 4. Splits
+(define-key my-window-map (kbd "s") 'split-window-below)
+(define-key my-window-map (kbd "v") 'split-window-right)
+
+;; 5. Close / other
+(define-key my-window-map (kbd "q") 'delete-window)
+(define-key my-window-map (kbd "c") 'delete-window)
+(define-key my-window-map (kbd "o") 'delete-other-windows)
+
+;; 6. Cycle
+(define-key my-window-map (kbd "w") 'other-window)
+
+;; 7. Resize
+(define-key my-window-map (kbd "=") 'balance-windows)
+(define-key my-window-map (kbd "+") 'enlarge-window)
+(define-key my-window-map (kbd "-") 'shrink-window)
+(define-key my-window-map (kbd ">") 'enlarge-window-horizontally)
+(define-key my-window-map (kbd "<") 'shrink-window-horizontally)
+
+;; 8. Move window position
+(define-key my-window-map (kbd "H") 'windmove-swap-states-left)
+(define-key my-window-map (kbd "J") 'windmove-swap-states-down)
+(define-key my-window-map (kbd "K") 'windmove-swap-states-up)
+(define-key my-window-map (kbd "L") 'windmove-swap-states-right)
+
 #+end_src
 
 * hooks-core
