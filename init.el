@@ -1361,6 +1361,73 @@ EXCLUDE-PATTERNS is an optional list of regex patterns to exclude files/director
         patterns))))
 
 ;;
+;; -> flymake-core
+;;
+(setq flymake-show-diagnostics-at-end-of-line nil)
+
+(with-eval-after-load 'flymake
+  (define-key flymake-mode-map (kbd "M-N") #'flymake-goto-next-error)
+  (define-key flymake-mode-map (kbd "M-P") #'flymake-goto-prev-error)
+
+  (defun my/flymake--diag-buffer ()
+    "Return the visible flymake diagnostics buffer, or nil."
+    (seq-some (lambda (b)
+                (and (with-current-buffer b
+                       (derived-mode-p 'flymake-diagnostics-buffer-mode))
+                     (get-buffer-window b)
+                     b))
+              (buffer-list)))
+
+  (defvar my/flymake--sync-overlay nil
+    "Overlay used to highlight the current entry in the diagnostics buffer.")
+
+  (defun my/flymake-sync-diagnostics ()
+    "Highlight the diagnostics buffer entry matching the error at point."
+    (when-let* ((buf (my/flymake--diag-buffer))
+                (win (get-buffer-window buf))
+                (diag (or (car (flymake-diagnostics (point)))
+                          (car (flymake-diagnostics (line-beginning-position)
+                                                    (line-end-position))))))
+      (with-current-buffer buf
+        (save-excursion
+          (goto-char (point-min))
+          (let ((found nil))
+            (while (and (not found) (not (eobp)))
+              (let ((id (tabulated-list-get-id)))
+                (if (and (listp id) (eq (plist-get id :diagnostic) diag))
+                    (setq found (point))
+                  (forward-line 1))))
+            (when found
+              (unless (overlayp my/flymake--sync-overlay)
+                (setq my/flymake--sync-overlay (make-overlay 1 1))
+                (overlay-put my/flymake--sync-overlay 'face 'highlight)
+                (overlay-put my/flymake--sync-overlay 'priority 100))
+              (move-overlay my/flymake--sync-overlay
+                            found
+                            (min (point-max) (1+ (line-end-position)))
+                            buf)
+              (set-window-point win found)))))))
+
+  (define-minor-mode my/flymake-follow-mode
+    "Sync the diagnostics buffer to the error at point."
+    :lighter nil
+    (if my/flymake-follow-mode
+        (add-hook 'post-command-hook #'my/flymake-sync-diagnostics nil t)
+      (remove-hook 'post-command-hook #'my/flymake-sync-diagnostics t)))
+
+  (add-hook 'flymake-mode-hook #'my/flymake-follow-mode)
+
+  (defun my/flymake-toggle-diagnostics ()
+    "Toggle the flymake diagnostics buffer."
+    (interactive)
+    (let ((buf (my/flymake--diag-buffer)))
+      (if buf
+          (quit-window nil (get-buffer-window buf))
+        (flymake-show-buffer-diagnostics)
+        (my/flymake-sync-diagnostics))))
+  (define-key flymake-mode-map (kbd "M-M") #'my/flymake-toggle-diagnostics))
+
+;;
 ;; -> ada-core
 ;;
 (defvar ada-light-mode-keywords
