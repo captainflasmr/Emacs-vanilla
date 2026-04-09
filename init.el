@@ -1428,6 +1428,12 @@ EXCLUDE-PATTERNS is an optional list of regex patterns to exclude files/director
   (define-key flymake-mode-map (kbd "M-M") #'my/flymake-toggle-diagnostics))
 
 ;;
+;; -> simply-annotate-search-map
+;;
+(with-eval-after-load 'simply-annotate
+  (set-keymap-parent simply-annotate-command-map search-map))
+
+;;
 ;; -> ada-core
 ;;
 (defvar ada-light-mode-keywords

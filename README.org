@@ -2731,6 +2731,22 @@ The follow mode walks the tabulated list of the diagnostics buffer and maintains
   (define-key flymake-mode-map (kbd "M-M") #'my/flymake-toggle-diagnostics))
 #+end_src
 
+* simply-annotate-search-map
+
+The =simply-annotate= package (configured in the parent =~/.emacs.d/init.el=) binds its command map globally to =M-s=, which replaces the default =search-map= prefix.  That kills off all the useful =M-s= search bindings like =M-s o= (occur), =M-s .= (isearch-forward-symbol-at-point), and any personal bindings that had been placed under =M-s=.
+
+The fix is keymap inheritance: make =simply-annotate-command-map= fall through to =search-map= for any key it does not itself define.  Emacs walks the parent chain automatically, so simply-annotate's own bindings still take precedence and everything else works exactly as before.
+
+Wrapped in =with-eval-after-load= so this file remains loadable even if =simply-annotate= is not installed.
+
+#+begin_src elisp
+;;
+;; -> simply-annotate-search-map
+;;
+(with-eval-after-load 'simply-annotate
+  (set-keymap-parent simply-annotate-command-map search-map))
+#+end_src
+
 * ada-core
 
 Taken originally from :
