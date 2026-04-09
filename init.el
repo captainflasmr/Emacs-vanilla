@@ -1104,7 +1104,7 @@ With directories under project root using find."
            (shell-command-to-string find-command)
            "\n" t))))
 
-(setq project-vc-extra-root-markers '(".project"))
+(setq project-vc-extra-root-markers '(".top"))
 
 ;;
 ;; -> indentation-core
