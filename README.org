@@ -1665,6 +1665,27 @@ If ARG is provided, it sets the starting counter."
                                 (tab-bar-history-forward)))
     (set-transient-map map t)))
 
+;; `tab-bar-history-mode' deliberately deduplicates consecutive invocations
+;; of the *same command* (see the eq check against `tab-bar-history-done-command'
+;; in tab-bar.el's `tab-bar--history-change').  That is helpful for interactive
+;; window resizing but means repeated `dired-find-file' / `dired-up-directory'
+;; navigations only record the first step, so `tab-bar-history-back' jumps
+;; higher up the tree than expected.  Clearing the done-command before each
+;; dired navigation command makes the eq check fail and the intermediate
+;; window configurations get recorded normally.
+(defun my/tab-bar-history-allow-repeat (&rest _)
+  "Let `tab-bar-history-mode' record consecutive invocations of a command."
+  (when (bound-and-true-p tab-bar-history-mode)
+    (setq tab-bar-history-done-command nil)))
+
+(with-eval-after-load 'dired
+  (dolist (cmd '(dired-find-file
+                 dired-find-alternate-file
+                 dired-find-file-other-window
+                 dired-up-directory
+                 dired-jump))
+    (advice-add cmd :before #'my/tab-bar-history-allow-repeat)))
+
 (defun my/get-window-position ()
   "Return the position of the current window as 'left', 'right', 'top', or 'bottom'."
   (let* ((edges (window-edges))
