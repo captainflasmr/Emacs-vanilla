@@ -341,6 +341,12 @@
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
   (define-key vc-dir-mode-map (kbd "e") #'vc-ediff))
+(defun my/vc-dir-here ()
+  "Run vc-dir on the current directory (dired's dir when called from dired)."
+  (interactive)
+  (vc-dir default-directory))
+(with-eval-after-load 'dired
+  (define-key dired-mode-map (kbd "C-x v D") #'my/vc-dir-here))
 (with-eval-after-load 'diff-mode
   (define-key diff-mode-map (kbd "M-j") #'nil)
   (define-key diff-mode-map (kbd "M-k") #'nil))
