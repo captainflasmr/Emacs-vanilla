@@ -330,7 +330,6 @@
 (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
 (global-set-key (kbd "M-o") #'bookmark-jump)
-(global-set-key (kbd "M-m") #'my/load-theme)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
@@ -611,14 +610,6 @@ Lightens dark themes by 20%, darkens light themes by 5%."
                           (adjust-color bg -5))))
       (custom-set-faces
        `(hl-line ((t (:background ,adjusted-bg))))))))
-
-(defun my/load-theme ()
-  "Prompt to select a theme from available themes and load the selected theme."
-  (interactive)
-  (let ((theme (completing-read "Choose theme: " (mapcar 'symbol-name (custom-available-themes)))))
-    (dolist (item custom-enabled-themes)
-      (disable-theme item))
-    (load-theme (intern theme) t)))
 
 (defun my/html-flush-divs ()
   "Flush the divs in export to improve on Confluence import."
