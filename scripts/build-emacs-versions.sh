@@ -11,12 +11,22 @@ SLES_BUILD_DEPS="gcc gcc-c++ make automake texinfo gtk2-devel gtk3-devel libXpm-
 # 27.2 2021-03-25
 # 28.2 2022-09-12
 # 29.4 2024-06-22
-VERSIONS=(
+DEFAULT_VERSIONS=(
     "emacs-27.2"
     "emacs-28.2"
     "emacs-29.4"
     "emacs-30.1"
 )
+
+# If a single version arg is given (e.g. "27.2" or "emacs-27.2") build just
+# that one; otherwise build the default set above.
+if [[ $# -ge 1 && -n "$1" ]]; then
+    v="$1"
+    [[ "$v" == emacs-* ]] || v="emacs-$v"
+    VERSIONS=("$v")
+else
+    VERSIONS=("${DEFAULT_VERSIONS[@]}")
+fi
 
 # Detect OS
 detect_os() {
@@ -70,16 +80,36 @@ function build_emacs() {
     local install_dir="$INSTALL_ROOT/$version"
     
     echo "Building $version..."
-    
-    # Download and extract
+
     cd "$BUILD_ROOT"
-    if [ ! -f "$version.tar.gz" ]; then
-        wget "https://ftp.gnu.org/gnu/emacs/$version.tar.gz"
+
+    # Source resolution: prefer a pre-staged tarball under $SOURCES_DIR (the
+    # offline-packages/sources/ dir populated by fetch-source.sh), then fall
+    # back to whatever is already in $BUILD_ROOT, else download.
+    local src=""
+    for cand in \
+        "${SOURCES_DIR:-}/$version.tar.xz" \
+        "${SOURCES_DIR:-}/$version.tar.gz" \
+        "$BUILD_ROOT/$version.tar.xz" \
+        "$BUILD_ROOT/$version.tar.gz"; do
+        [[ -z "$cand" || "$cand" == "/$version."* ]] && continue
+        if [[ -f "$cand" ]]; then
+            src="$cand"
+            break
+        fi
+    done
+
+    if [[ -z "$src" ]]; then
+        src="$BUILD_ROOT/$version.tar.xz"
+        echo "Downloading $version.tar.xz from ftp.gnu.org..."
+        wget -O "$src" "https://ftp.gnu.org/gnu/emacs/$version.tar.xz"
+    else
+        echo "Using local source: $src"
     fi
-    
+
     # Clean previous build if exists
     rm -rf "$build_dir"
-    tar xzf "$version.tar.gz"
+    tar -xf "$src"   # auto-detects .tar.gz / .tar.xz
     
     # Configure and build
     cd "$version"
@@ -178,10 +208,16 @@ EOF
 }
 
 # Main execution
-echo "This script provides two methods to build Emacs:"
-echo "1. Direct compilation (traditional)"
-echo "2. Using makepkg (Arch Linux only)"
-read -p "Which method do you prefer? (1/2): " build_method
+# BUILD_METHOD env var skips the prompt (1=direct, 2=makepkg). Useful when
+# called non-interactively (e.g. from create-install.sh).
+if [[ -n "${BUILD_METHOD:-}" ]]; then
+    build_method="$BUILD_METHOD"
+else
+    echo "This script provides two methods to build Emacs:"
+    echo "1. Direct compilation (traditional)"
+    echo "2. Using makepkg (Arch Linux only)"
+    read -p "Which method do you prefer? (1/2): " build_method
+fi
 
 case $build_method in
     1)
