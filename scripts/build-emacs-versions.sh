@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Abort on any unchecked failure. Without this, a failing `make` silently
+# flows into "installed to..." and the outer loop, masking real build errors.
+set -eo pipefail
+
 # Directory for Emacs builds
 BUILD_ROOT="$HOME/emacs-builds"
 INSTALL_ROOT="$HOME/emacs-versions"
@@ -145,10 +149,11 @@ function build_emacs() {
             --with-rsvg
     fi
     
-    # Use all available cores for compilation
-    make -j$(nproc)
-    make install
-    
+    # Use all available cores for compilation. set -e aborts on failure; the
+    # explicit messages make the failing phase obvious in long build logs.
+    make -j"$(nproc)" || { echo "ERROR: make failed for $version" >&2; exit 1; }
+    make install     || { echo "ERROR: make install failed for $version" >&2; exit 1; }
+
     echo "$version installed to $install_dir"
 }
 
