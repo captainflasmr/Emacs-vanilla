@@ -362,6 +362,7 @@
 (show-paren-mode t)
 (tab-bar-history-mode 1)
 (global-font-lock-mode t)
+(repeat-mode 1)
 
 ;;
 ;; -> bell-core
@@ -381,6 +382,7 @@
 (setq-default truncate-lines t)
 (setq frame-inhibit-implied-resize t)
 (setq native-comp-async-report-warnings-errors nil)
+(setq max-mini-window-height 6)
 
 ;;
 ;; -> confirm-core
@@ -828,6 +830,24 @@ Lightens dark themes by 20%, darkens light themes by 5%."
       (push 'hline rows))
     (cons header rows)))
 
+(defun my/vc-git-reset-and-clean ()
+  "Discard all tracked changes and delete all unregistered files in the current project."
+  (interactive)
+  (let ((root (vc-git-root default-directory)))
+    (if (not root)
+        (error "Not in a Git repository")
+      (when (yes-or-no-p "Permanently discard ALL changes and delete UNTRACKED files? ")
+        (let ((default-directory root))
+          (shell-command "git reset --hard HEAD && git clean -fd")
+          (vc-resynch-buffer root t t)
+          (message "Project wiped clean."))))))
+
+(with-eval-after-load 'vc-dir
+  (define-key vc-dir-mode-map (kbd "K") #'my/vc-git-reset-and-clean))
+
+(with-eval-after-load 'vc-hooks
+  (define-key vc-prefix-map (kbd "K") #'my/vc-git-reset-and-clean))
+
 ;;
 ;; -> window-positioning-core
 ;;
@@ -981,6 +1001,18 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (advice-add 'dired-do-copy :after (lambda (&rest _) (my-dired-switch-to-destination)))
 (advice-add 'dired-do-rename :after (lambda (&rest _) (my-dired-switch-to-destination)))
 
+;; In dired, hitting RET while inside an isearch should both exit isearch
+;; and open the file at point - matches the natural muscle memory.
+(defun my/dired-isearch-find-file ()
+  "Exit isearch and open the file at point in dired."
+  (interactive)
+  (isearch-exit)
+  (when (derived-mode-p 'dired-mode)
+    (dired-find-file)))
+
+(with-eval-after-load 'isearch
+  (define-key isearch-mode-map (kbd "<return>") #'my/dired-isearch-find-file))
+
 ;;
 ;; -> visuals-core
 ;;
@@ -1003,6 +1035,11 @@ Lightens dark themes by 20%, darkens light themes by 5%."
   (add-hook 'prog-mode-hook #'my/rainbow-mode)
   (add-hook 'org-mode-hook #'my/rainbow-mode)
   (add-hook 'conf-space-mode-hook #'my/rainbow-mode))
+
+;; Slight transparency on the frame background. Harmless in TTY/Wayland
+;; environments that don't support it.
+(set-frame-parameter nil 'alpha-background 90)
+(add-to-list 'default-frame-alist '(alpha-background . 90))
 
 ;;
 ;; -> imenu-core
@@ -1049,8 +1086,8 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 ;;
 (save-place-mode 1)
 (recentf-mode 1)
-(setq recentf-max-menu-items 10)
-(setq recentf-max-saved-items 10)
+(setq recentf-max-menu-items 40)
+(setq recentf-max-saved-items 40)
 
 (defun my/fido-recentf (arg)
   "Use fido to select from recently opened files.
@@ -1129,6 +1166,220 @@ With directories under project root using find."
            "\n" t))))
 
 (setq project-vc-extra-root-markers '(".top"))
+
+;;
+;; -> xref-core
+;;
+(require 'xref)
+
+(defvar my/xref-selection-cache (make-hash-table :test 'equal)
+  "Persistent cache of remembered xref choices keyed by project+identifier.
+Values are plists of the form (:file F :line L :column C :summary S);
+live xref-item objects would not round-trip through `savehist'.")
+
+(defvar my/xref-current-identifier nil
+  "Identifier currently being resolved by `xref--find-definitions'.")
+
+(defun my/xref--cache-key (identifier)
+  (cons (or (and (fboundp 'project-current)
+                 (when-let* ((proj (project-current)))
+                     (expand-file-name (project-root proj))))
+            default-directory)
+        identifier))
+
+(defun my/xref--serialize (xref)
+  "Convert XREF to a printable plist for persistence."
+  (let ((loc (xref-item-location xref)))
+    (list :file    (xref-location-group loc)
+          :line    (ignore-errors (xref-location-line loc))
+          :summary (xref-item-summary xref))))
+
+(defun my/xref--matching-item (cached fresh)
+  "Return the item in FRESH whose location matches CACHED plist, else nil."
+  (when cached
+    (let ((c-file (plist-get cached :file))
+          (c-line (plist-get cached :line)))
+      (seq-find (lambda (x)
+                  (let ((loc (xref-item-location x)))
+                    (and (equal c-file (xref-location-group loc))
+                         (equal c-line (ignore-errors (xref-location-line loc))))))
+                fresh))))
+
+;; Live-preview state. Dynamically bound around completing-read so the
+;; minibuffer post-command-hook can see them.
+(defvar my/xref--preview-items nil
+  "Alist of (display-string . xref-item) for the current preview session.")
+(defvar my/xref--preview-origin nil
+  "List (WINDOW BUFFER POINT WINDOW-START) captured before the prompt.")
+(defvar my/xref--preview-last nil
+  "Last xref previewed; used to skip redundant redraws.")
+(defvar my/xref--preview-timer nil
+  "Pending idle timer for the next preview update.")
+
+(defcustom my/xref-preview-delay 0.25
+  "Idle seconds before previewing the highlighted xref candidate.
+Set to 0 for immediate preview on every keystroke."
+  :type 'number
+  :group 'xref)
+
+(defun my/xref--build-items (xrefs)
+  "Build a unique (display . xref) alist with project-relative paths."
+  (let* ((proj-root (or (and (fboundp 'project-current)
+                             (when-let* ((p (project-current)))
+                                 (expand-file-name (project-root p))))
+                        default-directory))
+         (relativize (lambda (path)
+                       (if (and proj-root (file-name-absolute-p path))
+                           (file-relative-name path proj-root)
+                         path)))
+         (entries (mapcar (lambda (x)
+                            (let* ((loc (xref-item-location x))
+                                   (group (funcall relativize
+                                                   (xref-location-group loc)))
+                                   (line (ignore-errors (xref-location-line loc))))
+                              (cons (if line (format "%s:%d" group line) group)
+                                    x)))
+                          xrefs))
+         (head-width (apply #'max 0
+                            (mapcar (lambda (e) (length (car e))) entries)))
+         (head-fmt (format "%%-%ds  %%s" (+ head-width 2)))
+         (seen (make-hash-table :test 'equal))
+         items)
+    (dolist (e entries)
+      (let* ((head (car e))
+             (x (cdr e))
+             (summary (xref-item-summary x))
+             (label (format head-fmt head summary))
+             (uniq label)
+             (i 2))
+        (while (gethash uniq seen)
+          (setq uniq (format "%s (%d)" label i) i (1+ i)))
+        (puthash uniq t seen)
+        (push (cons uniq x) items)))
+    (nreverse items)))
+
+(defun my/xref--treemacs-follow-current ()
+  "If treemacs follow-mode is active, reveal the current buffer in the tree."
+  (when (and (bound-and-true-p treemacs-follow-mode)
+             (fboundp 'treemacs--follow))
+    (ignore-errors (treemacs--follow))))
+
+(defun my/xref--preview-update ()
+  "Preview the currently-highlighted candidate in the origin window."
+  (when (and (minibufferp) my/xref--preview-items my/xref--preview-origin)
+    (let* ((cand (ignore-errors (car (completion-all-sorted-completions))))
+           (xref (and cand (cdr (assoc cand my/xref--preview-items)))))
+      (when (and xref (not (eq xref my/xref--preview-last))
+                 (window-live-p (car my/xref--preview-origin)))
+        (setq my/xref--preview-last xref)
+        (let ((loc (xref-item-location xref)))
+          (with-selected-window (car my/xref--preview-origin)
+            (let ((marker (ignore-errors (xref-location-marker loc))))
+              (when (markerp marker)
+                (switch-to-buffer (marker-buffer marker) t t)
+                (goto-char marker)
+                (recenter)
+                (my/xref--treemacs-follow-current)))))))))
+
+(defun my/xref--preview-schedule ()
+  "Reschedule the preview to fire after `my/xref-preview-delay' idle seconds."
+  (when (timerp my/xref--preview-timer)
+    (cancel-timer my/xref--preview-timer))
+  (setq my/xref--preview-timer
+        (run-with-idle-timer my/xref-preview-delay nil
+                             #'my/xref--preview-update)))
+
+(defun my/xref--preview-cleanup ()
+  "Cancel any pending preview and restore the origin window state."
+  (when (timerp my/xref--preview-timer)
+    (cancel-timer my/xref--preview-timer)
+    (setq my/xref--preview-timer nil))
+  (pcase my/xref--preview-origin
+    (`(,win ,buf ,pt ,start)
+     (when (and (window-live-p win) (buffer-live-p buf))
+       (with-selected-window win
+         (switch-to-buffer buf t t)
+         (goto-char pt)
+         (set-window-start win start)
+         (my/xref--treemacs-follow-current))))))
+
+(defun my/xref--completing-read-with-preview (xrefs)
+  "Prompt for one of XREFS with live preview in the origin window.
+Returns the chosen xref-item, or nil if cancelled."
+  (let* ((items (my/xref--build-items xrefs))
+         (win (selected-window))
+         (my/xref--preview-items items)
+         (my/xref--preview-origin
+          (list win (window-buffer win) (window-point win) (window-start win)))
+         (my/xref--preview-last nil))
+    (minibuffer-with-setup-hook
+        (lambda ()
+          (add-hook 'post-command-hook #'my/xref--preview-schedule nil t)
+          (add-hook 'minibuffer-exit-hook #'my/xref--preview-cleanup nil t))
+      (let ((sel (completing-read
+                  "Definition: "
+                  (lambda (string pred action)
+                    (if (eq action 'metadata)
+                        '(metadata (category . xref-item))
+                      (complete-with-action action items string pred)))
+                  nil t)))
+        (cdr (assoc sel items))))))
+
+(defun my/xref-show-definitions-remember (fetcher alist)
+  "Memoizing + previewing replacement for `xref-show-definitions-function'.
+First pick for an identifier is prompted via completing-read with live
+preview; subsequent calls for the same identifier+project jump straight
+to the remembered xref. Choices persist via `savehist'. If the cached
+location no longer appears in the fresh results (line drift, file moved)
+we fall through to the prompt."
+  (let* ((xrefs (funcall fetcher))
+         (id my/xref-current-identifier)
+         (key (and id (my/xref--cache-key id)))
+         (cached (and key (gethash key my/xref-selection-cache)))
+         (remembered (my/xref--matching-item cached xrefs))
+         (display-action (assoc-default 'display-action alist)))
+    (cond
+     ;; Zero or one candidate - let the default handler do its thing.
+     ((or (null xrefs) (null (cdr xrefs)))
+      (xref-show-definitions-completing-read (lambda () xrefs) alist))
+     ;; Cached pick still valid - jump directly, no prompt.
+     (remembered
+      (xref-pop-to-location remembered display-action))
+     ;; Prompt with live preview, then record and jump.
+     (t
+      (let ((chosen (my/xref--completing-read-with-preview xrefs)))
+        (when chosen
+          (when key
+            (puthash key (my/xref--serialize chosen) my/xref-selection-cache))
+          (xref-pop-to-location chosen display-action)))))))
+
+;; Capture the identifier so the show-function can key its cache on it.
+;; `xref--find-definitions' is the common funnel for M-. and friends.
+(defun my/xref--capture-identifier (orig-fn id &rest args)
+  (let ((my/xref-current-identifier id))
+    (apply orig-fn id args)))
+
+(advice-add 'xref--find-definitions :around #'my/xref--capture-identifier)
+
+(defun my/dumb-jump-forget (arg)
+  "Forget the remembered xref for the symbol at point.
+With a prefix argument, forget every remembered xref."
+  (interactive "P")
+  (if arg
+      (progn (clrhash my/xref-selection-cache)
+             (message "Cleared all remembered xref choices"))
+    (let* ((id (or (thing-at-point 'symbol t)
+                   (xref--read-identifier "Forget definition of: ")))
+           (key (my/xref--cache-key id)))
+      (if (remhash key my/xref-selection-cache)
+          (message "Forgot remembered xref for %s" id)
+        (message "No remembered xref for %s" id)))))
+
+(with-eval-after-load 'savehist
+  (add-to-list 'savehist-additional-variables 'my/xref-selection-cache))
+
+(setq xref-show-definitions-function #'my/xref-show-definitions-remember
+      xref-show-xrefs-function       #'xref-show-definitions-buffer)
 
 ;;
 ;; -> indentation-core
@@ -1217,6 +1468,7 @@ With directories under project root using find."
 (setq tab-bar-new-button-show nil)
 (setq tab-bar-new-tab-to 'rightmost)
 (setq tab-bar-close-button-show nil)
+(setq tab-bar-auto-width-max '((120) 20))
 
 ;;
 ;; -> windows-specific-core
