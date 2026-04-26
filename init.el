@@ -45,14 +45,14 @@
 ;; -> modeline-completion-core
 ;;
 (custom-set-faces
-  '(icomplete-first-match
-    ((t (:foreground "#7c7c75" :background "#3a3a3a" :weight bold))))
-  '(icomplete-selected-match
-    ((t (:foreground "#ffffff" :background "#5f87af" :weight bold))))
-  '(completions-common-part
-    ((t (:foreground "#87ceeb"))))
-  '(completions-first-difference
-    ((t (:foreground "#ffb6c1")))))
+ '(icomplete-first-match
+   ((t (:foreground "#7c7c75" :background "#3a3a3a" :weight bold))))
+ '(icomplete-selected-match
+   ((t (:foreground "#ffffff" :background "#5f87af" :weight bold))))
+ '(completions-common-part
+   ((t (:foreground "#87ceeb"))))
+ '(completions-first-difference
+   ((t (:foreground "#ffb6c1")))))
 (setq icomplete-compute-delay 0)
 (setq icomplete-show-matches-on-no-input t)
 (define-key icomplete-minibuffer-map (kbd "C-n") 'icomplete-forward-completions)
@@ -288,13 +288,13 @@
 (global-set-key (kbd "C-M-j") 'windmove-down)
 (global-set-key (kbd "C-M-k") 'windmove-up)
 (global-set-key (kbd "M-L") (lambda () (interactive)
-                                (my/adaptive-resize t -2)))
+                              (my/adaptive-resize t -2)))
 (global-set-key (kbd "M-H") (lambda () (interactive)
-                                (my/adaptive-resize t 2)))
+                              (my/adaptive-resize t 2)))
 (global-set-key (kbd "M-J") (lambda () (interactive)
-                                (my/adaptive-resize nil -1)))
+                              (my/adaptive-resize nil -1)))
 (global-set-key (kbd "M-K") (lambda () (interactive)
-                                (my/adaptive-resize nil 1)))
+                              (my/adaptive-resize nil 1)))
 (global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
 (global-set-key (kbd "C-c a") #'org-agenda)
@@ -778,52 +778,52 @@ Lightens dark themes by 20%, darkens light themes by 5%."
   (let ((rows '())
         (header (list "TODO" "Tags" "Title" "Contents" "Properties")))
     
-      (org-map-entries
-       (lambda ()
-         (let* ((heading (org-get-heading t t t t))  ; Clean heading without TODO/tags
-                (level (org-outline-level))
-                (tags (org-get-tags))
-                (todo (org-get-todo-state))
-                (properties (org-entry-properties))
-                (contents ""))
-           
-           ;; Extract first paragraph content
-           (save-excursion
-             (org-end-of-meta-data t)
-             (when (looking-at-p "[ \t]*[^*\n]") ; Not another heading
-               (let ((start (point)))
-                 (forward-paragraph)
-                 (setq contents (string-trim 
+    (org-map-entries
+     (lambda ()
+       (let* ((heading (org-get-heading t t t t))  ; Clean heading without TODO/tags
+              (level (org-outline-level))
+              (tags (org-get-tags))
+              (todo (org-get-todo-state))
+              (properties (org-entry-properties))
+              (contents ""))
+         
+         ;; Extract first paragraph content
+         (save-excursion
+           (org-end-of-meta-data t)
+           (when (looking-at-p "[ \t]*[^*\n]") ; Not another heading
+             (let ((start (point)))
+               (forward-paragraph)
+               (setq contents (string-trim 
                                (replace-regexp-in-string 
                                 "[ \t\n]+" " " 
                                 (buffer-substring-no-properties start (point))))))))
+         
+         ;; Format title with indentation
+         (let ((formatted-title 
+                (concat (mapconcat (lambda (_) " - ") (make-list (max 0 (- level 2)) nil) "")
+                        (cond ((= level 1) "▶ ")
+                              ((= level 2) "▷ ")
+                              (t "• "))
+                        heading))
+               ;; Filter properties
+               (filtered-props
+                (if properties-to-display
+                    (string-join
+                     (delq nil
+                           (mapcar (lambda (prop)
+                                     (let ((val (cdr (assoc prop properties))))
+                                       (when val (format "%s:%s" prop val))))
+                                   properties-to-display))
+                     " ")
+                  "")))
            
-           ;; Format title with indentation
-           (let ((formatted-title 
-                  (concat (mapconcat (lambda (_) " - ") (make-list (max 0 (- level 2)) nil) "")
-                         (cond ((= level 1) "▶ ")
-                               ((= level 2) "▷ ")
-                               (t "• "))
-                         heading))
-                 ;; Filter properties
-                 (filtered-props
-                  (if properties-to-display
-                      (string-join
-                       (delq nil
-                             (mapcar (lambda (prop)
-                                       (let ((val (cdr (assoc prop properties))))
-                                         (when val (format "%s:%s" prop val))))
-                                     properties-to-display))
-                       " ")
-                    "")))
-             
-             (push (list (or todo "")
-                         (if tags (string-join tags ":") "")
-                         formatted-title
-                         contents
-                         filtered-props)
-                   rows))))
-       match)
+           (push (list (or todo "")
+                       (if tags (string-join tags ":") "")
+                       formatted-title
+                       contents
+                       filtered-props)
+                 rows))))
+     match)
     
     (when rows
       (setq rows (reverse rows))
@@ -990,9 +990,9 @@ For tar.gz, FILE-CMD is nil because single files should use gzip instead.")
   "Compress or uncompress marked files in Dired with format selection."
   [:description
    (lambda () (format "Compress %s"
-              (if-let ((files (dired-get-marked-files nil nil nil nil t)))
-                  (mapconcat #'file-name-nondirectory files ", ")
-                "nothing")))
+                      (if-let ((files (dired-get-marked-files nil nil nil nil t)))
+                          (mapconcat #'file-name-nondirectory files ", ")
+                        "nothing")))
    ("z" "xz     – best ratio, slow"     my/dired-compress-xz)
    ("g" "gzip   – fast, decent ratio"  my/dired-compress-gzip)
    ("t" "tar.gz – fast, decent ratio"   my/dired-compress-tar.gz)
@@ -1021,10 +1021,10 @@ Already-compressed files are decompressed via `dired-compress'."
                      (string-match-p (car entry) file))
             (setq already-compressed t)))
         (if (or already-compressed handler
-                 (and (file-directory-p file)
-                      (cl-find-if
-                       (lambda (s) (string-match-p (car s) file))
-                       suffixes)))
+                (and (file-directory-p file)
+                     (cl-find-if
+                      (lambda (s) (string-match-p (car s) file))
+                      suffixes)))
             (dired-compress file)
           (let ((newname (concat file suffix)))
             (condition-case err
@@ -1059,13 +1059,13 @@ Reverts the dired buffer on completion and reports errors."
                              (?i . ,(shell-quote-argument (file-local-name dir)))))))
     (when (and (file-exists-p full-out)
                (not (y-or-n-p (format "%s exists, overwrite? "
-                                        (abbreviate-file-name full-out)))))
+                                      (abbreviate-file-name full-out)))))
       (user-error "Aborted"))
     (message "Compressing %s with %s... (async)" (file-name-nondirectory dir) name)
     (let ((process (start-file-process
                     (format "compress-%s" (file-name-nondirectory dir))
                     (generate-new-buffer (format " *compress-%s*"
-                                                  (file-name-nondirectory dir)))
+                                                 (file-name-nondirectory dir)))
                     shell-file-name shell-command-switch cmd)))
       (process-put process 'my-dir default-directory)
       (process-put process 'my-cmd-name (file-name-nondirectory dir))
@@ -1079,14 +1079,14 @@ Reverts the dired buffer on completion and reports errors."
     (error "Single-file %s compression not supported for %s" name file))
   (when (and (file-exists-p newname)
              (not (y-or-n-p (format "%s exists, overwrite? "
-                                     (abbreviate-file-name newname)))))
+                                    (abbreviate-file-name newname)))))
     (user-error "Aborted"))
   (message "Compressing %s with %s... (async)" (file-name-nondirectory file) name)
   (let* ((default-directory (file-name-directory file))
          (process (start-file-process
                    (format "compress-%s" (file-name-nondirectory file))
                    (generate-new-buffer (format " *compress-%s*"
-                                                 (file-name-nondirectory file)))
+                                                (file-name-nondirectory file)))
                    shell-file-name shell-command-switch
                    (format "%s %s" file-cmd (shell-quote-argument (file-local-name file))))))
     (process-put process 'my-dir default-directory)
@@ -1158,7 +1158,9 @@ If file is already compressed, decompress it. Otherwise show format menu."
     (dired-find-file)))
 
 (with-eval-after-load 'isearch
-  (define-key isearch-mode-map (kbd "<return>") #'my/dired-isearch-find-file))
+  (define-key isearch-mode-map (kbd "<return>") #'my/dired-isearch-find-file)
+  (define-key isearch-mode-map (kbd "C-m") #'my/dired-isearch-find-file)
+  (define-key isearch-mode-map (kbd "C-j") #'my/dired-isearch-find-file))
 
 ;;
 ;; -> visuals-core
@@ -1330,7 +1332,7 @@ live xref-item objects would not round-trip through `savehist'.")
 (defun my/xref--cache-key (identifier)
   (cons (or (and (fboundp 'project-current)
                  (when-let* ((proj (project-current)))
-                     (expand-file-name (project-root proj))))
+                   (expand-file-name (project-root proj))))
             default-directory)
         identifier))
 
@@ -1373,7 +1375,7 @@ Set to 0 for immediate preview on every keystroke."
   "Build a unique (display . xref) alist with project-relative paths."
   (let* ((proj-root (or (and (fboundp 'project-current)
                              (when-let* ((p (project-current)))
-                                 (expand-file-name (project-root p))))
+                               (expand-file-name (project-root p))))
                         default-directory))
          (relativize (lambda (path)
                        (if (and proj-root (file-name-absolute-p path))
@@ -2168,9 +2170,9 @@ It doesn't define any keybindings. In comparison with `ada-mode',
                             (my/dwim-convert-with-selection-files files-string))))))))
 
 (defun my/image-dired-get-original-files ()
-    "Get original file paths from image-dired marked thumbnails or current thumbnail."
-    (when (fboundp 'dired-image-thumbnail-get-marked)
-      (dired-image-thumbnail-get-marked)))
+  "Get original file paths from image-dired marked thumbnails or current thumbnail."
+  (when (fboundp 'dired-image-thumbnail-get-marked)
+    (dired-image-thumbnail-get-marked)))
 
 (defun my/get-files-from-context ()
   "Get files based on current context (dired, image-dired, etc.)"
