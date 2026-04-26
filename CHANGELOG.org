@@ -12,6 +12,17 @@ This document contains the release notes for Emacs-core
 
 ** <2026-04-26>
 
+Enhanced dired compression with transient format menu and async execution
+
+- Replaced default =dired-do-compress= (=Z=) with a transient menu showing compression format and ratio hints
+- Added async compression via =start-file-process= with a sentinel that reverts the dired buffer on completion
+- Supported formats: xz, gzip, tar.gz, bzip2, zstd, lzip, 7z -- each with single-file and directory/archive paths
+- Directories are compressed as tar archives piped through the chosen compressor (or =tar -czf= for tar.gz, =7z a= for 7z)
+- Already-compressed files are automatically decompressed via =dired-compress=
+- Added =my/dired-compress-transient=, =my/dired-compress-with=, =my/dired-compress-directory=, =my/dired-compress-file=, and =my/dired-compress-sentinel=
+- Generated individual commands (=my/dired-compress-xz=, =my/dired-compress-gzip=, etc.) via =my/dired-define-compress-command= macro
+- Bound =Z= in dired to =my/dired-do-compress= via =[remap dired-do-compress]=
+
 Updated keybinding for centered buffer: replaced =toggle-centered-buffer= (removed defun) with =my/center-buffer-mode= minor mode (defined in Emacs-DIYer).
 
 ** <2026-04-05>

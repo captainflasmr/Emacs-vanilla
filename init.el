@@ -970,13 +970,160 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (setq dired-deletion-confirmer (lambda (_x) t))
 (setq dired-recursive-deletes 'always)
 
+(require 'transient)
+
+(defconst my/dired-compress-formats
+  '((?z . ("xz"    ".xz"     "xz -9e"   "tar -cf - %i | xz -9e > %o"))
+    (?g . ("gzip"  ".gz"     "gzip -9"   "tar -cf - %i | gzip -9 > %o"))
+    (?t . ("tar.gz" ".tar.gz" nil        "tar -czf %o %i"))
+    (?b . ("bzip2" ".bz2"    "bzip2 -9"  "tar -cf - %i | bzip2 -9 > %o"))
+    (?s . ("zstd"  ".zst"    "zstd -19"  "tar -cf - %i | zstd -19 -o %o"))
+    (?l . ("lzip"  ".lz"     "lzip -9"   "tar -cf - %i | lzip -9 > %o"))
+    (?7 . ("7z"    ".7z"     nil         "7z a %o %i")))
+  "Compression formats for `my/dired-do-compress'.
+Each entry is (KEY . (NAME SUFFIX FILE-CMD ARCHIVE-CMD)).
+FILE-CMD is the command to compress a single file (nil if not applicable).
+ARCHIVE-CMD is the command pattern for directories, using %i/%o placeholders.
+For tar.gz, FILE-CMD is nil because single files should use gzip instead.")
+
+(transient-define-prefix my/dired-compress-transient ()
+  "Compress or uncompress marked files in Dired with format selection."
+  [:description
+   (lambda () (format "Compress %s"
+              (if-let ((files (dired-get-marked-files nil nil nil nil t)))
+                  (mapconcat #'file-name-nondirectory files ", ")
+                "nothing")))
+   ("z" "xz     – best ratio, slow"     my/dired-compress-xz)
+   ("g" "gzip   – fast, decent ratio"  my/dired-compress-gzip)
+   ("t" "tar.gz – fast, decent ratio"   my/dired-compress-tar.gz)
+   ("b" "bzip2  – good ratio, medium"   my/dired-compress-bzip2)
+   ("s" "zstd   – fast, good ratio"     my/dired-compress-zstd)
+   ("l" "lzip   – best ratio, slow"     my/dired-compress-lzip)
+   ("7" "7z     – best ratio, slow"      my/dired-compress-7z)])
+
+(defun my/dired-compress-with (key)
+  "Compress marked files using format assocated with KEY from `my/dired-compress-formats'.
+Already-compressed files are decompressed via `dired-compress'."
+  (let* ((fmt (cdr (assq key my/dired-compress-formats)))
+         (name (nth 0 fmt))
+         (suffix (nth 1 fmt))
+         (file-cmd (nth 2 fmt))
+         (archive-cmd (nth 3 fmt))
+         (suffixes dired-compress-file-suffixes)
+         (files (dired-get-marked-files nil current-prefix-arg nil nil t)))
+    (unless fmt
+      (user-error "Unknown compression key: %c" key))
+    (dolist (file files)
+      (let ((handler (find-file-name-handler file 'dired-compress-file))
+            (already-compressed nil))
+        (dolist (entry suffixes)
+          (when (and (not already-compressed)
+                     (string-match-p (car entry) file))
+            (setq already-compressed t)))
+        (if (or already-compressed handler
+                 (and (file-directory-p file)
+                      (cl-find-if
+                       (lambda (s) (string-match-p (car s) file))
+                       suffixes)))
+            (dired-compress file)
+          (let ((newname (concat file suffix)))
+            (condition-case err
+                (if (file-directory-p file)
+                    (my/dired-compress-directory file newname name archive-cmd)
+                  (my/dired-compress-file file newname name file-cmd))
+              (error (error "Compression of %s failed: %s" file (error-message-string err))))))))
+    (dired-post-do-command)))
+
+(defun my/dired-compress-sentinel (process _event)
+  "Sentinel for async compression processes.
+Reverts the dired buffer on completion and reports errors."
+  (when (memq (process-status process) '(exit signal))
+    (let ((dir (process-get process 'my-dir))
+          (cmd-name (process-get process 'my-cmd-name))
+          (exit-code (process-exit-status process))
+          (dired-buf (process-get process 'my-dired-buffer)))
+      (if (zerop exit-code)
+          (message "Compressed %s (async)" cmd-name)
+        (message "Compression of %s failed (exit %d)" cmd-name exit-code)
+        (display-buffer (process-buffer process)))
+      (when (buffer-live-p dired-buf)
+        (with-current-buffer dired-buf
+          (revert-buffer nil t t))))))
+
+(defun my/dired-compress-directory (dir newname name archive-cmd)
+  "Compress DIR as a tar archive named NEWNAME using NAME/ARCHIVE-CMD, asynchronously."
+  (let* ((default-directory (file-name-directory dir))
+         (full-out (expand-file-name newname))
+         (cmd (format-spec archive-cmd
+                           `((?o . ,(shell-quote-argument (file-local-name full-out)))
+                             (?i . ,(shell-quote-argument (file-local-name dir)))))))
+    (when (and (file-exists-p full-out)
+               (not (y-or-n-p (format "%s exists, overwrite? "
+                                        (abbreviate-file-name full-out)))))
+      (user-error "Aborted"))
+    (message "Compressing %s with %s... (async)" (file-name-nondirectory dir) name)
+    (let ((process (start-file-process
+                    (format "compress-%s" (file-name-nondirectory dir))
+                    (generate-new-buffer (format " *compress-%s*"
+                                                  (file-name-nondirectory dir)))
+                    shell-file-name shell-command-switch cmd)))
+      (process-put process 'my-dir default-directory)
+      (process-put process 'my-cmd-name (file-name-nondirectory dir))
+      (process-put process 'my-dired-buffer (current-buffer))
+      (set-process-sentinel process #'my/dired-compress-sentinel)
+      (set-process-query-on-exit-flag process nil))))
+
+(defun my/dired-compress-file (file newname name file-cmd)
+  "Compress FILE as NEWNAME using NAME/FILE-CMD, asynchronously."
+  (unless file-cmd
+    (error "Single-file %s compression not supported for %s" name file))
+  (when (and (file-exists-p newname)
+             (not (y-or-n-p (format "%s exists, overwrite? "
+                                     (abbreviate-file-name newname)))))
+    (user-error "Aborted"))
+  (message "Compressing %s with %s... (async)" (file-name-nondirectory file) name)
+  (let* ((default-directory (file-name-directory file))
+         (process (start-file-process
+                   (format "compress-%s" (file-name-nondirectory file))
+                   (generate-new-buffer (format " *compress-%s*"
+                                                 (file-name-nondirectory file)))
+                   shell-file-name shell-command-switch
+                   (format "%s %s" file-cmd (shell-quote-argument (file-local-name file))))))
+    (process-put process 'my-dir default-directory)
+    (process-put process 'my-cmd-name (file-name-nondirectory file))
+    (process-put process 'my-dired-buffer (current-buffer))
+    (set-process-sentinel process #'my/dired-compress-sentinel)
+    (set-process-query-on-exit-flag process nil)))
+
+(defmacro my/dired-define-compress-command (key name suffix file-cmd archive-cmd)
+  "Generate a dired compress command for one format."
+  `(defun ,(intern (format "my/dired-compress-%s" name)) (&optional arg)
+     ,(format "Compress marked files (or next ARG) as %s." name)
+     (interactive "P" dired-mode)
+     (my/dired-compress-with ,key)))
+
+(my/dired-define-compress-command ?z "xz"    ".xz"     "xz -9e"   "tar -cf - %i | xz -9e > %o")
+(my/dired-define-compress-command ?g "gzip"   ".gz"     "gzip -9"   "tar -cf - %i | gzip -9 > %o")
+(my/dired-define-compress-command ?t "tar.gz" ".tar.gz" nil         "tar -czf %o %i")
+(my/dired-define-compress-command ?b "bzip2"  ".bz2"    "bzip2 -9"  "tar -cf - %i | bzip2 -9 > %o")
+(my/dired-define-compress-command ?s "zstd"   ".zst"    "zstd -19"  "tar -cf - %i | zstd -19 -o %o")
+(my/dired-define-compress-command ?l "lzip"   ".lz"     "lzip -9"   "tar -cf - %i | lzip -9 > %o")
+(my/dired-define-compress-command ?7 "7z"     ".7z"     nil         "7z a %o %i")
+
+(defun my/dired-do-compress (&optional arg)
+  "Compress or uncompress marked (or next ARG) files.
+If file is already compressed, decompress it. Otherwise show format menu."
+  (interactive "P" dired-mode)
+  (my/dired-compress-transient))
+
 (with-eval-after-load 'dired
   (define-key dired-mode-map (kbd "C") 'dired-copy-file)
   (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
   (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
   (define-key dired-mode-map (kbd "C-c U") 'my/disk-space-query)
   (define-key dired-mode-map (kbd "b") 'my/dired-file-to-org-link)
-  (define-key dired-mode-map (kbd "_") #'dired-create-empty-file))
+  (define-key dired-mode-map (kbd "_") #'dired-create-empty-file)
+  (define-key dired-mode-map [remap dired-do-compress] #'my/dired-do-compress))
 
 (defun my-dired-switch-to-destination ()
   "Switch to the destination window after copying in Dired."
