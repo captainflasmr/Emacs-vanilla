@@ -261,7 +261,7 @@
 (define-key my-win-keymap (kbd "h") #'font-lock-update)
 (define-key my-win-keymap (kbd "l") #'my/sync-ui-accent-color)
 (define-key my-win-keymap (kbd "n") #'display-line-numbers-mode)
-(define-key my-win-keymap (kbd "o") #'toggle-centered-buffer)
+(define-key my-win-keymap (kbd "o") #'my/center-buffer-mode)
 (define-key my-win-keymap (kbd "p") #'variable-pitch-mode)
 (define-key my-win-keymap (kbd "q") #'toggle-menu-bar-mode-from-frame)
 (define-key my-win-keymap (kbd "r") #'my/rainbow-mode)

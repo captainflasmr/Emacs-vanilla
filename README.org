@@ -197,12 +197,12 @@ It is often advantageous to use *external tools* that are optimized for specific
 - Window Management*
   
   - Handy shortcuts for splitting windows, resizing panes, and reshuffling the layout in a minimal keystroke setup.
-  - A handcrafted =toggle-centered-buffer= function focuses content by placing the active buffer in the centre, hiding distractions in other windows.
+  - A =my/center-buffer-mode= minor mode centers content by adjusting window margins and recalculating on window resize.
 
 ** Custom Functions
 
 - Handcrafted Lisp Utilities: A small collection of reusable functions that enhance workflow directly without accessing external configuration files or plugins:
-  - =toggle-centered-buffer=: Dynamically rebalanced the window layout for distraction-free working.
+  - =my/center-buffer-mode=: Minor mode for distraction-free centered writing, with automatic margin recalculation on window resize.
   - =my/dired-duplicate-file=: Quickly duplicates the currently selected file in dired mode, increasing workflow efficiency for file templating.
   - =my/copy-buffer-to-kill-ring=: Copies the entirety of the current buffer content directly to the kill ring for seamless external clipboard usage.
 
@@ -1376,7 +1376,7 @@ Sets up keybindings for quickly toggling visual features like font, theme, line 
 (define-key my-win-keymap (kbd "h") #'font-lock-update)
 (define-key my-win-keymap (kbd "l") #'my/sync-ui-accent-color)
 (define-key my-win-keymap (kbd "n") #'display-line-numbers-mode)
-(define-key my-win-keymap (kbd "o") #'toggle-centered-buffer)
+(define-key my-win-keymap (kbd "o") #'my/center-buffer-mode)
 (define-key my-win-keymap (kbd "p") #'variable-pitch-mode)
 (define-key my-win-keymap (kbd "q") #'toggle-menu-bar-mode-from-frame)
 (define-key my-win-keymap (kbd "r") #'my/rainbow-mode)
