@@ -10,6 +10,13 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-04-30>
+
+- Added =image-mode-dimensions= section to =README.org= and tangled =init.el=
+- =my/image-mode-show-dimensions= displays pixel dimensions and human-readable file size in the header line when viewing images in =image-mode=
+- Hooks into =image-mode-hook= and =image-mode-new-window-functions= so dimensions update on open and window changes
+- Falls back to an error message in the header line if image metadata cannot be read
+
 ** <2026-04-26>
 
 Enhanced dired compression with transient format menu and async execution

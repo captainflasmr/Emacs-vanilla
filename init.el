@@ -2268,6 +2268,35 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 (add-hook 'image-dired-thumbnail-mode-hook 'my/add-picture-menu-items)
 
 ;;
+;; -> image-mode-dimensions
+;;
+
+(defun my/image-mode-show-dimensions ()
+  "Display the open image's pixel dimensions and file size in the header line."
+  (when (and (derived-mode-p 'image-mode)
+             buffer-file-name
+             (file-exists-p buffer-file-name))
+    (condition-case err
+        (let* ((image (or (image-get-display-property)
+                          (create-image buffer-file-name)))
+               (size (image-size image t))
+               (width (car size))
+               (height (cdr size))
+               (bytes (file-attribute-size
+                        (file-attributes buffer-file-name))))
+          (setq header-line-format
+                (format " %d x %d px   %s"
+                        width height
+                        (file-size-human-readable bytes))))
+      (error
+       (setq header-line-format
+             (format " image dimensions unavailable: %S" err))))))
+
+(add-hook 'image-mode-hook #'my/image-mode-show-dimensions)
+(add-hook 'image-mode-new-window-functions
+          (lambda (&rest _) (my/image-mode-show-dimensions)))
+
+;;
 ;; -> publishing-core
 ;;
 (defun my/export-menu ()

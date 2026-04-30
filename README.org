@@ -3790,6 +3790,42 @@ Demonstrates "Do What I Mean" functionalities custom to Emacs, streamlining oper
 
 #+end_src
 
+* image-mode-dimensions
+
+Display the pixel dimensions and human-readable file size of the current image in the header line whenever an image is opened in =image-mode=. Falls back to an error message if the image metadata cannot be read.
+
+#+begin_src elisp
+;;
+;; -> image-mode-dimensions
+;;
+
+(defun my/image-mode-show-dimensions ()
+  "Display the open image's pixel dimensions and file size in the header line."
+  (when (and (derived-mode-p 'image-mode)
+             buffer-file-name
+             (file-exists-p buffer-file-name))
+    (condition-case err
+        (let* ((image (or (image-get-display-property)
+                          (create-image buffer-file-name)))
+               (size (image-size image t))
+               (width (car size))
+               (height (cdr size))
+               (bytes (file-attribute-size
+                        (file-attributes buffer-file-name))))
+          (setq header-line-format
+                (format " %d x %d px   %s"
+                        width height
+                        (file-size-human-readable bytes))))
+      (error
+       (setq header-line-format
+             (format " image dimensions unavailable: %S" err))))))
+
+(add-hook 'image-mode-hook #'my/image-mode-show-dimensions)
+(add-hook 'image-mode-new-window-functions
+          (lambda (&rest _) (my/image-mode-show-dimensions)))
+
+#+end_src
+
 * publishing-core
 
 A soft wrapper around the Emacs basic publishing mechanism for my own exporting pleasure!
