@@ -10,6 +10,14 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-05-05>
+
+Add emoji prefixes to TODO keywords on HTML export
+
+- Added =my/org-export-prepend-todo-emoji= filter to prepend emojis to TODO keywords during =ox-html= export
+- Defined =my/org-todo-emoji-map= mapping keywords to emojis: TODO 📋, DOING 🔄, ORDR 📝, SENT 📤, DONE ✅, CANCELLED ❌
+- Registered filter via =org-export-filter-body-functions= so emojis appear in exported HTML (e.g. for Jira/Confluence import) without affecting in-buffer display
+
 ** <2026-04-30>
 
 - Added =image-mode-dimensions= section to =README.org= and tangled =init.el=

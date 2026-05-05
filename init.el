@@ -918,6 +918,25 @@ Lightens dark themes by 20%, darkens light themes by 5%."
         ("SENT" . "#c86bee")
         ("DONE" . "#77aa66")
         ("CANCELLED" . "#426b3e")))
+(defconst my/org-todo-emoji-map
+  '(("TODO" . "📋")
+    ("DOING" . "🔄")
+    ("ORDR" . "📝")
+    ("SENT" . "📤")
+    ("DONE" . "✅")
+    ("CANCELLED" . "❌"))
+  "Mapping of TODO keywords to emoji prefixes for HTML export.")
+(defun my/org-export-prepend-todo-emoji (text _backend _info)
+  "Prepend emoji to TODO keywords in TEXT during HTML export."
+  (dolist (pair my/org-todo-emoji-map text)
+    (let ((keyword (car pair))
+          (emoji (cdr pair)))
+      (setq text (replace-regexp-in-string
+                  (format ">%s<" (regexp-quote keyword))
+                  (format ">%s %s<" emoji keyword)
+                  text t t)))))
+(add-to-list 'org-export-filter-body-functions
+             'my/org-export-prepend-todo-emoji)
 (setq org-goto-interface 'outline-path-completionp)
 (setq org-outline-path-complete-in-steps nil)
 (setq org-imenu-depth 1)
