@@ -10,6 +10,14 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-05-06>
+
+Add windmove repeat map and insert-background-color utility
+
+- Added =windmove-repeat-map= with h/j/k/l bindings for repeatable windmove navigation after =C-M-= prefix
+- Added =insert-default-background-color= function bound to =M-s b= to insert the default background color at point
+- Added =custom-settings-redirect= section to redirect Customize writes to a temp file
+
 ** <2026-05-05>
 
 Add emoji prefixes to TODO keywords on HTML export

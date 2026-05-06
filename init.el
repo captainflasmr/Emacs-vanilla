@@ -11,6 +11,11 @@
 (require 'color)
 
 ;;
+;; -> custom-settings-redirect
+;;
+(setq custom-file (make-temp-file "emacs-custom-"))
+
+;;
 ;; -> completion-core
 ;;
 (setq-default abbrev-mode t)
@@ -287,6 +292,20 @@
 (global-set-key (kbd "C-M-l") 'windmove-right)
 (global-set-key (kbd "C-M-j") 'windmove-down)
 (global-set-key (kbd "C-M-k") 'windmove-up)
+
+(put 'windmove-left  'repeat-map 'windmove-repeat-map)
+(put 'windmove-right 'repeat-map 'windmove-repeat-map)
+(put 'windmove-up    'repeat-map 'windmove-repeat-map)
+(put 'windmove-down  'repeat-map 'windmove-repeat-map)
+
+(defvar windmove-repeat-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "h") #'windmove-left)
+    (define-key map (kbd "j") #'windmove-down)
+    (define-key map (kbd "k") #'windmove-up)
+    (define-key map (kbd "l") #'windmove-right)
+    map))
+
 (global-set-key (kbd "M-L") (lambda () (interactive)
                               (my/adaptive-resize t -2)))
 (global-set-key (kbd "M-H") (lambda () (interactive)
@@ -336,6 +355,7 @@
 (global-set-key (kbd "M-z") #'visual-line-mode)
 (global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
 (global-set-key (kbd "M-s u") #'my/org-promote-all-headings)
+(global-set-key (kbd "M-s b") 'insert-default-background-color)
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
 (with-eval-after-load 'vc-dir
@@ -447,6 +467,11 @@
 ;;
 ;; -> defun-core
 ;;
+(defun insert-default-background-color ()
+  "Insert the default background color at point."
+  (interactive)
+  (insert (downcase (face-attribute 'default :background))))
+
 (defun my/save-macro (name)
   "Save a macro by NAME."
   (interactive "SName of the macro: ")
