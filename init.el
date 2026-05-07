@@ -1157,9 +1157,19 @@ Reverts the dired buffer on completion and reports errors."
 
 (defun my/dired-do-compress (&optional arg)
   "Compress or uncompress marked (or next ARG) files.
-If file is already compressed, decompress it. Otherwise show format menu."
+If any marked files are already compressed, decompress them directly via
+`dired-do-compress'.  Otherwise show the format selection transient."
   (interactive "P" dired-mode)
-  (my/dired-compress-transient))
+  (let* ((files (dired-get-marked-files nil current-prefix-arg nil nil t))
+         (suffixes dired-compress-file-suffixes)
+         (has-compressed nil))
+    (dolist (file files)
+      (dolist (entry suffixes)
+        (when (string-match-p (car entry) file)
+          (setq has-compressed t))))
+    (if has-compressed
+        (dired-do-compress arg)
+      (my/dired-compress-transient))))
 
 (with-eval-after-load 'dired
   (define-key dired-mode-map (kbd "C") 'dired-copy-file)
