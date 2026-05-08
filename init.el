@@ -1178,7 +1178,11 @@ If any marked files are already compressed, decompress them directly via
   (define-key dired-mode-map (kbd "C-c U") 'my/disk-space-query)
   (define-key dired-mode-map (kbd "b") 'my/dired-file-to-org-link)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file)
-  (define-key dired-mode-map [remap dired-do-compress] #'my/dired-do-compress))
+  (define-key dired-mode-map [remap dired-do-compress] #'my/dired-do-compress)
+  (define-key dired-mode-map (kbd "j") #'dired-next-line)
+  (define-key dired-mode-map (kbd "k") #'dired-previous-line)
+  (define-key dired-mode-map (kbd "l") #'dired-find-file)
+  (define-key dired-mode-map (kbd "h") #'dired-up-directory))
 
 (defun my-dired-switch-to-destination ()
   "Switch to the destination window after copying in Dired."
