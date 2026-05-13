@@ -2248,6 +2248,7 @@ When CLEAR-AFTER (seconds) is given, clear header-line after that delay."
             (concat (propertize " ● " 'face face)
                     (propertize msg 'face face)
                     (propertize " ●" 'face face)))
+      (force-mode-line-update t)
       (when clear-after
         (setq my/gh-release--header-timer
               (run-with-timer
@@ -2308,7 +2309,7 @@ The gh release list format is: TITLE\\tLATEST\\tTAG\\tDATE."
                   (dotimes (i (length row))
                     (aset widths i (max (aref widths i)
                                         (length (nth i row))))))
-                (aset widths 1 0)           ; hide Latest column
+                (aset widths 1 0)
                 (dolist (row rows)
                   (dotimes (i (length row))
                     (insert (propertize
@@ -2378,6 +2379,7 @@ NOTES is the release notes text, and FILES is a list of file paths to attach."
   (my/gh-release--ensure-gh)
   (my/gh-release--ensure-repo)
   (let* ((default-directory (locate-dominating-file default-directory ".git"))
+         (git-root default-directory)
          (file-args (mapconcat (lambda (f) (shell-quote-argument (expand-file-name f)))
                                 files " "))
          (cmd (format "gh release create %s --title %s --notes %s %s 2>&1"
@@ -2385,7 +2387,8 @@ NOTES is the release notes text, and FILES is a list of file paths to attach."
                       (shell-quote-argument title)
                       (shell-quote-argument notes)
                       file-args))
-         (rel-buf (get-buffer my/gh-release-buffer))
+         (rel-buf (or (get-buffer my/gh-release-buffer)
+                      (current-buffer)))
          (output-buffer "*gh-release-create*"))
     (my/gh-release--set-header-line rel-buf
       (format "Creating release %s..." tag) 'warning)
@@ -2401,18 +2404,19 @@ NOTES is the release notes text, and FILES is a list of file paths to attach."
            (format "✓ Release %s created" tag) 'success 6)
          (message "Release %s created successfully" tag)
          (when (buffer-live-p rel-buf)
-           (my/gh-release-list)))
-         ((string-match "exited abnormally" event)
-          (let* ((err-text (with-current-buffer output-buffer
-                             (buffer-substring (point-min) (line-end-position))))
-                 (reason (if (string-match ": \\(.+\\)" err-text)
-                             (match-string 1 err-text)
-                           (string-trim (car (split-string err-text "\n"))))))
-            (my/gh-release--set-header-line rel-buf
-              (format "✗ %s: %s" tag (truncate-string-to-width reason 40 nil nil t))
-              'error 8)
-            (message "Release %s failed — %s" tag reason)
-            (display-buffer output-buffer))))))))
+           (let ((default-directory git-root))
+             (my/gh-release-list))))
+        ((string-match "exited abnormally" event)
+         (let* ((err-text (with-current-buffer output-buffer
+                            (buffer-substring (point-min) (line-end-position))))
+                (reason (if (string-match ": \\(.+\\)" err-text)
+                            (match-string 1 err-text)
+                          (string-trim (car (split-string err-text "\n"))))))
+           (my/gh-release--set-header-line rel-buf
+             (format "✗ %s: %s" tag (truncate-string-to-width reason 40 nil nil t))
+             'error 8)
+           (message "Release %s failed — %s" tag reason)
+           (display-buffer output-buffer))))))))
 
 (defun my/gh-release-download ()
   "Download assets from the release at point."
@@ -2421,7 +2425,8 @@ NOTES is the release notes text, and FILES is a list of file paths to attach."
     (if tag
         (let* ((default-directory (locate-dominating-file default-directory ".git"))
                (dir (read-directory-name "Download to: " default-directory))
-               (rel-buf (get-buffer my/gh-release-buffer)))
+               (rel-buf (or (get-buffer my/gh-release-buffer)
+                            (current-buffer))))
           (my/gh-release--set-header-line rel-buf
             (format "Downloading assets for %s..." tag) 'warning)
           (message "Downloading assets for %s..." tag)

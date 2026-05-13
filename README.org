@@ -2302,6 +2302,15 @@ Already-compressed files are decompressed via `dired-compress'."
          (files (dired-get-marked-files nil current-prefix-arg nil nil t)))
     (unless fmt
       (user-error "Unknown compression key: %c" key))
+    (when files
+      (with-current-buffer (current-buffer)
+        (when my/dired--header-timer
+          (cancel-timer my/dired--header-timer))
+        (setq header-line-format
+              (concat (propertize " ● " 'face 'warning)
+                      (propertize (format "Compressing %s..." name) 'face 'warning)
+                      (propertize " ●" 'face 'warning)))
+        (force-mode-line-update t)))
     (dolist (file files)
       (let ((handler (find-file-name-handler file 'dired-compress-file))
             (already-compressed nil))
@@ -2323,21 +2332,53 @@ Already-compressed files are decompressed via `dired-compress'."
               (error (error "Compression of %s failed: %s" file (error-message-string err))))))))
     (dired-post-do-command)))
 
+(defvar-local my/dired--header-timer nil)
+
 (defun my/dired-compress-sentinel (process _event)
   "Sentinel for async compression processes.
-Reverts the dired buffer on completion and reports errors."
+Reverts the dired buffer on completion, updates header-line, and reports errors."
   (when (memq (process-status process) '(exit signal))
-    (let ((dir (process-get process 'my-dir))
-          (cmd-name (process-get process 'my-cmd-name))
-          (exit-code (process-exit-status process))
-          (dired-buf (process-get process 'my-dired-buffer)))
+    (let* ((cmd-name (process-get process 'my-cmd-name))
+           (exit-code (process-exit-status process))
+           (dired-buf (process-get process 'my-dired-buffer))
+           (newname (process-get process 'my-newname)))
       (if (zerop exit-code)
-          (message "Compressed %s (async)" cmd-name)
+          (let* ((filesize (when (and newname (file-exists-p newname))
+                              (file-size-human-readable
+                               (file-attribute-size (file-attributes newname)))))
+                 (msg (concat (propertize "✓" 'face 'success)
+                              (format " Compressed: %s" cmd-name)
+                              (when filesize
+                                (format " (%s)" filesize)))))
+            (message "%s" msg)
+            (when (buffer-live-p dired-buf)
+              (with-current-buffer dired-buf
+                (revert-buffer nil t t)
+                (when my/dired--header-timer
+                  (cancel-timer my/dired--header-timer))
+                (setq header-line-format
+                      (concat (propertize " ● " 'face 'success)
+                              msg
+                              (propertize " ●" 'face 'success)))
+                (force-mode-line-update t)
+                (setq my/dired--header-timer
+                      (run-with-timer
+                       6 nil
+                       (lambda (buf)
+                         (when (buffer-live-p buf)
+                           (with-current-buffer buf
+                             (setq header-line-format nil
+                                   my/dired--header-timer nil))))
+                       (current-buffer))))))
         (message "Compression of %s failed (exit %d)" cmd-name exit-code)
-        (display-buffer (process-buffer process)))
-      (when (buffer-live-p dired-buf)
-        (with-current-buffer dired-buf
-          (revert-buffer nil t t))))))
+        (display-buffer (process-buffer process))
+        (when (buffer-live-p dired-buf)
+          (with-current-buffer dired-buf
+            (revert-buffer nil t t)
+            (when my/dired--header-timer
+              (cancel-timer my/dired--header-timer))
+            (setq header-line-format nil)
+            (force-mode-line-update t)))))))
 
 (defun my/dired-compress-directory (dir newname name archive-cmd)
   "Compress DIR as a tar archive named NEWNAME using NAME/ARCHIVE-CMD, asynchronously."
@@ -2359,6 +2400,7 @@ Reverts the dired buffer on completion and reports errors."
       (process-put process 'my-dir default-directory)
       (process-put process 'my-cmd-name (file-name-nondirectory dir))
       (process-put process 'my-dired-buffer (current-buffer))
+      (process-put process 'my-newname full-out)
       (set-process-sentinel process #'my/dired-compress-sentinel)
       (set-process-query-on-exit-flag process nil))))
 
@@ -2381,6 +2423,7 @@ Reverts the dired buffer on completion and reports errors."
     (process-put process 'my-dir default-directory)
     (process-put process 'my-cmd-name (file-name-nondirectory file))
     (process-put process 'my-dired-buffer (current-buffer))
+    (process-put process 'my-newname (expand-file-name newname))
     (set-process-sentinel process #'my/dired-compress-sentinel)
     (set-process-query-on-exit-flag process nil)))
 
@@ -3951,6 +3994,31 @@ GitHub release management using the =gh= CLI. Provides listing, creating, deleti
 (defvar my/gh-release-buffer "*GitHub Releases*"
   "Buffer name for displaying GitHub releases.")
 
+(defvar-local my/gh-release--header-timer nil)
+
+(defun my/gh-release--set-header-line (buf msg face &optional clear-after)
+  "Set BUF's header-line to colored MSG with FACE.
+When CLEAR-AFTER (seconds) is given, clear header-line after that delay."
+  (when (buffer-live-p buf)
+    (with-current-buffer buf
+      (when my/gh-release--header-timer
+        (cancel-timer my/gh-release--header-timer))
+      (setq header-line-format
+            (concat (propertize " ● " 'face face)
+                    (propertize msg 'face face)
+                    (propertize " ●" 'face face)))
+      (force-mode-line-update t)
+      (when clear-after
+        (setq my/gh-release--header-timer
+              (run-with-timer
+               clear-after nil
+               (lambda (b)
+                 (when (buffer-live-p b)
+                   (with-current-buffer b
+                     (setq header-line-format nil
+                           my/gh-release--header-timer nil))))
+               buf))))))
+
 (defun my/gh-release--ensure-gh ()
   "Check that gh CLI is available."
   (unless (executable-find "gh")
@@ -3989,7 +4057,25 @@ The gh release list format is: TITLE\\tLATEST\\tTAG\\tDATE."
                        "gh release list --limit 30 2>&1")))
           (if (string-match-p "no releases" output)
               (insert "No releases found.\n")
-            (insert output)))
+            (let ((lines (split-string output "\n" t))
+                  rows cols)
+              (dolist (line lines)
+                (push (split-string line "\t") rows))
+              (setq rows (nreverse rows))
+              (setq cols (apply #'max (mapcar #'length rows)))
+              (let* ((widths (make-vector cols 0)))
+                (dolist (row rows)
+                  (dotimes (i (length row))
+                    (aset widths i (max (aref widths i)
+                                        (length (nth i row))))))
+                (aset widths 1 0)
+                (dolist (row rows)
+                  (dotimes (i (length row))
+                    (insert (propertize
+                             (format (format "%%-%ds  " (aref widths i))
+                                     (nth i row))
+                             'face (if (= i 0) 'bold 'default))))
+                   (insert "\n"))))))
         (goto-char (point-min)))
       (my/gh-release-mode)
       (pop-to-buffer (current-buffer)))))
@@ -4039,36 +4125,57 @@ TAG is the release tag, TITLE is the release title,
 NOTES is the release notes text, and FILES is a list of file paths to attach."
   (interactive
    (let* ((default-file (when (derived-mode-p 'dired-mode)
-                          (dired-get-filename nil t)))
+                           (dired-get-filename nil t)))
           (tag (read-string "Release tag (e.g. v1.0): "))
           (title (read-string "Release title: " tag))
           (notes (read-string "Release notes: " ""))
           (files-str (read-string "Files to attach (space-separated, empty for none): "
                                   (when default-file
-                                    (file-name-nondirectory default-file))))
-          (files (if (string-empty-p files-str) nil (split-string files-str))))
+                                    (file-name-unquote default-file))))
+          (files (if (string-empty-p files-str) nil
+                   (mapcar #'expand-file-name (split-string files-str)))))
      (list tag title notes files)))
   (my/gh-release--ensure-gh)
   (my/gh-release--ensure-repo)
   (let* ((default-directory (locate-dominating-file default-directory ".git"))
+         (git-root default-directory)
          (file-args (mapconcat (lambda (f) (shell-quote-argument (expand-file-name f)))
-                               files " "))
+                                files " "))
          (cmd (format "gh release create %s --title %s --notes %s %s 2>&1"
                       (shell-quote-argument tag)
                       (shell-quote-argument title)
                       (shell-quote-argument notes)
                       file-args))
+         (rel-buf (or (get-buffer my/gh-release-buffer)
+                      (current-buffer)))
          (output-buffer "*gh-release-create*"))
+    (my/gh-release--set-header-line rel-buf
+      (format "Creating release %s..." tag) 'warning)
     (message "Creating release %s..." tag)
     (with-current-buffer (get-buffer-create output-buffer)
       (erase-buffer))
     (set-process-sentinel
      (start-process-shell-command "gh-release-create" output-buffer cmd)
      (lambda (proc event)
-       (when (string-match "finished" event)
+       (cond
+        ((string-match "finished" event)
+         (my/gh-release--set-header-line rel-buf
+           (format "✓ Release %s created" tag) 'success 6)
          (message "Release %s created successfully" tag)
-         (when (get-buffer my/gh-release-buffer)
-           (my/gh-release-list)))))))
+         (when (buffer-live-p rel-buf)
+           (let ((default-directory git-root))
+             (my/gh-release-list))))
+        ((string-match "exited abnormally" event)
+         (let* ((err-text (with-current-buffer output-buffer
+                            (buffer-substring (point-min) (line-end-position))))
+                (reason (if (string-match ": \\(.+\\)" err-text)
+                            (match-string 1 err-text)
+                          (string-trim (car (split-string err-text "\n"))))))
+           (my/gh-release--set-header-line rel-buf
+             (format "✗ %s: %s" tag (truncate-string-to-width reason 40 nil nil t))
+             'error 8)
+           (message "Release %s failed — %s" tag reason)
+           (display-buffer output-buffer))))))))
 
 (defun my/gh-release-download ()
   "Download assets from the release at point."
@@ -4076,7 +4183,11 @@ NOTES is the release notes text, and FILES is a list of file paths to attach."
   (let ((tag (my/gh-release--tag-at-point)))
     (if tag
         (let* ((default-directory (locate-dominating-file default-directory ".git"))
-               (dir (read-directory-name "Download to: " default-directory)))
+               (dir (read-directory-name "Download to: " default-directory))
+               (rel-buf (or (get-buffer my/gh-release-buffer)
+                            (current-buffer))))
+          (my/gh-release--set-header-line rel-buf
+            (format "Downloading assets for %s..." tag) 'warning)
           (message "Downloading assets for %s..." tag)
           (set-process-sentinel
            (start-process-shell-command
@@ -4085,8 +4196,15 @@ NOTES is the release notes text, and FILES is a list of file paths to attach."
                     (shell-quote-argument tag)
                     (shell-quote-argument dir)))
            (lambda (proc event)
-             (when (string-match "finished" event)
-               (message "Download complete for %s" tag)))))
+             (cond
+              ((string-match "finished" event)
+               (my/gh-release--set-header-line rel-buf
+                 (format "✓ Downloaded assets for %s" tag) 'success 6)
+               (message "Download complete for %s" tag))
+              ((string-match "exited abnormally" event)
+               (my/gh-release--set-header-line rel-buf
+                 (format "✗ Download failed for %s" tag) 'error 6)
+               (message "Download failed for %s" tag))))))
       (user-error "No release tag found on this line"))))
 
 (defun my/gh-release-edit ()
