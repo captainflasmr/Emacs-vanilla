@@ -10,6 +10,21 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-05-13>
+
+Add header-line progress feedback for dired compression and gh-release, and format gh-release list output
+
+- Dired compression now shows =● Compressing xz... ●= in the header-line during async compression, then =● ✓ Compressed: filename (1.2M) ●= on completion, clearing after 6 seconds
+- Failure case clears the header-line promptly and shows error output
+- =my/dired-compress-with= sets initial header-line; =my/dired-compress-sentinel= updates it with success/error face and =force-mode-line-update= for immediate redisplay
+- Added buffer-local =my/dired--header-timer= to cancel stale timers from multiple concurrent compressions
+- =my/gh-release-create= and =my/gh-release-download= now show header-line progress in the releases buffer (creating, ✓ created, ✗ failed with error reason)
+- =my/gh-release--set-header-line= helper with timer cancellation to prevent stale restoration across multiple operations
+- Changed file-default in =my/gh-release-create= to show the full dired path (=file-name-unquote=) instead of just basename
+- =my/gh-release-list= now formats tab-separated =gh release list= output into aligned columns with bold titles and hidden Latest column
+- Release list failure path now shows the error reason in the header-line and pops up the error buffer
+- Suppressed distracting mu4e indexing progress messages from the minibuffer via advice on =mu4e-message=
+
 ** <2026-05-06>
 
 Add windmove repeat map and insert-background-color utility

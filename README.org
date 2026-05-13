@@ -30,6 +30,16 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2026-05-13>
+
+Add header-line progress feedback for dired compression and gh-release operations
+
+- Dired compression shows =● Compressing xz... ●= in the header-line during async compression, then =● ✓ Compressed: filename (1.2M) ●= on completion (clears after 6 seconds)
+- =my/gh-release-create= and =my/gh-release-download= show header-line progress in the releases buffer (creating, ✓ created, ✗ failed with error reason)
+- =my/gh-release-list= now formats tab-separated =gh release list= output into aligned columns
+- =my/gh-release-create= file default now shows full dired path instead of basename
+- Suppressed distracting mu4e indexing progress messages from the minibuffer
+
 ** <2026-04-26>
 
 Enhanced dired compression with transient format menu and async execution
@@ -2235,7 +2245,7 @@ l  lzip   – best ratio, slow
 7  7z     – best ratio, slow
 #+end_example
 
-Already-compressed files (matching =dired-compress-file-suffixes=) are automatically decompressed by =dired-compress=.  Directories are archived as tar piped through the chosen compressor (or =tar -czf= for tar.gz, =7z a= for 7z).  All compression runs asynchronously via =start-file-process= with a sentinel that reverts the dired buffer on completion.
+Already-compressed files (matching =dired-compress-file-suffixes=) are automatically decompressed by =dired-compress=.  Directories are archived as tar piped through the chosen compressor (or =tar -czf= for tar.gz, =7z a= for 7z).  All compression runs asynchronously via =start-file-process= with a sentinel that reverts the dired buffer on completion.  The dired header-line shows =● Compressing xz... ●= during compression and =● ✓ Compressed: filename (1.2M) ●= on completion (clears after 6 seconds).
 
 #+begin_src elisp
 ;;
@@ -3320,7 +3330,7 @@ The Ada language server uses on-type formatting to insert space characters whene
 
 The Ada language server exposes a custom command =als-other-file= that lets you jump between specification and body files; use it with `M-x ada-light-other-file= (after starting =eglot`) or bind the command to a key for easy access.
 
-#+begin_src elisp
+#+begin_src elisp :tangle no
 ;;
 ;; -> ada-core
 ;;
@@ -3932,7 +3942,7 @@ A soft wrapper around the Emacs basic publishing mechanism for my own exporting 
 
 * gh-release-core
 
-GitHub release management using the =gh= CLI. Provides listing, creating, deleting, viewing, downloading, and editing releases from within Emacs without any external packages.
+GitHub release management using the =gh= CLI. Provides listing, creating, deleting, viewing, downloading, and editing releases from within Emacs without any external packages.  Release create/download show header-line progress in the releases buffer.  Release list output is formatted into aligned columns.
 
 #+begin_src elisp
 ;;

@@ -1058,6 +1058,15 @@ Already-compressed files are decompressed via `dired-compress'."
          (files (dired-get-marked-files nil current-prefix-arg nil nil t)))
     (unless fmt
       (user-error "Unknown compression key: %c" key))
+    (when files
+      (with-current-buffer (current-buffer)
+        (when my/dired--header-timer
+          (cancel-timer my/dired--header-timer))
+        (setq header-line-format
+              (concat (propertize " ● " 'face 'warning)
+                      (propertize (format "Compressing %s..." name) 'face 'warning)
+                      (propertize " ●" 'face 'warning)))
+        (force-mode-line-update t)))
     (dolist (file files)
       (let ((handler (find-file-name-handler file 'dired-compress-file))
             (already-compressed nil))
@@ -1079,21 +1088,53 @@ Already-compressed files are decompressed via `dired-compress'."
               (error (error "Compression of %s failed: %s" file (error-message-string err))))))))
     (dired-post-do-command)))
 
+(defvar-local my/dired--header-timer nil)
+
 (defun my/dired-compress-sentinel (process _event)
   "Sentinel for async compression processes.
-Reverts the dired buffer on completion and reports errors."
+Reverts the dired buffer on completion, updates header-line, and reports errors."
   (when (memq (process-status process) '(exit signal))
-    (let ((dir (process-get process 'my-dir))
-          (cmd-name (process-get process 'my-cmd-name))
-          (exit-code (process-exit-status process))
-          (dired-buf (process-get process 'my-dired-buffer)))
+    (let* ((cmd-name (process-get process 'my-cmd-name))
+           (exit-code (process-exit-status process))
+           (dired-buf (process-get process 'my-dired-buffer))
+           (newname (process-get process 'my-newname)))
       (if (zerop exit-code)
-          (message "Compressed %s (async)" cmd-name)
+          (let* ((filesize (when (and newname (file-exists-p newname))
+                              (file-size-human-readable
+                               (file-attribute-size (file-attributes newname)))))
+                 (msg (concat (propertize "✓" 'face 'success)
+                              (format " Compressed: %s" cmd-name)
+                              (when filesize
+                                (format " (%s)" filesize)))))
+            (message "%s" msg)
+            (when (buffer-live-p dired-buf)
+              (with-current-buffer dired-buf
+                (revert-buffer nil t t)
+                (when my/dired--header-timer
+                  (cancel-timer my/dired--header-timer))
+                (setq header-line-format
+                      (concat (propertize " ● " 'face 'success)
+                              msg
+                              (propertize " ●" 'face 'success)))
+                (force-mode-line-update t)
+                (setq my/dired--header-timer
+                      (run-with-timer
+                       6 nil
+                       (lambda (buf)
+                         (when (buffer-live-p buf)
+                           (with-current-buffer buf
+                             (setq header-line-format nil
+                                   my/dired--header-timer nil))))
+                       (current-buffer))))))
         (message "Compression of %s failed (exit %d)" cmd-name exit-code)
-        (display-buffer (process-buffer process)))
-      (when (buffer-live-p dired-buf)
-        (with-current-buffer dired-buf
-          (revert-buffer nil t t))))))
+        (display-buffer (process-buffer process))
+        (when (buffer-live-p dired-buf)
+          (with-current-buffer dired-buf
+            (revert-buffer nil t t)
+            (when my/dired--header-timer
+              (cancel-timer my/dired--header-timer))
+            (setq header-line-format nil)
+            (force-mode-line-update t)))))))
 
 (defun my/dired-compress-directory (dir newname name archive-cmd)
   "Compress DIR as a tar archive named NEWNAME using NAME/ARCHIVE-CMD, asynchronously."
@@ -1115,6 +1156,7 @@ Reverts the dired buffer on completion and reports errors."
       (process-put process 'my-dir default-directory)
       (process-put process 'my-cmd-name (file-name-nondirectory dir))
       (process-put process 'my-dired-buffer (current-buffer))
+      (process-put process 'my-newname full-out)
       (set-process-sentinel process #'my/dired-compress-sentinel)
       (set-process-query-on-exit-flag process nil))))
 
@@ -1137,6 +1179,7 @@ Reverts the dired buffer on completion and reports errors."
     (process-put process 'my-dir default-directory)
     (process-put process 'my-cmd-name (file-name-nondirectory file))
     (process-put process 'my-dired-buffer (current-buffer))
+    (process-put process 'my-newname (expand-file-name newname))
     (set-process-sentinel process #'my/dired-compress-sentinel)
     (set-process-query-on-exit-flag process nil)))
 
@@ -1918,208 +1961,6 @@ EXCLUDE-PATTERNS is an optional list of regex patterns to exclude files/director
   (set-keymap-parent simply-annotate-command-map search-map))
 
 ;;
-;; -> ada-core
-;;
-(defvar ada-light-mode-keywords
-  ;; https://www.adaic.org/resources/add_content/standards/05rm/html/RM-2-9.html
-  '("abort" "else" "new" "return" "abs" "elsif" "not" "reverse" "abstract" "end"
-    "null" "accept" "entry" "select" "access" "exception" "of" "separate"
-    "aliased" "exit" "or" "subtype" "all" "others" "synchronized" "and" "for"
-    "out" "array" "function" "overriding" "tagged" "at" "task" "generic"
-    "package" "terminate" "begin" "goto" "pragma" "then" "body" "private" "type"
-    "if" "procedure" "case" "in" "protected" "until" "constant" "interface"
-    "use" "is" "raise" "declare" "range" "when" "delay" "limited" "record"
-    "while" "delta" "loop" "rem" "with" "digits" "renames" "do" "mod" "requeue"
-    "xor")
-  "Keywords of the Ada 2012 language.")
-;;
-(defvar ada-light-mode--font-lock-rules
-  (list (regexp-opt ada-light-mode-keywords 'symbols))
-  "Rules for search-based fontification in `ada-light-mode'.
-The format is appropriate for `font-lock-keywords'.")
-;;
-(defvar ada-light-mode-syntax-table     ; used automatically by define-derived-mode
-  (let ((table (make-syntax-table)))
-    ;; Comments start with "--".
-    (modify-syntax-entry ?- ". 12" table)
-    ;; Newlines end comments.
-    (modify-syntax-entry ?\n ">" table)
-    (modify-syntax-entry ?\r ">" table)
-    ;; Backslash is a regular symbol, not an escape character.
-    (modify-syntax-entry ?\\ "_" table)
-    table)
-  "Syntax table used in `ada-light-mode'.")
-;;
-(defvar ada-light-mode-other-file-alist
-  '(("\\.ads\\'" (".adb"))
-    ("\\.adb\\'" (".ads")))
-  "Value for `ff-other-file-alist' in `ada-light-mode'.")
-;;
-(defun ada-light-mode--syntax-propertize (start end)
-  "Apply syntax properties to the region from START to END."
-  ;; Ada delimits character literals with single quotes, but also uses the
-  ;; single quote for other purposes. Since character literals are always
-  ;; exactly one character long (i.e., there are no escape sequences), we can
-  ;; easily find them with a regular expression and change the syntax class of
-  ;; the enclosing single quotes to "generic string". This also nicely handles
-  ;; the case of '"': generic string delimiters only match other generic string
-  ;; delimiters, but not ordinary quote characters (i.e., the double quote).
-  (goto-char start)
-  (let (pos)
-    (while (setq pos (re-search-forward "'.'" end t))
-      (put-text-property (- pos 3) (- pos 2) 'syntax-table '(15))
-      (put-text-property (- pos 1) pos 'syntax-table '(15)))))
-;;
-(defvar ada-light-mode--imenu-rules
-  `(("Functions"
-     ,(rx bol
-          (* space)
-          (? (? "not" (* space)) "overriding" (* space))
-          "function"
-          (+ space)
-          (group (+ (or word (syntax symbol)))))
-     1)
-    ("Procedures"
-     ,(rx bol
-          (* space)
-          (? (? "not" (* space)) "overriding" (* space))
-          "procedure"
-          (+ space)
-          (group (+ (or word (syntax symbol)))))
-     1)
-    ("Types"
-     ,(rx bol
-          (* space)
-          (? "sub")
-          "type"
-          (+ space)
-          (group (+ (or word (syntax symbol)))))
-     1)
-    ("Packages"
-     ,(rx bol
-          (* space)
-          "package"
-          (+ space)
-          (group (+ (or word (syntax symbol))))
-          (+ space)
-          "is")
-     1))
-  "Imenu configuration for `ada-light-mode'.
-The format is appropriate for `imenu-generic-expression'.")
-;;
-(defun ada-light-mode--indent-line ()
-  "Indent a single line of Ada code."
-  ;; This is a really dumb implementation which just indents to the most recent
-  ;; non-empty line's indentation. It's better than the default though because
-  ;; it stops there, so that users who want completion on TAB can get it after
-  ;; indenting. (The default behavior is to insert TAB characters indefinitely.)
-  (let ((indent (save-excursion
-                  (beginning-of-line)
-                  (if (re-search-backward "^[^\n]" nil t) ; non-empty line
-                      (current-indentation)
-                    0))))
-    (if (<= (current-column) (current-indentation))
-        (indent-line-to indent)
-      (when (< (current-indentation) indent)
-        (save-excursion (indent-line-to indent))))))
-;;
-;;;###autoload
-(define-derived-mode ada-light-base-mode prog-mode "AdaLBase"
-  "Base mode for `ada-light-mode' and `gpr-light-mode'."
-  ;; Set up commenting; Ada uses "--" followed by two spaces.
-  (setq-local comment-use-syntax t
-              comment-start "--"
-              comment-padding 2)
-  ;; Set up fontification.
-  (setq-local font-lock-defaults '(ada-light-mode--font-lock-rules nil t)
-              syntax-propertize-function #'ada-light-mode--syntax-propertize)
-  ;; And finally, configure indentation. Since our indentation function isn't
-  ;; particularly good, don't force it upon the user.
-  (setq-local standard-indent 3
-              tab-width 3               ; used by eglot for range formatting
-              indent-line-function 'ada-light-mode--indent-line
-              electric-indent-inhibit t))
-;;
-;;;###autoload
-(define-derived-mode ada-light-mode ada-light-base-mode "AdaL"
-  "Major mode for the Ada programming language.
-It doesn't define any keybindings. In comparison with `ada-mode',
-`ada-light-mode' is faster but less accurate."
-  (setq-local ff-other-file-alist ada-light-mode-other-file-alist
-              imenu-generic-expression ada-light-mode--imenu-rules))
-;;
-;;;###autoload
-(define-derived-mode gpr-light-mode ada-light-base-mode "GPRL"
-  "Major mode for GPR project files."
-  :syntax-table ada-light-mode-syntax-table)
-;;
-;; Register the mode for Ada code following GNAT naming conventions.
-;;;###autoload
-(progn (add-to-list 'auto-mode-alist '("\\.ad[abcs]\\'" . ada-light-mode))
-       (add-to-list 'auto-mode-alist '("\\.gpr\\'" . gpr-light-mode)))
-;;
-;; Configure eglot if available.
-(with-eval-after-load 'eglot
-  (add-to-list 'eglot-server-programs '((ada-light-mode :language-id "ada")
-                                        "ada_language_server"))
-  ;; The Ada Language Server doesn't support formatting .gpr files, but it
-  ;; provides completion and detects syntax errors.
-  (add-to-list 'eglot-server-programs '((gpr-light-mode :language-id "ada")
-                                        "ada_language_server" "--language-gpr"))
-  (defun ada-light-other-file ()
-    "Jump from spec to body or vice versa using the Ada Language Server."
-    (interactive)
-    (if-let ((server (eglot-current-server)))
-        (eglot-execute-command server
-                               "als-other-file"
-                               (vector (eglot--TextDocumentIdentifier)))
-      (message "%s" "Not connected to the Ada Language Server")))
-  ;; The "als-other-file" command used by `ada-light-other-file' requires
-  ;; support for the "window/showDocument" server request in eglot; add it if
-  ;; necessary.
-  (unless (cl-find-method 'eglot-handle-request nil '(t (eql window/showDocument)))
-    (cl-defmethod eglot-handle-request
-      (_server (_method (eql window/showDocument)) &key uri &allow-other-keys)
-      (find-file (eglot--uri-to-path uri))
-      (list :success t)))
-  ;;
-  (defun ada-light-mode--current-line-empty-p ()
-    (save-excursion
-      (beginning-of-line)
-      (looking-at-p (rx (* space) eol))))
-  ;;
-  (defun ada-light-mode--indent-line-eglot ()
-    "Indent the current line using the Ada Language Server."
-    (interactive)
-    (if (ada-light-mode--current-line-empty-p)
-        ;; Let's not "indent" empty lines with the language server, it would
-        ;; just delete them. Instead, take a guess at the required indentation
-        ;; based on the most recent non-empty line.
-        (indent-relative t t)
-      (condition-case err
-          (eglot-format (line-beginning-position) (line-end-position))
-        ;; When `eglot-format' fails due to a server issue it signals the
-        ;; underlying `jsonrpc-error'. In this case, let's return normally to
-        ;; give completion a chance.
-        (jsonrpc-error
-         (when-let ((msg (alist-get 'jsonrpc-error-message (cdr err))))
-           (message "Language server error: %s" msg))
-         nil))))
-  ;;
-  (defun ada-light-mode--eglot-setup ()
-    "Set up `eglot' integration for `ada-light-mode'."
-    (when (eq major-mode 'ada-light-mode)
-      (if (eglot-managed-p)
-          (setq-local indent-line-function 'ada-light-mode--indent-line-eglot
-                      electric-indent-inhibit nil)
-        (setq-local indent-line-function 'ada-light-mode--indent-line
-                    electric-indent-inhibit t))))
-  ;;
-  (add-hook 'eglot-managed-mode-hook #'ada-light-mode--eglot-setup))
-;;
-(provide 'ada-light-mode)
-
-;;
 ;; -> development-core
 ;;
 (defun my-icomplete-copy-candidate ()
@@ -2394,6 +2235,30 @@ It doesn't define any keybindings. In comparison with `ada-mode',
 (defvar my/gh-release-buffer "*GitHub Releases*"
   "Buffer name for displaying GitHub releases.")
 
+(defvar-local my/gh-release--header-timer nil)
+
+(defun my/gh-release--set-header-line (buf msg face &optional clear-after)
+  "Set BUF's header-line to colored MSG with FACE.
+When CLEAR-AFTER (seconds) is given, clear header-line after that delay."
+  (when (buffer-live-p buf)
+    (with-current-buffer buf
+      (when my/gh-release--header-timer
+        (cancel-timer my/gh-release--header-timer))
+      (setq header-line-format
+            (concat (propertize " ● " 'face face)
+                    (propertize msg 'face face)
+                    (propertize " ●" 'face face)))
+      (when clear-after
+        (setq my/gh-release--header-timer
+              (run-with-timer
+               clear-after nil
+               (lambda (b)
+                 (when (buffer-live-p b)
+                   (with-current-buffer b
+                     (setq header-line-format nil
+                           my/gh-release--header-timer nil))))
+               buf))))))
+
 (defun my/gh-release--ensure-gh ()
   "Check that gh CLI is available."
   (unless (executable-find "gh")
@@ -2432,7 +2297,25 @@ The gh release list format is: TITLE\\tLATEST\\tTAG\\tDATE."
                        "gh release list --limit 30 2>&1")))
           (if (string-match-p "no releases" output)
               (insert "No releases found.\n")
-            (insert output)))
+            (let ((lines (split-string output "\n" t))
+                  rows cols)
+              (dolist (line lines)
+                (push (split-string line "\t") rows))
+              (setq rows (nreverse rows))
+              (setq cols (apply #'max (mapcar #'length rows)))
+              (let* ((widths (make-vector cols 0)))
+                (dolist (row rows)
+                  (dotimes (i (length row))
+                    (aset widths i (max (aref widths i)
+                                        (length (nth i row))))))
+                (aset widths 1 0)           ; hide Latest column
+                (dolist (row rows)
+                  (dotimes (i (length row))
+                    (insert (propertize
+                             (format (format "%%-%ds  " (aref widths i))
+                                     (nth i row))
+                             'face (if (= i 0) 'bold 'default))))
+                   (insert "\n"))))))
         (goto-char (point-min)))
       (my/gh-release-mode)
       (pop-to-buffer (current-buffer)))))
@@ -2482,36 +2365,54 @@ TAG is the release tag, TITLE is the release title,
 NOTES is the release notes text, and FILES is a list of file paths to attach."
   (interactive
    (let* ((default-file (when (derived-mode-p 'dired-mode)
-                          (dired-get-filename nil t)))
+                           (dired-get-filename nil t)))
           (tag (read-string "Release tag (e.g. v1.0): "))
           (title (read-string "Release title: " tag))
           (notes (read-string "Release notes: " ""))
           (files-str (read-string "Files to attach (space-separated, empty for none): "
                                   (when default-file
-                                    (file-name-nondirectory default-file))))
-          (files (if (string-empty-p files-str) nil (split-string files-str))))
+                                    (file-name-unquote default-file))))
+          (files (if (string-empty-p files-str) nil
+                   (mapcar #'expand-file-name (split-string files-str)))))
      (list tag title notes files)))
   (my/gh-release--ensure-gh)
   (my/gh-release--ensure-repo)
   (let* ((default-directory (locate-dominating-file default-directory ".git"))
          (file-args (mapconcat (lambda (f) (shell-quote-argument (expand-file-name f)))
-                               files " "))
+                                files " "))
          (cmd (format "gh release create %s --title %s --notes %s %s 2>&1"
                       (shell-quote-argument tag)
                       (shell-quote-argument title)
                       (shell-quote-argument notes)
                       file-args))
+         (rel-buf (get-buffer my/gh-release-buffer))
          (output-buffer "*gh-release-create*"))
+    (my/gh-release--set-header-line rel-buf
+      (format "Creating release %s..." tag) 'warning)
     (message "Creating release %s..." tag)
     (with-current-buffer (get-buffer-create output-buffer)
       (erase-buffer))
     (set-process-sentinel
      (start-process-shell-command "gh-release-create" output-buffer cmd)
      (lambda (proc event)
-       (when (string-match "finished" event)
+       (cond
+        ((string-match "finished" event)
+         (my/gh-release--set-header-line rel-buf
+           (format "✓ Release %s created" tag) 'success 6)
          (message "Release %s created successfully" tag)
-         (when (get-buffer my/gh-release-buffer)
-           (my/gh-release-list)))))))
+         (when (buffer-live-p rel-buf)
+           (my/gh-release-list)))
+         ((string-match "exited abnormally" event)
+          (let* ((err-text (with-current-buffer output-buffer
+                             (buffer-substring (point-min) (line-end-position))))
+                 (reason (if (string-match ": \\(.+\\)" err-text)
+                             (match-string 1 err-text)
+                           (string-trim (car (split-string err-text "\n"))))))
+            (my/gh-release--set-header-line rel-buf
+              (format "✗ %s: %s" tag (truncate-string-to-width reason 40 nil nil t))
+              'error 8)
+            (message "Release %s failed — %s" tag reason)
+            (display-buffer output-buffer))))))))
 
 (defun my/gh-release-download ()
   "Download assets from the release at point."
@@ -2519,7 +2420,10 @@ NOTES is the release notes text, and FILES is a list of file paths to attach."
   (let ((tag (my/gh-release--tag-at-point)))
     (if tag
         (let* ((default-directory (locate-dominating-file default-directory ".git"))
-               (dir (read-directory-name "Download to: " default-directory)))
+               (dir (read-directory-name "Download to: " default-directory))
+               (rel-buf (get-buffer my/gh-release-buffer)))
+          (my/gh-release--set-header-line rel-buf
+            (format "Downloading assets for %s..." tag) 'warning)
           (message "Downloading assets for %s..." tag)
           (set-process-sentinel
            (start-process-shell-command
@@ -2528,8 +2432,15 @@ NOTES is the release notes text, and FILES is a list of file paths to attach."
                     (shell-quote-argument tag)
                     (shell-quote-argument dir)))
            (lambda (proc event)
-             (when (string-match "finished" event)
-               (message "Download complete for %s" tag)))))
+             (cond
+              ((string-match "finished" event)
+               (my/gh-release--set-header-line rel-buf
+                 (format "✓ Downloaded assets for %s" tag) 'success 6)
+               (message "Download complete for %s" tag))
+              ((string-match "exited abnormally" event)
+               (my/gh-release--set-header-line rel-buf
+                 (format "✗ Download failed for %s" tag) 'error 6)
+               (message "Download failed for %s" tag))))))
       (user-error "No release tag found on this line"))))
 
 (defun my/gh-release-edit ()
