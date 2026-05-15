@@ -1593,6 +1593,7 @@ Configures aliases and settings for reducing the need for confirmations in repet
 (setq confirm-kill-processes nil)
 (setq confirm-nonexistent-file-or-buffer nil)
 (set-buffer-modified-p nil)
+(setq delete-by-moving-to-trash t)
 #+end_src
 
 * backups-core

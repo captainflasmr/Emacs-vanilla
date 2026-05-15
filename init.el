@@ -412,6 +412,7 @@
 (setq confirm-kill-processes nil)
 (setq confirm-nonexistent-file-or-buffer nil)
 (set-buffer-modified-p nil)
+(setq delete-by-moving-to-trash t)
 
 ;;
 ;; -> backups-core
