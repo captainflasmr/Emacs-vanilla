@@ -402,7 +402,7 @@
 (setq-default truncate-lines t)
 (setq frame-inhibit-implied-resize t)
 (setq native-comp-async-report-warnings-errors nil)
-(setq max-mini-window-height 6)
+(setq max-mini-window-height 8)
 
 ;;
 ;; -> confirm-core
