@@ -332,7 +332,8 @@
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "C-z") #'save-buffer)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
-(global-set-key (kbd "M-0") 'delete-window)
+(global-set-key (kbd "M-0") #'my/treemacs-toggle-current-project)
+(define-key esc-map (kbd "0") nil)
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-2") #'split-window-vertically)
 (global-set-key (kbd "M-3") #'split-window-horizontally)
@@ -1896,6 +1897,8 @@ EXCLUDE-PATTERNS is an optional list of regex patterns to exclude files/director
 (with-eval-after-load 'flymake
   (define-key flymake-mode-map (kbd "M-N") #'flymake-goto-next-error)
   (define-key flymake-mode-map (kbd "M-P") #'flymake-goto-prev-error)
+  (define-key flymake-mode-map (kbd "<f8>") #'flymake-goto-next-error)
+  (define-key flymake-mode-map (kbd "<S-f8>") #'flymake-goto-prev-error)
 
   (defun my/flymake--diag-buffer ()
     "Return the visible flymake diagnostics buffer, or nil."
