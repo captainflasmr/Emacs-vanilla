@@ -1390,6 +1390,29 @@ With universal argument, use the traditional recentf-open-files interface."
           (if (fboundp 'outline-show-all) #'outline-show-all #'show-all))
 (add-hook 'ediff-prepare-buffer-hook (lambda () (visual-line-mode -1)))
 
+(defun my/ediff-dired-directories ()
+  "Compare two directories using Ediff, seeded from visible Dired buffers.
+
+Dir A defaults to the current Dired buffer; Dir B to another visible
+Dired buffer.  Confirm or edit each at the prompt.
+
+Passes a prefix argument to prompt for an optional file filter regexp."
+  (interactive)
+  (let* ((dirs (delq nil
+                     (mapcar (lambda (w)
+                               (with-selected-window w
+                                 (when (eq major-mode 'dired-mode)
+                                   (dired-current-directory))))
+                             (window-list-1 nil 'visible t))))
+         (dir-a (read-directory-name "Dir A: " (car dirs) (car dirs) t))
+         (dir-b (read-directory-name "Dir B: " (cadr dirs) (cadr dirs) t))
+         (regexp (when current-prefix-arg
+                   (read-string "File filter regexp (empty for all): "))))
+    (ediff-directories
+     (file-name-as-directory dir-a)
+     (file-name-as-directory dir-b)
+     (and (stringp regexp) (not (string-blank-p regexp)) regexp))))
+
 ;;
 ;; -> project-core
 ;;
