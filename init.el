@@ -404,6 +404,9 @@
 (setq frame-inhibit-implied-resize t)
 (setq native-comp-async-report-warnings-errors nil)
 (setq max-mini-window-height 8)
+(setq isearch-lazy-count t
+      lazy-count-prefix-format "(%s/%s) "
+      lazy-count-suffix-format nil)
 
 ;;
 ;; -> confirm-core
@@ -437,7 +440,7 @@
   '(default ((t (:family "Monospace" :foundry "ADBO" :slant normal :weight regular :height 100 :width normal))))
  '(mode-line ((t (:height 140 :underline nil :overline nil :box nil))))
  '(mode-line-inactive ((t (:height 140 :underline nil :overline nil :box nil))))
- '(org-level-1 ((t (:inherit default :weight bold :height 1.1))))
+ '(org-level-1 ((t (:inherit default :weight bold :height 1.0))))
  '(org-level-2 ((t (:inherit default :weight regular :height 1.0))))
  '(org-level-3 ((t (:inherit default :weight regular :height 1.0))))
  '(org-level-4 ((t (:inherit default :weight regular :height 1.0))))
