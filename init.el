@@ -941,12 +941,12 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (setq org-use-speed-commands t)
 (setq org-hide-leading-stars t)
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "DOING(g)" "REVW(r)" "ORDR(o)" "SENT(s)"
+      '((sequence "TODO(t)" "DOING(g)" "REVIEW(r)" "ORDR(o)" "SENT(s)"
                   "|" "DONE(n)" "CANCELLED(c)" "CLOSED(l)")))
 (setq org-todo-keyword-faces
       '(("TODO" . "#ee6273")
         ("DOING" . "#6e8baa")
-        ("REVW" . "#d2b596")
+        ("REVIEW" . "#d2b596")
         ("ORDR" . "#c96eee")
         ("SENT" . "#c86bee")
         ("DONE" . "#77aa66")
@@ -955,7 +955,7 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (defconst my/org-todo-emoji-map
   '(("TODO" . "📋")
     ("DOING" . "🔄")
-    ("REVW" . "✍️")
+    ("REVIEW" . "✍️")
     ("ORDR" . "📝")
     ("SENT" . "📤")
     ("DONE" . "✅")
