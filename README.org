@@ -2152,21 +2152,26 @@ Extends and customizes Org mode for document structuring, note-taking, and proje
 (setq org-use-speed-commands t)
 (setq org-hide-leading-stars t)
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "DOING(g)" "ORDR(o)" "SENT(s)" "|" "DONE(n)" "CANCELLED(c)")))
+      '((sequence "TODO(t)" "DOING(g)" "REVW(r)" "ORDR(o)" "SENT(s)"
+                  "|" "DONE(n)" "CANCELLED(c)" "CLOSED(l)")))
 (setq org-todo-keyword-faces
       '(("TODO" . "#ee6273")
         ("DOING" . "#6e8baa")
+        ("REVW" . "#d2b596")
         ("ORDR" . "#c96eee")
         ("SENT" . "#c86bee")
         ("DONE" . "#77aa66")
-        ("CANCELLED" . "#426b3e")))
+        ("CANCELLED" . "#426b3e")
+        ("CLOSED" . "#6b6b6b")))
 (defconst my/org-todo-emoji-map
   '(("TODO" . "📋")
     ("DOING" . "🔄")
+    ("REVW" . "✍️")
     ("ORDR" . "📝")
     ("SENT" . "📤")
     ("DONE" . "✅")
-    ("CANCELLED" . "❌"))
+    ("CANCELLED" . "❌")
+    ("CLOSED" . "🔒"))
   "Mapping of TODO keywords to emoji prefixes for HTML export.")
 (defun my/org-export-prepend-todo-emoji (text _backend _info)
   "Prepend emoji to TODO keywords in TEXT during HTML export."
