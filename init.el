@@ -403,7 +403,7 @@
 (setq-default truncate-lines t)
 (setq frame-inhibit-implied-resize t)
 (setq native-comp-async-report-warnings-errors nil)
-(setq max-mini-window-height 8)
+(setq max-mini-window-height 10)
 (setq isearch-lazy-count t
       lazy-count-prefix-format "(%s/%s) "
       lazy-count-suffix-format nil)
