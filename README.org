@@ -1561,6 +1561,22 @@ Suppresses the auditory bell function in Emacs and opts for a visible bell or co
 (setq ring-bell-function 'ignore)
 #+end_src
 
+* coding-core
+
+Forces UTF-8 as the default coding system everywhere. On GNU/Linux the UTF-8 locale makes this the default automatically, but Windows falls back to =iso-latin-1=, which cannot encode characters such as curly quotes (U+2018/U+2019) and so prompts for a coding system on every save.
+
+#+begin_src elisp
+;;
+;; -> coding-core
+;;
+(set-language-environment "UTF-8")
+(prefer-coding-system 'utf-8)
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+(setq default-buffer-file-coding-system 'utf-8)
+#+end_src
+
 * setqs-core
 
 This broad category includes a wide range of `setq` configurations that modify the behaviour of Emacs's core features — from file handling to search behaviours, reinforcing the customization of Emacs.
