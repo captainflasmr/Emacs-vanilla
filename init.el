@@ -1087,26 +1087,67 @@ Already-compressed files are decompressed via `dired-compress'."
                       (propertize (format "Compressing %s..." name) 'face 'warning)
                       (propertize " ●" 'face 'warning)))
         (force-mode-line-update t)))
-    (dolist (file files)
-      (let ((handler (find-file-name-handler file 'dired-compress-file))
-            (already-compressed nil))
-        (dolist (entry suffixes)
-          (when (and (not already-compressed)
-                     (string-match-p (car entry) file))
-            (setq already-compressed t)))
-        (if (or already-compressed handler
-                (and (file-directory-p file)
-                     (cl-find-if
-                      (lambda (s) (string-match-p (car s) file))
-                      suffixes)))
-            (dired-compress file)
-          (let ((newname (concat file suffix)))
-            (condition-case err
-                (if (file-directory-p file)
-                    (my/dired-compress-directory file newname name archive-cmd)
-                  (my/dired-compress-file file newname name file-cmd))
-              (error (error "Compression of %s failed: %s" file (error-message-string err))))))))
+    (if (> (length files) 1)
+        (my/dired-compress-files files name suffix archive-cmd)
+      (dolist (file files)
+        (let ((handler (find-file-name-handler file 'dired-compress-file))
+              (already-compressed nil))
+          (dolist (entry suffixes)
+            (when (and (not already-compressed)
+                       (string-match-p (car entry) file))
+              (setq already-compressed t)))
+          (if (or already-compressed handler
+                  (and (file-directory-p file)
+                       (cl-find-if
+                        (lambda (s) (string-match-p (car s) file))
+                        suffixes)))
+              (dired-compress file)
+            (let ((newname (concat file suffix)))
+              (condition-case err
+                  (if (or (file-directory-p file) (not file-cmd))
+                      (my/dired-compress-directory file newname name archive-cmd)
+                    (my/dired-compress-file file newname name file-cmd))
+                (error (error "Compression of %s failed: %s"
+                              file (error-message-string err)))))))))
     (dired-post-do-command)))
+
+(defun my/dired-compress-files (files name suffix archive-cmd)
+  "Compress FILES into a single archive using NAME/SUFFIX/ARCHIVE-CMD.
+FILES is a list of file paths.  Prompts for archive name,
+defaulting to the current dired directory name."
+  (unless archive-cmd
+    (user-error "Multi-file %s compression not supported" name))
+  (let* ((dir-name (file-name-nondirectory
+                    (directory-file-name default-directory)))
+         (default-name (concat dir-name suffix))
+         (archive-name (read-string
+                        (format "Archive name (%s): " default-name)
+                        default-name))
+         (full-out (expand-file-name archive-name))
+         (files-arg (mapconcat
+                     (lambda (f) (shell-quote-argument (file-local-name f)))
+                     files " "))
+         (cmd (format-spec archive-cmd
+                          `((?o . ,(shell-quote-argument
+                                    (file-local-name full-out)))
+                            (?i . ,files-arg)))))
+    (when (and (file-exists-p full-out)
+               (not (y-or-n-p (format "%s exists, overwrite? "
+                                      (abbreviate-file-name full-out)))))
+      (user-error "Aborted"))
+    (message "Compressing %d files as %s... (async)"
+             (length files) archive-name)
+    (let ((process (start-file-process
+                    (format "compress-%s" archive-name)
+                    (generate-new-buffer
+                     (format " *compress-%s*" archive-name))
+                    shell-file-name shell-command-switch cmd)))
+      (process-put process 'my-dir default-directory)
+      (process-put process 'my-cmd-name archive-name)
+      (process-put process 'my-dired-buffer (current-buffer))
+      (process-put process 'my-newname full-out)
+      (set-process-sentinel process #'my/dired-compress-sentinel)
+      (set-process-query-on-exit-flag process nil))))
 
 (defvar-local my/dired--header-timer nil)
 
@@ -1241,7 +1282,7 @@ If any marked files are already compressed, decompress them directly via
   (define-key dired-mode-map (kbd "C-c U") 'my/disk-space-query)
   (define-key dired-mode-map (kbd "b") 'my/dired-file-to-org-link)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file)
-  (define-key dired-mode-map [remap dired-do-compress] #'my/dired-do-compress)
+  (define-key dired-mode-map (kbd "z") #'my/dired-do-compress)
   (define-key dired-mode-map (kbd "j") #'dired-next-line)
   (define-key dired-mode-map (kbd "k") #'dired-previous-line)
   (define-key dired-mode-map (kbd "l") #'dired-find-file)
