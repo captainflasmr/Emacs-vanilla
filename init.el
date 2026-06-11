@@ -2568,4 +2568,4 @@ NOTES is the release notes text, and FILES is a list of file paths to attach."
 ;; -> dwim
 ;;
 ;;
-(my/sync-ui-accent-color "coral")
+;; (my/sync-ui-accent-color "coral")

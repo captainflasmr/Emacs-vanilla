@@ -4345,7 +4345,7 @@ Functions to run
 ;; -> dwim
 ;;
 ;;
-(my/sync-ui-accent-color "coral")
+;; (my/sync-ui-accent-color "coral")
 #+end_src
 
 * Testing
