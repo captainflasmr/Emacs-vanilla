@@ -900,10 +900,15 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 ;; -> window-positioning-core
 ;;
 (add-to-list 'display-buffer-alist
-             '("\\*\\(.*shell\\|.*term.*\\|eldoc.*\\*\\|Flymake.*\\)"
+             '("\\*\\(.*shell\\|.*term.*\\)"
                (display-buffer-reuse-window display-buffer-at-bottom)
                (inhibit-same-window . t)
-               (window-height . 0.3)))
+               (window-height . 0.4)))
+(add-to-list 'display-buffer-alist
+             '("\\*\\(eldoc.*\\*\\|Flymake.*\\)"
+               (display-buffer-reuse-window display-buffer-at-bottom)
+               (inhibit-same-window . t)
+               (window-height . 0.4)))
 (add-to-list 'display-buffer-alist
              '("\\*\\(Completions.*\\)"
                (display-buffer-reuse-window display-buffer-at-bottom)
