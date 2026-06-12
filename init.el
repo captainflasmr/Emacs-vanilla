@@ -1164,10 +1164,13 @@ defaulting to the current dired directory name."
 (defvar-local my/dired--header-timer nil)
 
 (defun my/dired-compress-sentinel (process _event)
-  "Sentinel for async compression processes.
-Reverts the dired buffer on completion, updates header-line, and reports errors."
+  "Sentinel for async (de)compression processes.
+Reverts the dired buffer on completion, updates header-line, and reports errors.
+The process property `my-action' (\"Compress\" or \"Decompress\", default
+\"Compress\") selects the verb used in messages."
   (when (memq (process-status process) '(exit signal))
     (let* ((cmd-name (process-get process 'my-cmd-name))
+           (action (or (process-get process 'my-action) "Compress"))
            (exit-code (process-exit-status process))
            (dired-buf (process-get process 'my-dired-buffer))
            (newname (process-get process 'my-newname)))
@@ -1176,7 +1179,7 @@ Reverts the dired buffer on completion, updates header-line, and reports errors.
                               (file-size-human-readable
                                (file-attribute-size (file-attributes newname)))))
                  (msg (concat (propertize "✓" 'face 'success)
-                              (format " Compressed: %s" cmd-name)
+                              (format " %sed: %s" action cmd-name)
                               (when filesize
                                 (format " (%s)" filesize)))))
             (message "%s" msg)
@@ -1199,7 +1202,7 @@ Reverts the dired buffer on completion, updates header-line, and reports errors.
                              (setq header-line-format nil
                                    my/dired--header-timer nil))))
                        (current-buffer))))))
-        (message "Compression of %s failed (exit %d)" cmd-name exit-code)
+        (message "%s failed for %s (exit %d)" action cmd-name exit-code)
         (display-buffer (process-buffer process))
         (when (buffer-live-p dired-buf)
           (with-current-buffer dired-buf
@@ -1271,10 +1274,73 @@ Reverts the dired buffer on completion, updates header-line, and reports errors.
 (my/dired-define-compress-command ?l "lzip"   ".lz"     "lzip -9"   "tar -cf - %i | lzip -9 > %o")
 (my/dired-define-compress-command ?7 "7z"     ".7z"     nil         "7z a %o %i")
 
+(defconst my/dired-decompress-formats
+  '(("\\.\\(?:tar\\.\\(?:gz\\|xz\\|bz2\\|zst\\|lz\\)\\|tgz\\|txz\\|tbz2?\\|tzst\\|tar\\)\\'"
+     . ("tar"   "tar -xf %i"))
+    ("\\.gz\\'"  . ("gzip"  "gzip -d %i"))
+    ("\\.xz\\'"  . ("xz"    "xz -d %i"))
+    ("\\.bz2\\'" . ("bzip2" "bzip2 -d %i"))
+    ("\\.zst\\'" . ("zstd"  "zstd -d --rm %i"))
+    ("\\.lz\\'"  . ("lzip"  "lzip -d %i"))
+    ("\\.7z\\'"  . ("7z"    "7z x -y %i"))
+    ("\\.zip\\'" . ("zip"   "unzip -o %i")))
+  "Decompression formats for `my/dired-decompress'.
+Each entry is (REGEXP . (NAME COMMAND)) and is tried in order, so archive
+formats must precede their single-file suffixes (e.g. .tar.gz before .gz).
+COMMAND is a shell command pattern using the %i placeholder for the
+shell-quoted input file.  `tar -xf' auto-detects the compression filter.")
+
+(defun my/dired-decompress-file (file)
+  "Decompress FILE asynchronously, dispatching on its extension.
+Reuses `my/dired-compress-sentinel' for buffer refresh and reporting."
+  (let* ((entry (cl-find-if (lambda (e) (string-match-p (car e) file))
+                            my/dired-decompress-formats))
+         (fmt (cdr entry))
+         (name (nth 0 fmt))
+         (cmd-pattern (nth 1 fmt)))
+    (unless entry
+      (user-error "Don't know how to decompress %s"
+                  (file-name-nondirectory file)))
+    (let* ((default-directory (file-name-directory file))
+           (basename (file-name-nondirectory file))
+           (cmd (format-spec cmd-pattern
+                             `((?i . ,(shell-quote-argument
+                                       (file-local-name file))))))
+           (process (start-file-process
+                     (format "decompress-%s" basename)
+                     (generate-new-buffer (format " *decompress-%s*" basename))
+                     shell-file-name shell-command-switch cmd)))
+      (message "Decompressing %s with %s... (async)" basename name)
+      (process-put process 'my-dir default-directory)
+      (process-put process 'my-cmd-name basename)
+      (process-put process 'my-dired-buffer (current-buffer))
+      (process-put process 'my-action "Decompress")
+      (set-process-sentinel process #'my/dired-compress-sentinel)
+      (set-process-query-on-exit-flag process nil))))
+
+(defun my/dired-decompress (&optional arg)
+  "Decompress marked (or next ARG) files asynchronously.
+Each file is dispatched on its extension via `my/dired-decompress-formats'."
+  (interactive "P" dired-mode)
+  (let ((files (dired-get-marked-files nil arg nil nil t)))
+    (when files
+      (with-current-buffer (current-buffer)
+        (when my/dired--header-timer
+          (cancel-timer my/dired--header-timer))
+        (setq header-line-format
+              (concat (propertize " ● " 'face 'warning)
+                      (propertize "Decompressing..." 'face 'warning)
+                      (propertize " ●" 'face 'warning)))
+        (force-mode-line-update t))
+      (dolist (file files)
+        (my/dired-decompress-file file)))
+    (dired-post-do-command)))
+
 (defun my/dired-do-compress (&optional arg)
   "Compress or uncompress marked (or next ARG) files.
-If any marked files are already compressed, decompress them directly via
-`dired-do-compress'.  Otherwise show the format selection transient."
+If any marked files are already compressed, decompress them
+asynchronously via `my/dired-decompress'.  Otherwise show the format
+selection transient."
   (interactive "P" dired-mode)
   (let* ((files (dired-get-marked-files nil current-prefix-arg nil nil t))
          (suffixes dired-compress-file-suffixes)
@@ -1284,7 +1350,7 @@ If any marked files are already compressed, decompress them directly via
         (when (string-match-p (car entry) file)
           (setq has-compressed t))))
     (if has-compressed
-        (dired-do-compress arg)
+        (my/dired-decompress arg)
       (my/dired-compress-transient))))
 
 (with-eval-after-load 'dired
