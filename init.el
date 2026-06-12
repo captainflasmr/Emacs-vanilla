@@ -359,8 +359,15 @@
 (global-set-key (kbd "M-s b") 'insert-default-background-color)
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
+(defun my/vc-dir-diff-stay ()
+  "Run `vc-diff' from vc-dir but keep point in the vc-dir window."
+  (interactive)
+  (let ((win (selected-window)))
+    (call-interactively #'vc-diff)
+    (select-window win)))
 (with-eval-after-load 'vc-dir
-  (define-key vc-dir-mode-map (kbd "e") #'vc-ediff))
+  (define-key vc-dir-mode-map (kbd "e") #'vc-ediff)
+  (define-key vc-dir-mode-map (kbd "SPC") #'my/vc-dir-diff-stay))
 (defun my/vc-dir-here ()
   "Run vc-dir on the current directory (dired's dir when called from dired)."
   (interactive)
