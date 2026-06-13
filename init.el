@@ -360,10 +360,16 @@
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
 (defun my/vc-dir-diff-stay ()
-  "Run `vc-diff' from vc-dir but keep point in the vc-dir window."
+  "Show the file at point from vc-dir, keeping point in the vc-dir window.
+For unregistered files just display the file in another window;
+otherwise run `vc-diff'."
   (interactive)
-  (let ((win (selected-window)))
-    (call-interactively #'vc-diff)
+  (let* ((win (selected-window))
+         (node (ewoc-locate vc-ewoc))
+         (state (and node (vc-dir-fileinfo->state (ewoc-data node)))))
+    (if (eq state 'unregistered)
+        (display-buffer (find-file-noselect (vc-dir-current-file)))
+      (call-interactively #'vc-diff))
     (select-window win)))
 (with-eval-after-load 'vc-dir
   (define-key vc-dir-mode-map (kbd "e") #'vc-ediff)
