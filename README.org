@@ -1825,25 +1825,49 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
      ((and (not horizontal) (eq pos 'bottom)) (enlarge-window (- delta) nil))
      (t (enlarge-window delta horizontal)))))
 
-(defun my/dired-du ()
-  "Run 'du -hc' and count the total number of files in the directory under
-  the cursor in Dired, then display the output in a buffer named *dired-du*."
-  (interactive)
-  (let ((current-dir (dired-get-file-for-visit)))
+(defun my/dired-du (&optional depth)
+  "Show disk usage of the directory under the cursor in Dired.
+Lists each entry's size and file count, sorted largest-first, in a
+buffer named *dired-du*.  DEPTH controls how many directory levels
+deep to descend (passed to `du --max-depth'); it defaults to 1 and is
+taken from the numeric prefix argument, so e.g. \\[universal-argument] 3
+\\[my/dired-du] shows three levels."
+  (interactive "p")
+  (let ((current-dir (dired-get-file-for-visit))
+        (depth (max 1 (or depth 1))))
     (if (file-directory-p current-dir)
-        (let ((buf (get-buffer-create "*dired-du*")))
+        (let* ((buf (get-buffer-create "*dired-du*"))
+               (dir (shell-quote-argument current-dir))
+               ;; List entries by size (KiB) descending, then render
+               ;; each as: SIZE  FILES  NAME with aligned columns.
+               (command
+                (format "du -k --max-depth=%d %s 2>/dev/null | sort -rn | \
+awk -v base=%s 'BEGIN{print \"SIZE\\tFILES\\tNAME\"}
+{
+  size=$1; $1=\"\"; sub(/^[ \\t]+/,\"\"); path=$0;
+  # human-readable size
+  h=size; unit=\"K\";
+  if (h>=1048576){h=h/1048576; unit=\"G\"}
+  else if (h>=1024){h=h/1024; unit=\"M\"}
+  hs=sprintf(\"%%.1f%%s\", h, unit);
+  # count files under this path
+  cmd=\"find \\\"\" path \"\\\" -type f 2>/dev/null | wc -l\";
+  cmd | getline files; close(cmd);
+  name=path; sub(base \"/?\", \"\", name); if(name==\"\") name=\".\";
+  printf \"%%s\\t%%s\\t%%s\\n\", hs, files, name;
+}' | column -t -s '\t'"
+                        depth dir current-dir)))
           (with-current-buffer buf
             (erase-buffer)
-            (let* ((command (format "du -hc --max-depth=1 %s && echo && echo 'File counts per subdirectory:' && find %s -maxdepth 2 -type d -exec sh -c 'echo -n \"{}: \"; find \"{}\" -type f | wc -l' \\;"
-                                    (shell-quote-argument current-dir)
-                                    (shell-quote-argument current-dir)))
-                   (process (start-process-shell-command "dired-du" buf command)))
-              (set-process-sentinel process
-                                    (lambda (_proc event)
-                                      (when (string-match "finished" event)
-                                        (when (buffer-live-p buf)
-                                          (with-current-buffer buf
-                                            (goto-char (point-min)))))))
+            (let ((process (start-process-shell-command "dired-du" buf command)))
+              (set-process-sentinel
+               process
+               (lambda (_proc event)
+                 (when (and (string-match "finished" event) (buffer-live-p buf))
+                   (with-current-buffer buf
+                     (goto-char (point-min))
+                     (insert (format "Disk usage for %s (depth %d, largest first)\n\n"
+                                     current-dir depth))))))
               (pop-to-buffer buf))))
       (message "The current point is not a directory."))))
 
