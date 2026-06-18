@@ -441,6 +441,44 @@ otherwise run `vc-diff'."
 (set-buffer-modified-p nil)
 (setq delete-by-moving-to-trash t)
 
+(when (eq system-type 'windows-nt)
+  (defun my/windows-move-file-to-trash (filename)
+    "Move FILENAME to the Windows Recycle Bin via PowerShell.
+Uses Microsoft.VisualBasic.FileIO.FileSystem which calls the same
+Shell API as Windows Explorer.  Handles network drives correctly
+where `rename-file'-based trash fails with cross-volume errors."
+    (setq filename (expand-file-name filename))
+    (let ((pwsh (or (executable-find "powershell.exe")
+                    (executable-find "powershell"))))
+      (if pwsh
+          (let* ((escaped (replace-regexp-in-string "'" "''" filename))
+                 (ps-script
+                  (format
+                   "$ErrorActionPreference='Stop'; $p='%s'; try { if (Test-Path -LiteralPath $p -PathType Container) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($p,'OnlyErrorDialogs','SendToRecycleBin') } else { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($p,'OnlyErrorDialogs','SendToRecycleBin') } } catch { Write-Error $_; exit 1 }"
+                   escaped))
+                 (exit-code (call-process pwsh nil nil nil
+                                          "-NoProfile" "-NonInteractive"
+                                          "-Command" ps-script)))
+            (unless (zerop exit-code)
+              (error "PowerShell trash failed (exit %d) for %s"
+                     exit-code filename)))
+        ;; No PowerShell: fall back to permanent deletion.
+        (if (file-directory-p filename)
+            (delete-directory filename t nil)
+          (delete-file filename nil)))))
+  ;; Provide system-move-file-to-trash if not already bound (MSYS2 builds).
+  (unless (fboundp 'system-move-file-to-trash)
+    (defalias 'system-move-file-to-trash #'my/windows-move-file-to-trash))
+  ;; If the native impl IS bound but fails (e.g. network drive), fall back.
+  (advice-add 'move-file-to-trash :around
+              (lambda (orig-fn filename)
+                (condition-case err
+                    (funcall orig-fn filename)
+                  (file-error
+                   (if (file-exists-p filename)
+                       (my/windows-move-file-to-trash filename)
+                     (signal (car err) (cdr err))))))))
+
 ;;
 ;; -> backups-core
 ;;
