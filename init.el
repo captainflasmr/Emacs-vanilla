@@ -611,21 +611,45 @@ DELTA is the amount to resize (positive to grow, negative to shrink)."
      ((and (not horizontal) (eq pos 'bottom)) (enlarge-window (- delta) nil))
      (t (enlarge-window delta horizontal)))))
 
+(defun my/dired-du--unix-path (path)
+  "Convert a Windows drive-letter PATH to MSYS2/Git-Portable Unix style.
+e.g. c:/Users/foo -> /c/Users/foo, C:\\Users\\foo -> /c/Users/foo.
+Non-Windows or non-drive-letter paths are returned unchanged."
+  (if (and (eq system-type 'windows-nt)
+           (string-match "\\`\\([a-zA-Z]\\):[/\\]" path))
+      (concat "/" (downcase (match-string 1 path)) "/"
+              (replace-regexp-in-string "\\\\" "/" (substring path (match-end 0))))
+    path))
+
 (defun my/dired-du (&optional depth)
   "Show disk usage of the directory under the cursor in Dired.
 Lists each entry's size and file count, sorted largest-first, in a
 buffer named *dired-du*.  DEPTH controls how many directory levels
 deep to descend (passed to `du --max-depth'); it defaults to 1 and is
 taken from the numeric prefix argument, so e.g. \\[universal-argument] 3
-\\[my/dired-du] shows three levels."
+\\[my/dired-du] shows three levels.
+
+On Windows the Unix pipeline is run through bash (from PortableGit)
+with the directory path converted to MSYS2 style (/c/Users/...)."
   (interactive "p")
   (let ((current-dir (dired-get-file-for-visit))
         (depth (max 1 (or depth 1))))
     (if (file-directory-p current-dir)
         (let* ((buf (get-buffer-create "*dired-du*"))
-               (dir (shell-quote-argument current-dir))
+               (unix-dir (my/dired-du--unix-path current-dir))
+               (dir (shell-quote-argument unix-dir))
+               ;; On Windows, use bash so Unix pipes work; otherwise
+               ;; rely on the default shell.
+               (shell-file-name
+                (if (eq system-type 'windows-nt)
+                    (or (executable-find "bash") shell-file-name)
+                  shell-file-name))
+               (shell-command-switch
+                (if (eq system-type 'windows-nt) "-c" shell-command-switch))
                ;; List entries by size (KiB) descending, then render
                ;; each as: SIZE  FILES  NAME with aligned columns.
+               ;; `column' may be absent on Windows (Git Portable);
+               ;; fall back to cat so the pipeline still succeeds.
                (command
                 (format "du -k --max-depth=%d %s 2>/dev/null | sort -rn | \
 awk -v base=%s 'BEGIN{print \"SIZE\\tFILES\\tNAME\"}
@@ -641,8 +665,8 @@ awk -v base=%s 'BEGIN{print \"SIZE\\tFILES\\tNAME\"}
   cmd | getline files; close(cmd);
   name=path; sub(base \"/?\", \"\", name); if(name==\"\") name=\".\";
   printf \"%%s\\t%%s\\t%%s\\n\", hs, files, name;
-}' | column -t -s '\t'"
-                        depth dir current-dir)))
+}' | { column -t -s '\\t' 2>/dev/null || cat; }"
+                        depth dir unix-dir)))
           (with-current-buffer buf
             (erase-buffer)
             (let ((process (start-process-shell-command "dired-du" buf command)))
@@ -653,7 +677,7 @@ awk -v base=%s 'BEGIN{print \"SIZE\\tFILES\\tNAME\"}
                    (with-current-buffer buf
                      (goto-char (point-min))
                      (insert (format "Disk usage for %s (depth %d, largest first)\n\n"
-                                     current-dir depth))))))
+                                   current-dir depth))))))
               (pop-to-buffer buf))))
       (message "The current point is not a directory."))))
 
@@ -778,9 +802,17 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (global-set-key [remap kill-ring-save] 'my/kill-ring-save)
 
 (defun my/disk-space-query ()
-  "Run 'df -h' and display the output in a new buffer."
+  "Run 'df -h' and display the output in a new buffer.
+On Windows the command is run through bash (from PortableGit) since
+`df' is a Unix tool and cmdproxy cannot handle it."
   (interactive)
-  (let ((output-buffer-name "*Disk Space*"))
+  (let ((output-buffer-name "*Disk Space*")
+        (shell-file-name
+         (if (eq system-type 'windows-nt)
+             (or (executable-find "bash") shell-file-name)
+           shell-file-name))
+        (shell-command-switch
+         (if (eq system-type 'windows-nt) "-c" shell-command-switch)))
     (with-current-buffer (get-buffer-create output-buffer-name)
       (erase-buffer)
       (let* ((command "df -h")
@@ -1080,12 +1112,12 @@ Lightens dark themes by 20%, darkens light themes by 5%."
 (require 'transient)
 
 (defconst my/dired-compress-formats
-  '((?z . ("xz"    ".xz"     "xz -9e"   "tar -cf - %i | xz -9e > %o"))
-    (?g . ("gzip"  ".gz"     "gzip -9"   "tar -cf - %i | gzip -9 > %o"))
-    (?t . ("tar.gz" ".tar.gz" nil        "tar -czf %o %i"))
-    (?b . ("bzip2" ".bz2"    "bzip2 -9"  "tar -cf - %i | bzip2 -9 > %o"))
-    (?s . ("zstd"  ".zst"    "zstd -19"  "tar -cf - %i | zstd -19 -o %o"))
-    (?l . ("lzip"  ".lz"     "lzip -9"   "tar -cf - %i | lzip -9 > %o"))
+  '((?z . ("xz"    ".xz"     "xz -9e"   "tar --force-local -cf - %i | xz -9e > %o"))
+    (?g . ("gzip"  ".gz"     "gzip -9"   "tar --force-local -cf - %i | gzip -9 > %o"))
+    (?t . ("tar.gz" ".tar.gz" nil        "tar --force-local -czf %o %i"))
+    (?b . ("bzip2" ".bz2"    "bzip2 -9"  "tar --force-local -cf - %i | bzip2 -9 > %o"))
+    (?s . ("zstd"  ".zst"    "zstd -19"  "tar --force-local -cf - %i | zstd -19 -o %o"))
+    (?l . ("lzip"  ".lz"     "lzip -9"   "tar --force-local -cf - %i | lzip -9 > %o"))
     (?7 . ("7z"    ".7z"     nil         "7z a %o %i")))
   "Compression formats for `my/dired-do-compress'.
 Each entry is (KEY . (NAME SUFFIX FILE-CMD ARCHIVE-CMD)).
@@ -1296,17 +1328,17 @@ The process property `my-action' (\"Compress\" or \"Decompress\", default
      (interactive "P" dired-mode)
      (my/dired-compress-with ,key)))
 
-(my/dired-define-compress-command ?z "xz"    ".xz"     "xz -9e"   "tar -cf - %i | xz -9e > %o")
-(my/dired-define-compress-command ?g "gzip"   ".gz"     "gzip -9"   "tar -cf - %i | gzip -9 > %o")
-(my/dired-define-compress-command ?t "tar.gz" ".tar.gz" nil         "tar -czf %o %i")
-(my/dired-define-compress-command ?b "bzip2"  ".bz2"    "bzip2 -9"  "tar -cf - %i | bzip2 -9 > %o")
-(my/dired-define-compress-command ?s "zstd"   ".zst"    "zstd -19"  "tar -cf - %i | zstd -19 -o %o")
-(my/dired-define-compress-command ?l "lzip"   ".lz"     "lzip -9"   "tar -cf - %i | lzip -9 > %o")
+(my/dired-define-compress-command ?z "xz"    ".xz"     "xz -9e"   "tar --force-local -cf - %i | xz -9e > %o")
+(my/dired-define-compress-command ?g "gzip"   ".gz"     "gzip -9"   "tar --force-local -cf - %i | gzip -9 > %o")
+(my/dired-define-compress-command ?t "tar.gz" ".tar.gz" nil         "tar --force-local -czf %o %i")
+(my/dired-define-compress-command ?b "bzip2"  ".bz2"    "bzip2 -9"  "tar --force-local -cf - %i | bzip2 -9 > %o")
+(my/dired-define-compress-command ?s "zstd"   ".zst"    "zstd -19"  "tar --force-local -cf - %i | zstd -19 -o %o")
+(my/dired-define-compress-command ?l "lzip"   ".lz"     "lzip -9"   "tar --force-local -cf - %i | lzip -9 > %o")
 (my/dired-define-compress-command ?7 "7z"     ".7z"     nil         "7z a %o %i")
 
 (defconst my/dired-decompress-formats
   '(("\\.\\(?:tar\\.\\(?:gz\\|xz\\|bz2\\|zst\\|lz\\)\\|tgz\\|txz\\|tbz2?\\|tzst\\|tar\\)\\'"
-     . ("tar"   "tar -xf %i"))
+     . ("tar"   "tar --force-local -xf %i"))
     ("\\.gz\\'"  . ("gzip"  "gzip -d %i"))
     ("\\.xz\\'"  . ("xz"    "xz -d %i"))
     ("\\.bz2\\'" . ("bzip2" "bzip2 -d %i"))
