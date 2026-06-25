@@ -356,7 +356,6 @@
 (global-set-key (kbd "M-z") #'visual-line-mode)
 (global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
 (global-set-key (kbd "M-s u") #'my/org-promote-all-headings)
-(global-set-key (kbd "M-s b") 'insert-default-background-color)
 (global-unset-key (kbd "C-h h"))
 (global-unset-key (kbd "C-t"))
 (defun my/vc-dir-diff-stay ()
