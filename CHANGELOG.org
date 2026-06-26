@@ -10,6 +10,17 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-06-26>
+
+Add vc-dir integration for git skip-worktree
+
+- New =vc-git-skip-worktree-core= section exposing =git update-index --skip-worktree= so app-rewritten files (e.g. =~/.config/digikamrc=) can be kept tracked without dirtying the tree
+- =my/vc-git-skip-worktree-p= queries =git ls-files -v= for the =S = flag (with =point-min= reset so the match fires correctly)
+- In =vc-dir=: =* s= toggles the bit on the file at point, =* u= clears it on a single file, =* U= clears every flagged file in the repo after a count prompt
+- Outside =vc-dir=: =M-x my/vc-git-toggle-skip-worktree= and =M-x my/vc-git-clear-skip-worktree= act on the current buffer's file
+- =vc-git-dir-status-files= is advised to inject a =skip-worktree= state entry for each flagged file (fetched once via =git ls-files -v -z=), since git otherwise reports them as clean and =vc-dir= would hide them
+- =vc-dir-printer= is advised to append a warning-coloured ={S}= suffix to those rows
+
 ** <2026-05-13>
 
 Add header-line progress feedback for dired compression and gh-release, and format gh-release list output

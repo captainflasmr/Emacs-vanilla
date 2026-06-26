@@ -384,6 +384,135 @@ otherwise run `vc-diff'."
   (define-key diff-mode-map (kbd "M-k") #'nil))
 
 ;;
+;; -> vc-git-skip-worktree-core
+;;
+(defun my/vc-git-skip-worktree-p (file)
+  "Return non-nil if FILE has git's skip-worktree bit set."
+  (and (eq (vc-backend file) 'Git)
+       (with-temp-buffer
+         (vc-git-command (current-buffer) 0 (list file) "ls-files" "-v"
+                         "--" (file-relative-name file (vc-git-root file)))
+         (goto-char (point-min))
+         (looking-at "S "))))
+
+(defun my/vc-git-toggle-skip-worktree (file)
+  "Toggle git --skip-worktree on FILE.
+Interactively, FILE is the file at point in `vc-dir' or the current
+buffer's file otherwise."
+  (interactive
+   (list (if (derived-mode-p 'vc-dir-mode)
+             (vc-dir-current-file)
+           buffer-file-name)))
+  (if (or (not file) (not (eq (vc-backend file) 'Git)))
+      (user-error "Not under git")
+    (let ((turning-on (not (my/vc-git-skip-worktree-p file))))
+      (vc-git-command nil 0 (list file) "update-index"
+                      (if turning-on "--skip-worktree" "--no-skip-worktree")
+                      (file-relative-name file (vc-git-root file)))
+      (vc-resynch-buffer file nil nil)
+      (message "skip-worktree %s for %s"
+               (if turning-on "SET" "CLEAR")
+               (file-relative-name file (vc-git-root file)))
+      (when (derived-mode-p 'vc-dir-mode) (vc-dir-refresh)))))
+
+(defun my/vc-git-clear-skip-worktree (file)
+  "Clear git --skip-worktree on FILE.
+Interactively, FILE is the file at point in `vc-dir' or the current
+buffer's file otherwise.  No-op if the bit is not set."
+  (interactive
+   (list (if (derived-mode-p 'vc-dir-mode)
+             (vc-dir-current-file)
+           buffer-file-name)))
+  (if (or (not file) (not (eq (vc-backend file) 'Git)))
+      (user-error "Not under git")
+    (if (not (my/vc-git-skip-worktree-p file))
+        (message "skip-worktree not set for %s"
+                 (file-relative-name file (vc-git-root file)))
+      (vc-git-command nil 0 (list file) "update-index" "--no-skip-worktree"
+                      (file-relative-name file (vc-git-root file)))
+      (vc-resynch-buffer file nil nil)
+      (message "skip-worktree CLEARED for %s"
+               (file-relative-name file (vc-git-root file)))
+      (when (derived-mode-p 'vc-dir-mode) (vc-dir-refresh)))))
+
+(defun my/vc-git-clear-all-skip-worktree ()
+  "Clear git --skip-worktree on every flagged file in the current repo."
+  (interactive)
+  (let ((root (vc-git-root default-directory)))
+    (if (not root)
+        (user-error "Not in a git repository")
+      (let ((files (mapcar #'car (my/vc-git--skip-worktree-entries root))))
+        (if (null files)
+            (message "No skip-worktree files in %s" root)
+          (when (y-or-n-p (format "Clear skip-worktree on %d file(s)? "
+                                  (length files)))
+            (dolist (f files)
+              (let ((abs (expand-file-name f root)))
+                (vc-git-command nil 0 (list abs) "update-index"
+                                "--no-skip-worktree" f)))
+            (vc-resynch-buffer root nil nil)
+            (message "skip-worktree CLEARED for %d file(s)" (length files))
+            (when (derived-mode-p 'vc-dir-mode) (vc-dir-refresh))))))))
+
+;;; Inject skip-worktree files into the vc-dir listing.
+;;;
+;;; On its own git reports a skip-worktree file as clean, so `vc-dir'
+;;; never shows it.  We wrap `vc-git-dir-status-files' (the backend
+;;; status collector) and append an entry with state `skip-worktree'
+;;; for every flagged file under the vc-dir directory, fetched once
+;;; synchronously from `git ls-files -v -z'.
+
+(defun my/vc-git--skip-worktree-entries (dir)
+  "Return vc-dir entries (FILE STATE EXTRA) for skip-worktree files under DIR."
+  (let (entries tokens)
+    (with-temp-buffer
+      (let ((default-directory dir))
+        (vc-git-command (current-buffer) 0 nil "ls-files" "-v" "-z"))
+      (goto-char (point-min))
+      (while (not (eobp))
+        (let ((start (point)))
+          (skip-chars-forward "^\0")
+          (push (buffer-substring-no-properties start (point)) tokens)
+          (unless (eobp) (forward-char 1))))     ; consume the NUL
+      (dolist (tok tokens)
+        (when (string-prefix-p "S " tok)
+          (push (list (substring tok 2) 'skip-worktree nil) entries))))
+    entries))
+
+(defun my/vc-git-dir-status-files--inject-skip-worktree (orig-fn dir files update-function)
+  "Wrap UPDATE-FUNCTION so skip-worktree files appear in the vc-dir listing."
+  (let* ((skip-entries (my/vc-git--skip-worktree-entries dir))
+         (orig-update update-function))
+    (funcall orig-fn dir files
+             (lambda (entries &optional more-to-come)
+               (funcall orig-update
+                        (if (or more-to-come (null skip-entries))
+                            entries
+                          (let ((present (mapcar #'car entries)))
+                            (append entries
+                                    (delq nil
+                                          (mapcar (lambda (e)
+                                                    (unless (member (car e) present) e))
+                                                  skip-entries)))))
+                        more-to-come)))))
+
+(defun my/vc-dir-printer--skip-marker (fn fileentry)
+  "Append a warning-coloured {S} marker to skipped entries when rendering vc-dir."
+  (funcall fn fileentry)
+  (when (eq (vc-dir-fileinfo->state fileentry) 'skip-worktree)
+    (let ((inhibit-read-only t))
+      (insert (propertize "  {S}" 'face 'warning)))))
+
+(with-eval-after-load 'vc-git
+  (advice-add 'vc-git-dir-status-files :around
+              #'my/vc-git-dir-status-files--inject-skip-worktree))
+(with-eval-after-load 'vc-dir
+  (define-key vc-dir-mode-map (kbd "* s") #'my/vc-git-toggle-skip-worktree)
+  (define-key vc-dir-mode-map (kbd "* u") #'my/vc-git-clear-skip-worktree)
+  (define-key vc-dir-mode-map (kbd "* U") #'my/vc-git-clear-all-skip-worktree)
+  (advice-add 'vc-dir-printer :around #'my/vc-dir-printer--skip-marker))
+
+;;
 ;; -> modes-core
 ;;
 (tooltip-mode -1)
