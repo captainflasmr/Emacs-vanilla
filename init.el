@@ -256,7 +256,7 @@
 ;; -> keys-visual-core
 ;;
 (defvar my-win-keymap (make-sparse-keymap))
-(global-set-key (kbd "C-q") my-win-keymap)
+(global-set-key (kbd "C-z") my-win-keymap)
 (define-key my-win-keymap (kbd "b") #'(lambda () (interactive)(tab-bar-mode 'toggle)))
 (define-key my-win-keymap (kbd "c") #'display-fill-column-indicator-mode)
 (define-key my-win-keymap (kbd "d") #'window-divider-mode)
