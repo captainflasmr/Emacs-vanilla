@@ -330,7 +330,7 @@
 (global-set-key (kbd "C-x v e") 'vc-ediff)
 (global-set-key (kbd "C-x x g") #'revert-buffer)
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
-(global-set-key (kbd "C-z") #'save-buffer)
+(global-set-key (kbd "M-a") #'save-buffer)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
 (global-set-key (kbd "C-0") #'my/treemacs-toggle-current-project)
 (global-set-key (kbd "M-0") 'delete-window)
