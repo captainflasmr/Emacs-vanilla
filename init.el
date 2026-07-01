@@ -1275,6 +1275,10 @@ On Windows the command is run through bash (from PortableGit) since
 (setq dired-deletion-confirmer (lambda (_x) t))
 (setq dired-recursive-deletes 'always)
 
+(load (expand-file-name "my-dired-clipboard"
+                        (file-name-directory load-file-name)))
+(add-hook 'dired-mode-hook #'my-dired-clipboard-mode)
+
 (require 'transient)
 
 (defconst my/dired-compress-formats
