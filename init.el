@@ -687,7 +687,8 @@ where `rename-file'-based trash fails with cross-volume errors."
 
 (defun my/dired-duplicate-file (arg)
   "Duplicate a file from DIRED with an incremented number.
-If ARG is provided, it sets the starting counter."
+If ARG is provided, it sets the starting counter.
+Copies asynchronously via rsync with header-line progress."
   (interactive "P")
   (let* ((file (dired-get-file-for-visit))
          (dir (file-name-directory file))
@@ -695,15 +696,36 @@ If ARG is provided, it sets the starting counter."
          (base-name (file-name-sans-extension name))
          (extension (file-name-extension name t))
          (counter (if arg (prefix-numeric-value arg) 1))
-         (new-file))
+         (new-file)
+         (dired-dir (dired-current-directory)))
     (while (and (setq new-file
                       (format "%s%s_%03d%s" dir base-name counter extension))
                 (file-exists-p new-file))
       (setq counter (1+ counter)))
-    (if (file-directory-p file)
-        (copy-directory file new-file)
-      (copy-file file new-file))
-    (dired-revert)))
+    (let* ((source (if (file-directory-p file)
+                       (file-name-as-directory file)
+                     file))
+           (proc (start-process "dup" nil "rsync" "-a" "--info=progress2"
+                                source new-file))
+           (buf (generate-new-buffer
+                 (format "*dup %s*" (file-name-nondirectory new-file)))))
+      (set-process-buffer proc buf)
+      (set-process-filter proc #'my/async-transfer--filter)
+      (push proc my/async-transfer-rsync-jobs)
+      (my/async-transfer-header-start)
+      (set-process-sentinel
+       proc
+       (lambda (proc event)
+         (setq my/async-transfer-rsync-progress nil)
+         (my/async-transfer-header-update)
+         (cond
+          ((string= event "finished\n")
+           (message "Duplicated: %s" (file-name-nondirectory new-file))
+           (with-current-buffer (find-file-noselect dired-dir)
+             (revert-buffer nil t)))
+          ((string-prefix-p "exited abnormally" event)
+            (message "Duplicate failed for %s"
+                     (file-name-nondirectory new-file)))))))))
 
 (defun my/mark-block ()
   "Marking a block of text surrounded by a newline."
@@ -1274,6 +1296,70 @@ On Windows the command is run through bash (from PortableGit) since
 (setq dired-no-confirm t)
 (setq dired-deletion-confirmer (lambda (_x) t))
 (setq dired-recursive-deletes 'always)
+
+;;
+;; -> async-transfer-header-line
+;;
+(defvar my/async-transfer-rsync-jobs nil
+  "Live rsync processes tracked for the async-transfer header-line.")
+
+(defvar my/async-transfer-rsync-progress nil
+  "Most recent parsed rsync progress fragment (e.g. \"[87% 12.3MB/s]\").")
+
+(defvar my/async-transfer-timer nil
+  "Repeating timer that refreshes the async-transfer header-line.")
+
+(defun my/async-transfer-count ()
+  "Return plist (:rsync N) of active transfer jobs."
+  (setq my/async-transfer-rsync-jobs
+        (seq-filter #'process-live-p my/async-transfer-rsync-jobs))
+  (list :rsync (length my/async-transfer-rsync-jobs)))
+
+(defun my/async-transfer-header-update ()
+  "Refresh a global header-line describing active rsync jobs."
+  (let* ((c (my/async-transfer-count))
+         (r (plist-get c :rsync))
+         (face 'mode-line-highlight))
+    (setq-default header-line-format
+                  (when (> r 0)
+                    (propertize
+                     (concat " ⟳"
+                             (format " %d rsync%s" r
+                                     (if my/async-transfer-rsync-progress
+                                         (concat " "
+                                                 (replace-regexp-in-string
+                                                  "%" "%%"
+                                                  my/async-transfer-rsync-progress))
+                                       ""))
+                             " running ")
+                     'face face)))
+    (force-mode-line-update t)
+    (when (and my/async-transfer-timer (zerop r))
+      (cancel-timer my/async-transfer-timer)
+      (setq my/async-transfer-timer nil))))
+
+(defun my/async-transfer-header-start (&rest _)
+  "Start the 0.5 s refresh timer if not already running."
+  (unless my/async-transfer-timer
+    (setq my/async-transfer-timer
+          (run-at-time 0 0.5 #'my/async-transfer-header-update))))
+
+(defun my/async-transfer--filter (proc chunk)
+  "Filter for rsync --info=progress2 output.
+Captures latest progress into `my/async-transfer-rsync-progress'."
+  (when (buffer-live-p (process-buffer proc))
+    (with-current-buffer (process-buffer proc)
+      (goto-char (point-max))
+      (insert chunk)))
+  (let ((pos 0) (last nil))
+    (while (string-match
+            "\\([0-9]+\\)%[ \t]+\\([0-9.]+[kKMmGgTt]?B/s\\)"
+            chunk pos)
+      (setq last (cons (match-string 1 chunk) (match-string 2 chunk))
+            pos  (match-end 0)))
+    (when last
+      (setq my/async-transfer-rsync-progress
+            (format "[%s%% %s]" (car last) (cdr last))))))
 
 (require 'transient)
 
