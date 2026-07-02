@@ -2022,8 +2022,17 @@ with header-line progress."
                    new-file
                    "/E" "/COPY:DAT" "/R:0" "/W:0" "/NP" "/NJH" "/NJS"
                    "/NDL" "/NFL" "/BYTES" "/MT:8")
-                (start-process "dup" nil "cmd" "/c" "copy" "/Y"
-                               file new-file)))
+                (let ((pwsh (or (executable-find "powershell.exe")
+                                (executable-find "powershell"))))
+                  (if pwsh
+                      (start-process "dup" nil pwsh
+                                     "-NoProfile" "-NonInteractive"
+                                     "-Command"
+                                     (format "Copy-Item -LiteralPath '%s' -Destination '%s'"
+                                             (replace-regexp-in-string "'" "''" file)
+                                             (replace-regexp-in-string "'" "''" new-file)))
+                    (start-process "dup" nil "cmd" "/c" "copy" "/Y"
+                                   file new-file)))))
              (t
               (start-process "dup" nil "rsync" "-a" "--info=progress2"
                              rsync-source new-file))))
