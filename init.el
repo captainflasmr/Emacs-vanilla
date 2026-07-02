@@ -585,7 +585,7 @@ an async process for the actual file move with header-line progress."
           (let* ((escaped (replace-regexp-in-string "'" "''" filename))
                  (ps-script
                   (format
-                   "$ErrorActionPreference='Stop'; $p='%s'; try { if (Test-Path -LiteralPath $p -PathType Container) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($p,'OnlyErrorDialogs','SendToRecycleBin') } else { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($p,'OnlyErrorDialogs','SendToRecycleBin') } } catch { Write-Error $_; exit 1 }"
+                   "Add-Type -AssemblyName Microsoft.VisualBasic; $ErrorActionPreference='Stop'; $p='%s'; try { if (Test-Path -LiteralPath $p -PathType Container) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($p,'OnlyErrorDialogs','SendToRecycleBin') } else { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($p,'OnlyErrorDialogs','SendToRecycleBin') } } catch { Write-Error $_; exit 1 }"
                    escaped))
                  (proc (start-process "trash" nil pwsh
                                       "-NoProfile" "-NonInteractive"
@@ -756,7 +756,8 @@ Removes dired lines immediately (optimistic) after launching the async process."
 (defun my/dired-duplicate-file (arg)
   "Duplicate a file from DIRED with an incremented number.
 If ARG is provided, it sets the starting counter.
-Copies asynchronously via rsync with header-line progress."
+Copies asynchronously via rsync (Linux) or copy/robocopy (Windows)
+with header-line progress."
   (interactive "P")
   (let* ((file (dired-get-file-for-visit))
          (dir (file-name-directory file))
@@ -765,16 +766,29 @@ Copies asynchronously via rsync with header-line progress."
          (extension (file-name-extension name t))
          (counter (if arg (prefix-numeric-value arg) 1))
          (new-file)
-         (dired-dir (dired-current-directory)))
+         (dired-dir (dired-current-directory))
+         (is-dir (file-directory-p file))
+         (rsync-source (if is-dir (file-name-as-directory file) file)))
     (while (and (setq new-file
                       (format "%s%s_%03d%s" dir base-name counter extension))
                 (file-exists-p new-file))
       (setq counter (1+ counter)))
-    (let* ((source (if (file-directory-p file)
-                       (file-name-as-directory file)
-                     file))
-           (proc (start-process "dup" nil "rsync" "-a" "--info=progress2"
-                                source new-file))
+    (let* ((proc
+            (cond
+             ((eq system-type 'windows-nt)
+              (if is-dir
+                  (start-process
+                   "dup" nil "robocopy"
+                   (file-name-directory file)
+                   (file-name-directory new-file)
+                   (file-name-nondirectory (directory-file-name file))
+                   "/E" "/COPY:DAT" "/R:0" "/W:0" "/NP" "/NJH" "/NJS"
+                   "/NDL" "/NFL" "/BYTES" "/MT:8")
+                (start-process "dup" nil "cmd" "/c" "copy" "/Y"
+                               file new-file)))
+             (t
+              (start-process "dup" nil "rsync" "-a" "--info=progress2"
+                             rsync-source new-file))))
            (buf (generate-new-buffer
                  (format "*dup %s*" (file-name-nondirectory new-file)))))
       (set-process-buffer proc buf)
@@ -786,14 +800,20 @@ Copies asynchronously via rsync with header-line progress."
        (lambda (proc event)
          (setq my/async-transfer-rsync-progress nil)
          (my/async-transfer-header-update)
-         (cond
-          ((string= event "finished\n")
-           (message "Duplicated: %s" (file-name-nondirectory new-file))
-           (with-current-buffer (find-file-noselect dired-dir)
-             (revert-buffer nil t)))
-          ((string-prefix-p "exited abnormally" event)
-            (message "Duplicate failed for %s"
-                     (file-name-nondirectory new-file)))))))))
+         (let ((exit-code (or (process-exit-status proc) -1)))
+           (cond
+            ((and is-dir (eq system-type 'windows-nt)
+                  (<= exit-code 7))
+             (message "Duplicated: %s" (file-name-nondirectory new-file))
+             (with-current-buffer (find-file-noselect dired-dir)
+               (revert-buffer nil t)))
+            ((string= event "finished\n")
+             (message "Duplicated: %s" (file-name-nondirectory new-file))
+             (with-current-buffer (find-file-noselect dired-dir)
+               (revert-buffer nil t)))
+            ((string-prefix-p "exited abnormally" event)
+             (message "Duplicate failed for %s (exit %d)"
+                      (file-name-nondirectory new-file) exit-code)))))))))
 
 (defun my/mark-block ()
   "Marking a block of text surrounded by a newline."
