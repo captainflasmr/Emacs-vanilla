@@ -2018,9 +2018,8 @@ with header-line progress."
               (if is-dir
                   (start-process
                    "dup" nil "robocopy"
-                   (file-name-directory file)
-                   (file-name-directory new-file)
-                   (file-name-nondirectory (directory-file-name file))
+                   (directory-file-name file)
+                   new-file
                    "/E" "/COPY:DAT" "/R:0" "/W:0" "/NP" "/NJH" "/NJS"
                    "/NDL" "/NFL" "/BYTES" "/MT:8")
                 (start-process "dup" nil "cmd" "/c" "copy" "/Y"
