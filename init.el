@@ -569,13 +569,16 @@ buffer's file otherwise.  No-op if the bit is not set."
 (set-buffer-modified-p nil)
 (setq delete-by-moving-to-trash t)
 
-(when (eq system-type 'windows-nt)
-  (defun my/windows-move-file-to-trash (filename)
-    "Move FILENAME to the Windows Recycle Bin via PowerShell.
-Uses Microsoft.VisualBasic.FileIO.FileSystem which calls the same
-Shell API as Windows Explorer.  Handles network drives correctly
-where `rename-file'-based trash fails with cross-volume errors."
-    (setq filename (expand-file-name filename))
+;;
+;; -> trash-core
+;;
+(defun my/async-move-file-to-trash (filename)
+  "Move FILENAME to trash asynchronously via rsync (Linux) or PowerShell (Win).
+Writes the .trashinfo sidecar synchronously (tiny, instant), then launches
+an async process for the actual file move with header-line progress."
+  (setq filename (expand-file-name filename))
+  (cond
+   ((eq system-type 'windows-nt)
     (let ((pwsh (or (executable-find "powershell.exe")
                     (executable-find "powershell"))))
       (if pwsh
@@ -584,28 +587,93 @@ where `rename-file'-based trash fails with cross-volume errors."
                   (format
                    "$ErrorActionPreference='Stop'; $p='%s'; try { if (Test-Path -LiteralPath $p -PathType Container) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($p,'OnlyErrorDialogs','SendToRecycleBin') } else { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($p,'OnlyErrorDialogs','SendToRecycleBin') } } catch { Write-Error $_; exit 1 }"
                    escaped))
-                 (exit-code (call-process pwsh nil nil nil
-                                          "-NoProfile" "-NonInteractive"
-                                          "-Command" ps-script)))
-            (unless (zerop exit-code)
-              (error "PowerShell trash failed (exit %d) for %s"
-                     exit-code filename)))
-        ;; No PowerShell: fall back to permanent deletion.
+                 (proc (start-process "trash" nil pwsh
+                                      "-NoProfile" "-NonInteractive"
+                                      "-Command" ps-script)))
+            (set-process-sentinel
+             proc
+             (lambda (proc event)
+               (when (string-prefix-p "exited abnormally" event)
+                 (message "Trash failed for %s" filename)))))
         (if (file-directory-p filename)
             (delete-directory filename t nil)
           (delete-file filename nil)))))
-  ;; Provide system-move-file-to-trash if not already bound (MSYS2 builds).
-  (unless (fboundp 'system-move-file-to-trash)
-    (defalias 'system-move-file-to-trash #'my/windows-move-file-to-trash))
-  ;; If the native impl IS bound but fails (e.g. network drive), fall back.
-  (advice-add 'move-file-to-trash :around
-              (lambda (orig-fn filename)
-                (condition-case err
-                    (funcall orig-fn filename)
-                  (file-error
-                   (if (file-exists-p filename)
-                       (my/windows-move-file-to-trash filename)
-                     (signal (car err) (cdr err))))))))
+   (t
+    ;; Linux: freedesktop.org trash via rsync --remove-source-files
+    (let* ((trash-base (or (getenv "XDG_DATA_HOME")
+                           (expand-file-name "~/.local/share")))
+           (trash-dir (expand-file-name "Trash" trash-base))
+           (files-dir (expand-file-name "files" trash-dir))
+           (info-dir (expand-file-name "info" trash-dir))
+           (name (file-name-nondirectory filename))
+           (trash-file (expand-file-name name files-dir))
+           (counter 1))
+      (make-directory files-dir t)
+      (make-directory info-dir t)
+      (while (file-exists-p trash-file)
+        (setq trash-file (expand-file-name
+                          (format "%s.%d%s" (file-name-base name) counter
+                                  (or (file-name-extension name) ""))
+                          files-dir)
+              counter (1+ counter)))
+      (let ((info-file (expand-file-name
+                        (concat (file-name-nondirectory trash-file) ".trashinfo")
+                        info-dir)))
+        (unless (file-exists-p info-file)
+          (with-temp-file info-file
+            (insert (format "[Trash Info]\nPath=%s\nDeletionDate=%s\n"
+                            filename (format-time-string "%Y-%m-%dT%H:%M:%S"))))))
+      (let* ((source (if (file-directory-p filename)
+                         (file-name-as-directory filename) filename))
+             (proc (start-process
+                    "trash" nil "rsync" "-a" "--remove-source-files"
+                    "--info=progress2" source trash-file))
+             (buf (generate-new-buffer
+                   (format "*trash %s*" (file-name-nondirectory filename)))))
+        (set-process-buffer proc buf)
+        (set-process-filter proc #'my/async-transfer--filter)
+        (push proc my/async-transfer-rsync-jobs)
+        (my/async-transfer-header-start)
+        (set-process-sentinel
+         proc
+         (lambda (proc event)
+           (setq my/async-transfer-rsync-progress nil)
+           (my/async-transfer-header-update)
+           (cond
+            ((string= event "finished\n")
+             (when (file-directory-p filename)
+               (ignore-errors (delete-directory filename))))
+            ((string-prefix-p "exited abnormally" event)
+             (message "Trash failed for %s" (file-name-nondirectory filename)))))))))))
+
+(defun my/dired-async-do-delete (&optional arg)
+  "Delete marked files, trashing asynchronously via rsync or PowerShell.
+With prefix ARG, permanently delete instead of trashing.
+Removes dired lines immediately (optimistic) after launching the async process."
+  (interactive "P")
+  (let ((files (dired-get-marked-files nil current-prefix-arg nil nil t)))
+    (if (or (not dired-deletion-confirmer)
+            (and (functionp dired-deletion-confirmer)
+                 (funcall dired-deletion-confirmer
+                          (format (if arg "Permanently delete %d file%s? "
+                                    "Trash %d file%s? ")
+                                  (length files)
+                                  (if (= 1 (length files)) "" "s")))))
+        (dolist (file files)
+          (if arg
+              (progn
+                (if (file-directory-p file)
+                    (delete-directory file t nil)
+                  (delete-file file nil))
+                (dired-remove-file file))
+            (my/async-move-file-to-trash file)
+            (dired-remove-file file)))
+      (message "Aborted"))))
+
+;; Replace the built-in move-file-to-trash with the async version on both platforms.
+;; This makes D and x (flagged delete) in dired use the async path automatically.
+(unless (eq system-type 'windows-nt)
+  (defalias 'system-move-file-to-trash #'my/async-move-file-to-trash))
 
 ;;
 ;; -> backups-core
@@ -1668,6 +1736,7 @@ selection transient."
       (my/dired-compress-transient))))
 
 (with-eval-after-load 'dired
+  (define-key dired-mode-map (kbd "D") #'my/dired-async-do-delete)
   (define-key dired-mode-map (kbd "C") 'dired-copy-file)
   (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
   (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
