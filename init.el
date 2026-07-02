@@ -281,7 +281,7 @@
 (global-set-key (kbd "M-s +") #'ediff-regions-linewise)
 (global-set-key (kbd "M-h") #'my/mark-block)
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
-(global-set-key (kbd "M-s ;") #'my/copy-buffer-to-kill-ring)
+(global-set-key (kbd "C-c b") #'my/copy-buffer-to-kill-ring)
 (global-set-key (kbd "C-c f") #'my/find-file)
 (global-set-key (kbd "C-c g") #'my/grep)
 
@@ -1274,10 +1274,6 @@ On Windows the command is run through bash (from PortableGit) since
 (setq dired-no-confirm t)
 (setq dired-deletion-confirmer (lambda (_x) t))
 (setq dired-recursive-deletes 'always)
-
-(load (expand-file-name "my-dired-clipboard"
-                        (file-name-directory load-file-name)))
-(add-hook 'dired-mode-hook #'my-dired-clipboard-mode)
 
 (require 'transient)
 
