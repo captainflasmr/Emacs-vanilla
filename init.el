@@ -576,28 +576,33 @@ buffer's file otherwise.  No-op if the bit is not set."
   "Move FILENAME to trash asynchronously via rsync (Linux) or PowerShell (Win).
 Writes the .trashinfo sidecar synchronously (tiny, instant), then launches
 an async process for the actual file move with header-line progress."
-  (setq filename (expand-file-name filename))
+  (setq filename (directory-file-name (expand-file-name filename)))
   (cond
-   ((eq system-type 'windows-nt)
-    (let ((pwsh (or (executable-find "powershell.exe")
-                    (executable-find "powershell"))))
-      (if pwsh
-          (let* ((escaped (replace-regexp-in-string "'" "''" filename))
-                 (ps-script
-                  (format
-                   "Add-Type -AssemblyName Microsoft.VisualBasic; $ErrorActionPreference='Stop'; $p='%s'; try { if (Test-Path -LiteralPath $p -PathType Container) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($p,'OnlyErrorDialogs','SendToRecycleBin') } else { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($p,'OnlyErrorDialogs','SendToRecycleBin') } } catch { Write-Error $_; exit 1 }"
-                   escaped))
-                 (proc (start-process "trash" nil pwsh
-                                      "-NoProfile" "-NonInteractive"
-                                      "-Command" ps-script)))
-            (set-process-sentinel
-             proc
-             (lambda (proc event)
-               (when (string-prefix-p "exited abnormally" event)
-                 (message "Trash failed for %s" filename)))))
-        (if (file-directory-p filename)
-            (delete-directory filename t nil)
-          (delete-file filename nil)))))
+    ((eq system-type 'windows-nt)
+     (let ((pwsh (or (executable-find "powershell.exe")
+                     (executable-find "powershell")))
+           (origin-buf (current-buffer)))
+       (if pwsh
+           (let* ((escaped (replace-regexp-in-string "'" "''" filename))
+                  (ps-script
+                   (format
+                    "Add-Type -AssemblyName Microsoft.VisualBasic; $ErrorActionPreference='Stop'; $p='%s'; try { if (Test-Path -LiteralPath $p -PathType Container) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($p,'OnlyErrorDialogs','SendToRecycleBin') } else { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($p,'OnlyErrorDialogs','SendToRecycleBin') } } catch { Write-Error $_; exit 1 }"
+                    escaped))
+                  (proc (start-process "trash" nil pwsh
+                                       "-NoProfile" "-NonInteractive"
+                                       "-Command" ps-script)))
+             (set-process-sentinel
+              proc
+              (lambda (proc event)
+                (when (buffer-live-p origin-buf)
+                  (with-current-buffer origin-buf
+                    (when (derived-mode-p 'dired-mode)
+                      (revert-buffer))))
+                (when (string-prefix-p "exited abnormally" event)
+                  (message "Trash failed for %s" filename)))))
+         (if (file-directory-p filename)
+             (delete-directory filename t nil)
+           (delete-file filename nil)))))
    (t
     ;; Linux: freedesktop.org trash via rsync --remove-source-files
     (let* ((trash-base (or (getenv "XDG_DATA_HOME")
@@ -623,11 +628,12 @@ an async process for the actual file move with header-line progress."
           (with-temp-file info-file
             (insert (format "[Trash Info]\nPath=%s\nDeletionDate=%s\n"
                             filename (format-time-string "%Y-%m-%dT%H:%M:%S"))))))
-      (let* ((source (if (file-directory-p filename)
-                         (file-name-as-directory filename) filename))
-             (proc (start-process
-                    "trash" nil "rsync" "-a" "--remove-source-files"
-                    "--info=progress2" source trash-file))
+      (let* ((is-dir (file-directory-p filename))
+             (origin-buf (current-buffer))
+             (proc (if is-dir
+                       (start-process "trash" nil "mv" filename trash-file)
+                     (start-process "trash" nil "rsync" "-a" "--remove-source-files"
+                                    "--info=progress2" filename trash-file)))
              (buf (generate-new-buffer
                    (format "*trash %s*" (file-name-nondirectory filename)))))
         (set-process-buffer proc buf)
@@ -641,10 +647,18 @@ an async process for the actual file move with header-line progress."
            (my/async-transfer-header-update)
            (cond
             ((string= event "finished\n")
-             (when (file-directory-p filename)
-               (ignore-errors (delete-directory filename))))
+             (when (and is-dir (file-directory-p filename))
+               (ignore-errors (delete-directory filename t)))
+             (when (buffer-live-p origin-buf)
+               (with-current-buffer origin-buf
+                 (when (derived-mode-p 'dired-mode)
+                   (revert-buffer)))))
             ((string-prefix-p "exited abnormally" event)
-             (message "Trash failed for %s" (file-name-nondirectory filename)))))))))))
+             (message "Trash failed for %s" (file-name-nondirectory filename))
+             (when (buffer-live-p origin-buf)
+               (with-current-buffer origin-buf
+                 (when (derived-mode-p 'dired-mode)
+                   (revert-buffer)))))))))))))
 
 (defun my/dired-async-do-delete (&optional arg)
   "Delete marked files, trashing asynchronously via rsync or PowerShell.
@@ -665,9 +679,9 @@ Removes dired lines immediately (optimistic) after launching the async process."
                 (if (file-directory-p file)
                     (delete-directory file t nil)
                   (delete-file file nil))
-                (dired-remove-file file))
+                (ignore-errors (dired-remove-file file)))
             (my/async-move-file-to-trash file)
-            (dired-remove-file file)))
+            (ignore-errors (dired-remove-file file))))
       (message "Aborted"))))
 
 ;; Replace the built-in move-file-to-trash with the async version on both platforms.
