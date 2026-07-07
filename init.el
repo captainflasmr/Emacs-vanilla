@@ -1,5 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 
+;; -*- lexical-binding: t; -*-
 ;;
 ;; -> requires-core
 ;;
@@ -572,6 +573,13 @@ buffer's file otherwise.  No-op if the bit is not set."
 ;;
 ;; -> trash-core
 ;;
+;; When t, file deletion uses the async rsync/PowerShell trash mechanism.
+;; When nil (default), falls back to Emacs' built-in blocking deletion
+;; (which still honours `delete-by-moving-to-trash' on supported platforms).
+(defvar my/async-trash-enabled nil
+  "If non-nil, use async rsync/PowerShell to move files to trash.
+When nil, rely on Emacs' default blocking deletion mechanism.")
+
 (defun my/async-move-file-to-trash (filename)
   "Move FILENAME to trash asynchronously via rsync (Linux) or PowerShell (Win).
 Writes the .trashinfo sidecar synchronously (tiny, instant), then launches
@@ -603,90 +611,93 @@ an async process for the actual file move with header-line progress."
          (if (file-directory-p filename)
              (delete-directory filename t nil)
            (delete-file filename nil)))))
-   (t
-    ;; Linux: freedesktop.org trash via rsync --remove-source-files
-    (let* ((trash-base (or (getenv "XDG_DATA_HOME")
-                           (expand-file-name "~/.local/share")))
-           (trash-dir (expand-file-name "Trash" trash-base))
-           (files-dir (expand-file-name "files" trash-dir))
-           (info-dir (expand-file-name "info" trash-dir))
-           (name (file-name-nondirectory filename))
-           (trash-file (expand-file-name name files-dir))
-           (counter 1))
-      (make-directory files-dir t)
-      (make-directory info-dir t)
-      (while (file-exists-p trash-file)
-        (setq trash-file (expand-file-name
-                          (format "%s.%d%s" (file-name-base name) counter
-                                  (or (file-name-extension name) ""))
-                          files-dir)
-              counter (1+ counter)))
-      (let ((info-file (expand-file-name
-                        (concat (file-name-nondirectory trash-file) ".trashinfo")
-                        info-dir)))
-        (unless (file-exists-p info-file)
-          (with-temp-file info-file
-            (insert (format "[Trash Info]\nPath=%s\nDeletionDate=%s\n"
-                            filename (format-time-string "%Y-%m-%dT%H:%M:%S"))))))
-      (let* ((is-dir (file-directory-p filename))
-             (origin-buf (current-buffer))
-             (proc (if is-dir
-                       (start-process "trash" nil "mv" filename trash-file)
-                     (start-process "trash" nil "rsync" "-a" "--remove-source-files"
-                                    "--info=progress2" filename trash-file)))
-             (buf (generate-new-buffer
-                   (format "*trash %s*" (file-name-nondirectory filename)))))
-        (set-process-buffer proc buf)
-        (set-process-filter proc #'my/async-transfer--filter)
-        (push proc my/async-transfer-rsync-jobs)
-        (my/async-transfer-header-start)
-        (set-process-sentinel
-         proc
-         (lambda (proc event)
-           (setq my/async-transfer-rsync-progress nil)
-           (my/async-transfer-header-update)
-           (cond
-            ((string= event "finished\n")
-             (when (and is-dir (file-directory-p filename))
-               (ignore-errors (delete-directory filename t)))
-             (when (buffer-live-p origin-buf)
-               (with-current-buffer origin-buf
-                 (when (derived-mode-p 'dired-mode)
-                   (revert-buffer)))))
-            ((string-prefix-p "exited abnormally" event)
-             (message "Trash failed for %s" (file-name-nondirectory filename))
-             (when (buffer-live-p origin-buf)
-               (with-current-buffer origin-buf
-                 (when (derived-mode-p 'dired-mode)
-                   (revert-buffer)))))))))))))
+    (t
+     ;; Linux: freedesktop.org trash via mv (dirs) or rsync (files)
+     (let* ((trash-base (or (getenv "XDG_DATA_HOME")
+                            (expand-file-name "~/.local/share")))
+            (trash-dir (expand-file-name "Trash" trash-base))
+            (files-dir (expand-file-name "files" trash-dir))
+            (info-dir (expand-file-name "info" trash-dir))
+            (name (file-name-nondirectory filename))
+            (trash-file (expand-file-name name files-dir))
+            (counter 1))
+       (make-directory files-dir t)
+       (make-directory info-dir t)
+       (while (file-exists-p trash-file)
+         (setq trash-file (expand-file-name
+                           (format "%s.%d%s" (file-name-base name) counter
+                                   (or (file-name-extension name) ""))
+                           files-dir)
+               counter (1+ counter)))
+       (let ((info-file (expand-file-name
+                         (concat (file-name-nondirectory trash-file) ".trashinfo")
+                         info-dir)))
+         (unless (file-exists-p info-file)
+           (with-temp-file info-file
+             (insert (format "[Trash Info]\nPath=%s\nDeletionDate=%s\n"
+                             filename (format-time-string "%Y-%m-%dT%H:%M:%S"))))))
+       (let* ((is-dir (file-directory-p filename))
+              (origin-buf (current-buffer))
+              (proc (if is-dir
+                        (start-process "trash" nil "mv" filename trash-file)
+                      (start-process "trash" nil "rsync" "-a" "--remove-source-files"
+                                     "--info=progress2" filename trash-file)))
+              (buf (generate-new-buffer
+                    (format "*trash %s*" (file-name-nondirectory filename)))))
+         (set-process-buffer proc buf)
+         (set-process-filter proc #'my/async-transfer--filter)
+         (push proc my/async-transfer-rsync-jobs)
+         (my/async-transfer-header-start)
+         (set-process-sentinel
+          proc
+          (lambda (proc event)
+            (setq my/async-transfer-rsync-progress nil)
+            (my/async-transfer-header-update)
+            (cond
+             ((string= event "finished\n")
+              (when (and is-dir (file-directory-p filename))
+                (ignore-errors (delete-directory filename t)))
+              (when (buffer-live-p origin-buf)
+                (with-current-buffer origin-buf
+                  (when (derived-mode-p 'dired-mode)
+                    (revert-buffer)))))
+             ((string-prefix-p "exited abnormally" event)
+              (message "Trash failed for %s" (file-name-nondirectory filename))
+              (when (buffer-live-p origin-buf)
+                (with-current-buffer origin-buf
+                  (when (derived-mode-p 'dired-mode)
+                    (revert-buffer)))))))))))))
 
 (defun my/dired-async-do-delete (&optional arg)
   "Delete marked files, trashing asynchronously via rsync or PowerShell.
 With prefix ARG, permanently delete instead of trashing.
-Removes dired lines immediately (optimistic) after launching the async process."
+When `my/async-trash-enabled' is nil, delegates to the standard
+`dired-do-delete' (blocking Emacs deletion) instead."
   (interactive "P")
-  (let ((files (dired-get-marked-files nil current-prefix-arg nil nil t)))
-    (if (or (not dired-deletion-confirmer)
-            (and (functionp dired-deletion-confirmer)
-                 (funcall dired-deletion-confirmer
-                          (format (if arg "Permanently delete %d file%s? "
-                                    "Trash %d file%s? ")
-                                  (length files)
-                                  (if (= 1 (length files)) "" "s")))))
-        (dolist (file files)
-          (if arg
-              (progn
-                (if (file-directory-p file)
-                    (delete-directory file t nil)
-                  (delete-file file nil))
-                (ignore-errors (dired-remove-file file)))
-            (my/async-move-file-to-trash file)
-            (ignore-errors (dired-remove-file file))))
-      (message "Aborted"))))
+  (if (not my/async-trash-enabled)
+      (dired-do-delete arg)
+    (let ((files (dired-get-marked-files nil current-prefix-arg nil nil t)))
+      (if (or (not dired-deletion-confirmer)
+              (and (functionp dired-deletion-confirmer)
+                   (funcall dired-deletion-confirmer
+                            (format (if arg "Permanently delete %d file%s? "
+                                      "Trash %d file%s? ")
+                                (length files)
+                                (if (= 1 (length files)) "" "s")))))
+          (dolist (file files)
+            (if arg
+                (progn
+                  (if (file-directory-p file)
+                      (delete-directory file t nil)
+                    (delete-file file nil))
+                  (ignore-errors (dired-remove-file file)))
+              (my/async-move-file-to-trash file)
+              (ignore-errors (dired-remove-file file))))
+        (message "Aborted")))))
 
-;; Replace the built-in move-file-to-trash with the async version on both platforms.
+;; Replace the built-in move-file-to-trash with the async version when enabled.
 ;; This makes D and x (flagged delete) in dired use the async path automatically.
-(unless (eq system-type 'windows-nt)
+(when (and my/async-trash-enabled (not (eq system-type 'windows-nt)))
   (defalias 'system-move-file-to-trash #'my/async-move-file-to-trash))
 
 ;;

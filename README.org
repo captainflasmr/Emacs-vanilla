@@ -418,6 +418,7 @@ emacs --init-directory=~/.emacs.d.core
 Ensures essential packages are loaded at startup.
 
 #+begin_src elisp
+;; -*- lexical-binding: t; -*-
 ;;
 ;; -> requires-core
 ;;
@@ -1789,10 +1790,23 @@ Configures aliases and settings for reducing the need for confirmations in repet
 
 Moves files to the system trash asynchronously via rsync (Linux) or PowerShell (Windows), with header-line progress. On Linux, the freedesktop.org trash spec is followed by writing a =.trashinfo= sidecar synchronously (tiny, instant) and then moving directories atomically with =mv= or transferring individual files with rsync =--remove-source-files= in the background. On Windows, PowerShell is used asynchronously via =start-process=.
 
+When =my/async-trash-enabled= is =nil= (the default), the async mechanism is bypassed and Emacs' built-in blocking deletion is used instead (which still honours =delete-by-moving-to-trash= on supported platforms). Set it to =t= to enable the async rsync/PowerShell path:
+
+#+begin_src elisp :tangle no
+(setq my/async-trash-enabled t)
+#+end_src
+
 #+begin_src elisp
 ;;
 ;; -> trash-core
 ;;
+;; When t, file deletion uses the async rsync/PowerShell trash mechanism.
+;; When nil (default), falls back to Emacs' built-in blocking deletion
+;; (which still honours `delete-by-moving-to-trash' on supported platforms).
+(defvar my/async-trash-enabled nil
+  "If non-nil, use async rsync/PowerShell to move files to trash.
+When nil, rely on Emacs' default blocking deletion mechanism.")
+
 (defun my/async-move-file-to-trash (filename)
   "Move FILENAME to trash asynchronously via rsync (Linux) or PowerShell (Win).
 Writes the .trashinfo sidecar synchronously (tiny, instant), then launches
@@ -1884,30 +1898,33 @@ an async process for the actual file move with header-line progress."
 (defun my/dired-async-do-delete (&optional arg)
   "Delete marked files, trashing asynchronously via rsync or PowerShell.
 With prefix ARG, permanently delete instead of trashing.
-Removes dired lines immediately (optimistic) after launching the async process."
+When `my/async-trash-enabled' is nil, delegates to the standard
+`dired-do-delete' (blocking Emacs deletion) instead."
   (interactive "P")
-  (let ((files (dired-get-marked-files nil current-prefix-arg nil nil t)))
-    (if (or (not dired-deletion-confirmer)
-            (and (functionp dired-deletion-confirmer)
-                 (funcall dired-deletion-confirmer
-                          (format (if arg "Permanently delete %d file%s? "
-                                    "Trash %d file%s? ")
-                                  (length files)
-                                  (if (= 1 (length files)) "" "s")))))
-        (dolist (file files)
-          (if arg
-              (progn
-                (if (file-directory-p file)
-                    (delete-directory file t nil)
-                  (delete-file file nil))
-                (ignore-errors (dired-remove-file file)))
-            (my/async-move-file-to-trash file)
-            (ignore-errors (dired-remove-file file))))
-      (message "Aborted"))))
+  (if (not my/async-trash-enabled)
+      (dired-do-delete arg)
+    (let ((files (dired-get-marked-files nil current-prefix-arg nil nil t)))
+      (if (or (not dired-deletion-confirmer)
+              (and (functionp dired-deletion-confirmer)
+                   (funcall dired-deletion-confirmer
+                            (format (if arg "Permanently delete %d file%s? "
+                                      "Trash %d file%s? ")
+                                (length files)
+                                (if (= 1 (length files)) "" "s")))))
+          (dolist (file files)
+            (if arg
+                (progn
+                  (if (file-directory-p file)
+                      (delete-directory file t nil)
+                    (delete-file file nil))
+                  (ignore-errors (dired-remove-file file)))
+              (my/async-move-file-to-trash file)
+              (ignore-errors (dired-remove-file file))))
+        (message "Aborted")))))
 
-;; Replace the built-in move-file-to-trash with the async version on both platforms.
+;; Replace the built-in move-file-to-trash with the async version when enabled.
 ;; This makes D and x (flagged delete) in dired use the async path automatically.
-(unless (eq system-type 'windows-nt)
+(when (and my/async-trash-enabled (not (eq system-type 'windows-nt)))
   (defalias 'system-move-file-to-trash #'my/async-move-file-to-trash))
 #+end_src
 
