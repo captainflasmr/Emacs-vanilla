@@ -71,7 +71,6 @@
 (global-set-key (kbd "M-l") my-jump-keymap)
 (define-key my-jump-keymap (kbd "=") #'tab-bar-new-tab)
 (define-key my-jump-keymap (kbd "b") (lambda () (interactive) (find-file "~/bin")))
-(define-key my-jump-keymap (kbd "c") (lambda () (interactive) (find-file "~/DCIM/content/aaa--calendar.org")))
 (define-key my-jump-keymap (kbd "d") (lambda () (interactive) (find-file (expand-file-name diary-file))))
 (define-key my-jump-keymap (kbd "e")
             (lambda ()
@@ -79,14 +78,9 @@
               (find-file (expand-file-name "init.el" user-emacs-directory))))
 (define-key my-jump-keymap (kbd "g") (lambda () (interactive) (find-file "~/.config")))
 (define-key my-jump-keymap (kbd "h") (lambda () (interactive) (find-file "~")))
-(define-key my-jump-keymap (kbd "j") (lambda () (interactive) (find-file "~/DCIM/content/aaa--todo.org")))
-(define-key my-jump-keymap (kbd "k")
-            (lambda () (interactive)
-              (find-file (concat user-emacs-directory "emacs--core.org"))))
 (define-key my-jump-keymap (kbd "l") #'my/fido-recentf)
 (define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
 (define-key my-jump-keymap (kbd "s") (lambda () (interactive) (find-file "~/source")))
-(define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "~/DCIM/content/")))
 (define-key my-jump-keymap (kbd "-") #'tab-close)
 (global-set-key (kbd "M-;") #'my/quick-window-jump)
 
@@ -2500,31 +2494,32 @@ With a prefix argument, forget every remembered xref."
 ;; -> windows-specific-core
 ;;
 (when (eq system-type 'windows-nt)
-  (setq home-dir "c:/users/jimbo")
-  (let ((xPaths
-         `(,(expand-file-name "~/bin")
-           ,(expand-file-name "~/bin/PortableGit/bin")
-           ,(expand-file-name "~/bin/PortableGit/usr/bin")
-           ,(expand-file-name "~/bin/Apache-Subversion/bin/")
-           ,(expand-file-name "~/bin/svn2git-2.4.0/bin")
-           ,(expand-file-name "~/bin/clang/bin")
-           ,(expand-file-name "~/bin/find")
-           ,(expand-file-name "~/bin/omnisharp-win-x64")
-           "c:/GnuWin32/bin"
-           "c:/GNAT/2021/bin")))
-    (setenv "PATH" (mapconcat 'identity xPaths ";"))
-    (setq exec-path (append xPaths (list "." exec-directory))))
-
-  (custom-theme-set-faces
-   'user
-   '(variable-pitch ((t (:family "Consolas" :height 110 :weight normal))))
-   '(fixed-pitch ((t ( :family "Consolas" :height 110)))))
-
-  (setq font-general "Consolas 11")
-  (set-frame-font font-general nil t)
-  (add-to-list 'default-frame-alist `(font . ,font-general)))
-
-(setq tab-bar-show 1)
+  (let* ((bin (expand-file-name "bin" user-emacs-directory))
+         (sys (getenv "SystemRoot"))
+         (xPaths
+          `(,bin
+            ,(concat bin "/PortableGit/bin")
+            ,(concat bin "/PortableGit/usr/bin")
+            ,(concat bin "/netcoredbg")
+            ,(concat bin "/csharp-ls/tools/net9.0/any")
+            ,(concat bin "/hunspell/bin")
+            ,(concat bin "/find")
+            ,(concat bin "/clang/bin")
+            ,(concat bin "/cmake/bin")
+            ,(concat bin "/protoc")
+            ,(concat bin "/ada_language_server/bin")
+            ,(concat bin "/buf/bin")
+            ,(concat bin "/kotlin-language-server/bin")
+            ,(concat bin "/jdtls/bin")
+            ,(concat bin "/ImageMagick-7.1.2-27-portable-Q16-x64")
+            ,(concat bin "/ffmpeg-7.1.1-essentials_build/bin")
+            ,(concat sys "/System32")
+            ,(concat sys "/System32/Wbem")
+            ,(concat sys "/System32/WindowsPowerShell/v1.0/")
+            ,(concat sys "/System32/OpenSSH/")))
+         (sysPath (getenv "PATH")))
+    (setenv "PATH" (concat (mapconcat #'identity xPaths ";") ";" sysPath))
+    (setq exec-path (append xPaths (split-string sysPath ";") (list "." exec-directory)))))
 
 ;;
 ;; -> programming-core
