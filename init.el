@@ -276,6 +276,9 @@
 (define-key my-win-keymap (kbd "u") #'set-cursor-color)
 (define-key my-win-keymap (kbd "U") #'set-foreground-color)
 (define-key my-win-keymap (kbd "B") #'set-background-color)
+(define-key my-win-keymap (kbd "t")
+            (lambda () (interactive)
+              (org-table-map-tables 'org-table-align)))
 
 ;;
 ;; -> keys-other-core
