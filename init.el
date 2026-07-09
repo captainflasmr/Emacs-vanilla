@@ -2426,6 +2426,17 @@ With a prefix argument, forget every remembered xref."
   (let ((new-buffer-name (concat "*eshell-" name "*")))
     (rename-buffer new-buffer-name t)))
 
+(defun my/ansi-term-create (name)
+  "Create a custom-named ansi-term buffer with NAME."
+  (interactive "sName: ")
+  (let* ((shell-prog (or explicit-shell-file-name shell-file-name "/bin/bash"))
+         (temp-name (replace-regexp-in-string
+                     "\\`\\*\\|\\*\\'" ""
+                     (generate-new-buffer-name "*ansi-term-temp*")))
+         (buf (ansi-term shell-prog temp-name)))
+    (with-current-buffer buf
+      (rename-buffer (generate-new-buffer-name (concat "*ansi-term-" name "*"))))))
+
 (setq eshell-scroll-to-bottom-on-input t)
 (add-hook 'eshell-mode-hook (lambda () (setq-local tab-always-indent 'complete)))
 
@@ -2474,7 +2485,7 @@ With a prefix argument, forget every remembered xref."
     (pcase key
       (?e (call-interactively 'my/shell-create))
       (?s (call-interactively 'shell))
-      (?a (call-interactively 'ansi-term))
+      (?a (call-interactively 'my/ansi-term-create))
       ;; Quit
       (?q (message "Quit Shell menu."))
       (?\C-g (message "Quit Shell menu."))
