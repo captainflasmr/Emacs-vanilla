@@ -1515,7 +1515,6 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "M-a") #'save-buffer)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
-(global-set-key (kbd "C-0") #'my/treemacs-toggle-current-project)
 (global-set-key (kbd "M-0") 'delete-window)
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-2") #'split-window-vertically)
@@ -3541,7 +3540,7 @@ With directories under project root using find."
 
 Persistent, project-aware memoization for ~xref-find-definitions~ (M-.) plus a minimal live preview during candidate selection. Built on the stock ~xref~ and ~savehist~; works with whichever xref backend happens to be active (etags, eglot, dumb-jump, etc.).
 
-When more than one definition matches, the first pick is prompted via ~completing-read~ with a live preview in the origin window — as you cycle candidates after a short idle pause, the buffer in the originating window jumps to that location and (if active) ~treemacs-follow-mode~ reveals the file. Subsequent ~M-.~ on the same identifier in the same project skips the prompt and jumps straight to the remembered definition. Stale entries (file moved, code rewritten, line drift) automatically fall through to the picker again. The cache survives sessions via ~savehist-additional-variables~.
+When more than one definition matches, the first pick is prompted via ~completing-read~ with a live preview in the origin window — as you cycle candidates after a short idle pause, the buffer in the originating window jumps to that location. Subsequent ~M-.~ on the same identifier in the same project skips the prompt and jumps straight to the remembered definition. Stale entries (file moved, code rewritten, line drift) automatically fall through to the picker again. The cache survives sessions via ~savehist-additional-variables~.
 
 Use ~M-x my/dumb-jump-forget~ to drop the entry for the symbol at point; with a prefix argument it clears the whole cache. The name is historical — it forgets any xref pick, not just dumb-jump's.
 
@@ -3637,12 +3636,6 @@ Set to 0 for immediate preview on every keystroke."
         (push (cons uniq x) items)))
     (nreverse items)))
 
-(defun my/xref--treemacs-follow-current ()
-  "If treemacs follow-mode is active, reveal the current buffer in the tree."
-  (when (and (bound-and-true-p treemacs-follow-mode)
-             (fboundp 'treemacs--follow))
-    (ignore-errors (treemacs--follow))))
-
 (defun my/xref--preview-update ()
   "Preview the currently-highlighted candidate in the origin window."
   (when (and (minibufferp) my/xref--preview-items my/xref--preview-origin)
@@ -3655,10 +3648,9 @@ Set to 0 for immediate preview on every keystroke."
           (with-selected-window (car my/xref--preview-origin)
             (let ((marker (ignore-errors (xref-location-marker loc))))
               (when (markerp marker)
-                (switch-to-buffer (marker-buffer marker) t t)
-                (goto-char marker)
-                (recenter)
-                (my/xref--treemacs-follow-current)))))))))
+                 (switch-to-buffer (marker-buffer marker) t t)
+                 (goto-char marker)
+                 (recenter)))))))))
 
 (defun my/xref--preview-schedule ()
   "Reschedule the preview to fire after `my/xref-preview-delay' idle seconds."
@@ -3679,8 +3671,7 @@ Set to 0 for immediate preview on every keystroke."
        (with-selected-window win
          (switch-to-buffer buf t t)
          (goto-char pt)
-         (set-window-start win start)
-         (my/xref--treemacs-follow-current))))))
+          (set-window-start win start))))))
 
 (defun my/xref--completing-read-with-preview (xrefs)
   "Prompt for one of XREFS with live preview in the origin window.

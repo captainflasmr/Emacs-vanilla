@@ -338,7 +338,6 @@
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "M-a") #'save-buffer)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
-(global-set-key (kbd "C-0") #'my/treemacs-toggle-current-project)
 (global-set-key (kbd "M-0") 'delete-window)
 (global-set-key (kbd "M-1") #'delete-other-windows)
 (global-set-key (kbd "M-2") #'split-window-vertically)
@@ -2289,12 +2288,6 @@ Set to 0 for immediate preview on every keystroke."
         (push (cons uniq x) items)))
     (nreverse items)))
 
-(defun my/xref--treemacs-follow-current ()
-  "If treemacs follow-mode is active, reveal the current buffer in the tree."
-  (when (and (bound-and-true-p treemacs-follow-mode)
-             (fboundp 'treemacs--follow))
-    (ignore-errors (treemacs--follow))))
-
 (defun my/xref--preview-update ()
   "Preview the currently-highlighted candidate in the origin window."
   (when (and (minibufferp) my/xref--preview-items my/xref--preview-origin)
@@ -2307,10 +2300,9 @@ Set to 0 for immediate preview on every keystroke."
           (with-selected-window (car my/xref--preview-origin)
             (let ((marker (ignore-errors (xref-location-marker loc))))
               (when (markerp marker)
-                (switch-to-buffer (marker-buffer marker) t t)
-                (goto-char marker)
-                (recenter)
-                (my/xref--treemacs-follow-current)))))))))
+                 (switch-to-buffer (marker-buffer marker) t t)
+                 (goto-char marker)
+                 (recenter)))))))))
 
 (defun my/xref--preview-schedule ()
   "Reschedule the preview to fire after `my/xref-preview-delay' idle seconds."
@@ -2331,8 +2323,7 @@ Set to 0 for immediate preview on every keystroke."
        (with-selected-window win
          (switch-to-buffer buf t t)
          (goto-char pt)
-         (set-window-start win start)
-         (my/xref--treemacs-follow-current))))))
+          (set-window-start win start))))))
 
 (defun my/xref--completing-read-with-preview (xrefs)
   "Prompt for one of XREFS with live preview in the origin window.
