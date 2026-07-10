@@ -2564,7 +2564,18 @@ With a prefix argument, forget every remembered xref."
    'eglot-workspace-configuration
    `((ada . (:projectFile ,(dired-get-filename))))))
 
-(setq vc-handled-backends '(SVN Git))
+(setq vc-handled-backends
+      (append (and (executable-find "svn") '(SVN)) '(Git)))
+
+(defun my/vc-svn-registered-silent (orig-fun file)
+  "Silently return nil when `svn' command fails.
+Prevents `vc-do-command' errors (e.g. status 53) from blocking
+Dired or other VC operations on SVN working copies that svn
+cannot handle."
+  (condition-case nil
+      (funcall orig-fun file)
+    (error nil)))
+(advice-add 'vc-svn-registered :around #'my/vc-svn-registered-silent)
 
 (global-set-key (kbd "C-c l") 'my/selective-display-fold)
 
