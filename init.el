@@ -2968,21 +2968,29 @@ EXCLUDE-PATTERNS is an optional list of regex patterns to exclude files/director
 ;;
 
 (defun my/image-mode-show-dimensions ()
-  "Display the open image's pixel dimensions and file size in the header line."
+  "Display the open image's original pixel dimensions and file size in the header line."
   (when (and (derived-mode-p 'image-mode)
              buffer-file-name
              (file-exists-p buffer-file-name))
     (condition-case err
         (let* ((image (or (image-get-display-property)
                           (create-image buffer-file-name)))
-               (size (image-size image t))
-               (width (car size))
-               (height (cdr size))
+               (display-size (image-size image t))
+               (display-width (car display-size))
+               (display-height (cdr display-size))
+               (original-image (create-image buffer-file-name nil nil :scale 1))
+               (original-size (image-size original-image t))
+               (original-width (car original-size))
+               (original-height (cdr original-size))
                (bytes (file-attribute-size
-                        (file-attributes buffer-file-name))))
+                       (file-attributes buffer-file-name))))
           (setq header-line-format
-                (format " %d x %d px   %s"
-                        width height
+                (format " %d x %d px%s   %s"
+                        original-width original-height
+                        (if (or (/= original-width display-width)
+                                (/= original-height display-height))
+                            (format " (displayed %d x %d px)" display-width display-height)
+                          "")
                         (file-size-human-readable bytes))))
       (error
        (setq header-line-format

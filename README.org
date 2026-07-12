@@ -4745,7 +4745,7 @@ Demonstrates "Do What I Mean" functionalities custom to Emacs, streamlining oper
 
 * image-mode-dimensions
 
-Display the pixel dimensions and human-readable file size of the current image in the header line whenever an image is opened in =image-mode=. Falls back to an error message if the image metadata cannot be read.
+Display the original pixel dimensions and human-readable file size of the current image in the header line whenever an image is opened in =image-mode=. Uses a separate image created with =:scale 1= to obtain the native (unscaled) dimensions, independent of any window-fitting scaling applied by =image-mode=. When the display size differs from the original, both are shown. Falls back to an error message if the image metadata cannot be read.
 
 #+begin_src elisp
 ;;
@@ -4753,21 +4753,29 @@ Display the pixel dimensions and human-readable file size of the current image i
 ;;
 
 (defun my/image-mode-show-dimensions ()
-  "Display the open image's pixel dimensions and file size in the header line."
+  "Display the open image's original pixel dimensions and file size in the header line."
   (when (and (derived-mode-p 'image-mode)
              buffer-file-name
              (file-exists-p buffer-file-name))
     (condition-case err
         (let* ((image (or (image-get-display-property)
                           (create-image buffer-file-name)))
-               (size (image-size image t))
-               (width (car size))
-               (height (cdr size))
+               (display-size (image-size image t))
+               (display-width (car display-size))
+               (display-height (cdr display-size))
+               (original-image (create-image buffer-file-name nil nil :scale 1))
+               (original-size (image-size original-image t))
+               (original-width (car original-size))
+               (original-height (cdr original-size))
                (bytes (file-attribute-size
-                        (file-attributes buffer-file-name))))
+                       (file-attributes buffer-file-name))))
           (setq header-line-format
-                (format " %d x %d px   %s"
-                        width height
+                (format " %d x %d px%s   %s"
+                        original-width original-height
+                        (if (or (/= original-width display-width)
+                                (/= original-height display-height))
+                            (format " (displayed %d x %d px)" display-width display-height)
+                          "")
                         (file-size-human-readable bytes))))
       (error
        (setq header-line-format
