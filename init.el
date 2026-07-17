@@ -270,7 +270,7 @@
 ;; -> keys-visual-core
 ;;
 (defvar my-win-keymap (make-sparse-keymap))
-(global-set-key (kbd "C-z") my-win-keymap)
+ (define-key my-overrides-mode-map (kbd "C-z") my-win-keymap)
 (define-key my-win-keymap (kbd "b") #'(lambda () (interactive)(tab-bar-mode 'toggle)))
 (define-key my-win-keymap (kbd "c") #'display-fill-column-indicator-mode)
 (define-key my-win-keymap (kbd "d") #'window-divider-mode)
@@ -296,7 +296,7 @@
 ;;
 (global-set-key (kbd "M-s =") #'ediff-buffers)
 (global-set-key (kbd "M-s +") #'ediff-regions-linewise)
-(global-set-key (kbd "M-h") #'my/mark-block)
+(define-key my-overrides-mode-map (kbd "M-h") #'my/mark-block)
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
 (global-set-key (kbd "C-c b") #'my/copy-buffer-to-kill-ring)
 (global-set-key (kbd "C-c f") #'my/find-file)
@@ -305,11 +305,6 @@
 ;;
 ;; -> keybinding-core
 ;;
-(global-set-key (kbd "C-M-h") 'windmove-left)
-(global-set-key (kbd "C-M-l") 'windmove-right)
-(global-set-key (kbd "C-M-j") 'windmove-down)
-(global-set-key (kbd "C-M-k") 'windmove-up)
-
 (put 'windmove-left  'repeat-map 'windmove-repeat-map)
 (put 'windmove-right 'repeat-map 'windmove-repeat-map)
 (put 'windmove-up    'repeat-map 'windmove-repeat-map)
@@ -323,36 +318,33 @@
     (define-key map (kbd "l") #'windmove-right)
     map))
 
-(global-set-key (kbd "M-L") (lambda () (interactive)
+(define-key my-overrides-mode-map (kbd "M-L") (lambda () (interactive)
                               (my/adaptive-resize t -2)))
-(global-set-key (kbd "M-H") (lambda () (interactive)
+(define-key my-overrides-mode-map (kbd "M-H") (lambda () (interactive)
                               (my/adaptive-resize t 2)))
-(global-set-key (kbd "M-J") (lambda () (interactive)
+(define-key my-overrides-mode-map (kbd "M-J") (lambda () (interactive)
                               (my/adaptive-resize nil -1)))
-(global-set-key (kbd "M-K") (lambda () (interactive)
+(define-key my-overrides-mode-map (kbd "M-K") (lambda () (interactive)
                               (my/adaptive-resize nil 1)))
 (global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "<f12>") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
-(global-set-key (kbd "M-[") #'my/shell-menu)
+(define-key my-overrides-mode-map (kbd "M-[") #'my/shell-menu)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
-(global-set-key (kbd "C-x [") #'beginning-of-buffer)
-(global-set-key (kbd "C-x ]") #'end-of-buffer)
 (global-set-key (kbd "C-x k") #'kill-buffer)
-(global-set-key (kbd "C-c j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
-(global-set-key (kbd "C-c k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
+(define-key my-overrides-mode-map (kbd "C-c j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
+(define-key my-overrides-mode-map (kbd "C-c k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
 (global-set-key (kbd "C-x l") #'scroll-lock-mode)
 (global-set-key (kbd "C-x v e") 'vc-ediff)
 (global-set-key (kbd "C-x x g") #'revert-buffer)
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
-(global-set-key (kbd "M-a") #'save-buffer)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
-(global-set-key (kbd "M-0") 'delete-window)
-(global-set-key (kbd "M-1") #'delete-other-windows)
-(global-set-key (kbd "M-2") #'split-window-vertically)
-(global-set-key (kbd "M-3") #'split-window-horizontally)
+(define-key my-overrides-mode-map (kbd "M-0") 'delete-window)
+(define-key my-overrides-mode-map (kbd "M-1") #'delete-other-windows)
+(define-key my-overrides-mode-map (kbd "M-2") #'split-window-vertically)
+(define-key my-overrides-mode-map (kbd "M-3") #'split-window-horizontally)
 (setq tab-bar-select-tab-modifiers '(control))
 (defun my/dired-jump-or-up ()
   "If in Dired, go up a directory; otherwise dired-jump for current buffer."
@@ -360,14 +352,11 @@
   (if (derived-mode-p 'dired-mode)
       (dired-up-directory)
     (dired-jump)))
-(global-set-key (kbd "M-e") #'my/dired-jump-or-up)
+(define-key my-overrides-mode-map (kbd "M-e") #'my/dired-jump-or-up)
 (global-set-key (kbd "M-g i") #'imenu)
 (global-set-key (kbd "M-g o") #'org-goto)
-(global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
-(global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
 (define-key my-overrides-mode-map (kbd "M-o") #'bookmark-jump)
 (define-key my-overrides-mode-map (kbd "C-w") 'my-window-map)
-(define-key my-overrides-mode-map (kbd "C-z") my-win-keymap)
 (define-key my-overrides-mode-map (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (define-key my-overrides-mode-map (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (define-key my-overrides-mode-map (kbd "C-x [") #'beginning-of-buffer)
@@ -377,8 +366,6 @@
 (define-key my-overrides-mode-map (kbd "M-a") #'save-buffer)
 (define-key my-overrides-mode-map (kbd "M-;") #'my/quick-window-jump)
 
-(global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
-(global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
 (global-set-key (kbd "M-z") #'visual-line-mode)
 (global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
@@ -610,87 +597,87 @@ Writes the .trashinfo sidecar synchronously (tiny, instant), then launches
 an async process for the actual file move with header-line progress."
   (setq filename (directory-file-name (expand-file-name filename)))
   (cond
-    ((eq system-type 'windows-nt)
-     (let ((pwsh (or (executable-find "powershell.exe")
-                     (executable-find "powershell")))
-           (origin-buf (current-buffer)))
-       (if pwsh
-           (let* ((escaped (replace-regexp-in-string "'" "''" filename))
-                  (ps-script
-                   (format
-                    "Add-Type -AssemblyName Microsoft.VisualBasic; $ErrorActionPreference='Stop'; $p='%s'; try { if (Test-Path -LiteralPath $p -PathType Container) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($p,'OnlyErrorDialogs','SendToRecycleBin') } else { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($p,'OnlyErrorDialogs','SendToRecycleBin') } } catch { Write-Error $_; exit 1 }"
-                    escaped))
-                  (proc (start-process "trash" nil pwsh
-                                       "-NoProfile" "-NonInteractive"
-                                       "-Command" ps-script)))
-             (set-process-sentinel
-              proc
-              (lambda (proc event)
-                (when (buffer-live-p origin-buf)
-                  (with-current-buffer origin-buf
-                    (when (derived-mode-p 'dired-mode)
-                      (revert-buffer))))
-                (when (string-prefix-p "exited abnormally" event)
-                  (message "Trash failed for %s" filename)))))
-         (if (file-directory-p filename)
-             (delete-directory filename t nil)
-           (delete-file filename nil)))))
-    (t
-     ;; Linux: freedesktop.org trash via mv (dirs) or rsync (files)
-     (let* ((trash-base (or (getenv "XDG_DATA_HOME")
-                            (expand-file-name "~/.local/share")))
-            (trash-dir (expand-file-name "Trash" trash-base))
-            (files-dir (expand-file-name "files" trash-dir))
-            (info-dir (expand-file-name "info" trash-dir))
-            (name (file-name-nondirectory filename))
-            (trash-file (expand-file-name name files-dir))
-            (counter 1))
-       (make-directory files-dir t)
-       (make-directory info-dir t)
-       (while (file-exists-p trash-file)
-         (setq trash-file (expand-file-name
-                           (format "%s.%d%s" (file-name-base name) counter
-                                   (or (file-name-extension name) ""))
-                           files-dir)
-               counter (1+ counter)))
-       (let ((info-file (expand-file-name
-                         (concat (file-name-nondirectory trash-file) ".trashinfo")
-                         info-dir)))
-         (unless (file-exists-p info-file)
-           (with-temp-file info-file
-             (insert (format "[Trash Info]\nPath=%s\nDeletionDate=%s\n"
-                             filename (format-time-string "%Y-%m-%dT%H:%M:%S"))))))
-       (let* ((is-dir (file-directory-p filename))
-              (origin-buf (current-buffer))
-              (proc (if is-dir
-                        (start-process "trash" nil "mv" filename trash-file)
-                      (start-process "trash" nil "rsync" "-a" "--remove-source-files"
-                                     "--info=progress2" filename trash-file)))
-              (buf (generate-new-buffer
-                    (format "*trash %s*" (file-name-nondirectory filename)))))
-         (set-process-buffer proc buf)
-         (set-process-filter proc #'my/async-transfer--filter)
-         (push proc my/async-transfer-rsync-jobs)
-         (my/async-transfer-header-start)
-         (set-process-sentinel
-          proc
-          (lambda (proc event)
-            (setq my/async-transfer-rsync-progress nil)
-            (my/async-transfer-header-update)
-            (cond
-             ((string= event "finished\n")
-              (when (and is-dir (file-directory-p filename))
-                (ignore-errors (delete-directory filename t)))
-              (when (buffer-live-p origin-buf)
-                (with-current-buffer origin-buf
-                  (when (derived-mode-p 'dired-mode)
-                    (revert-buffer)))))
-             ((string-prefix-p "exited abnormally" event)
-              (message "Trash failed for %s" (file-name-nondirectory filename))
-              (when (buffer-live-p origin-buf)
-                (with-current-buffer origin-buf
-                  (when (derived-mode-p 'dired-mode)
-                    (revert-buffer)))))))))))))
+   ((eq system-type 'windows-nt)
+    (let ((pwsh (or (executable-find "powershell.exe")
+                    (executable-find "powershell")))
+          (origin-buf (current-buffer)))
+      (if pwsh
+          (let* ((escaped (replace-regexp-in-string "'" "''" filename))
+                 (ps-script
+                  (format
+                   "Add-Type -AssemblyName Microsoft.VisualBasic; $ErrorActionPreference='Stop'; $p='%s'; try { if (Test-Path -LiteralPath $p -PathType Container) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($p,'OnlyErrorDialogs','SendToRecycleBin') } else { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($p,'OnlyErrorDialogs','SendToRecycleBin') } } catch { Write-Error $_; exit 1 }"
+                   escaped))
+                 (proc (start-process "trash" nil pwsh
+                                      "-NoProfile" "-NonInteractive"
+                                      "-Command" ps-script)))
+            (set-process-sentinel
+             proc
+             (lambda (proc event)
+               (when (buffer-live-p origin-buf)
+                 (with-current-buffer origin-buf
+                   (when (derived-mode-p 'dired-mode)
+                     (revert-buffer))))
+               (when (string-prefix-p "exited abnormally" event)
+                 (message "Trash failed for %s" filename)))))
+        (if (file-directory-p filename)
+            (delete-directory filename t nil)
+          (delete-file filename nil)))))
+   (t
+    ;; Linux: freedesktop.org trash via mv (dirs) or rsync (files)
+    (let* ((trash-base (or (getenv "XDG_DATA_HOME")
+                           (expand-file-name "~/.local/share")))
+           (trash-dir (expand-file-name "Trash" trash-base))
+           (files-dir (expand-file-name "files" trash-dir))
+           (info-dir (expand-file-name "info" trash-dir))
+           (name (file-name-nondirectory filename))
+           (trash-file (expand-file-name name files-dir))
+           (counter 1))
+      (make-directory files-dir t)
+      (make-directory info-dir t)
+      (while (file-exists-p trash-file)
+        (setq trash-file (expand-file-name
+                          (format "%s.%d%s" (file-name-base name) counter
+                                  (or (file-name-extension name) ""))
+                          files-dir)
+              counter (1+ counter)))
+      (let ((info-file (expand-file-name
+                        (concat (file-name-nondirectory trash-file) ".trashinfo")
+                        info-dir)))
+        (unless (file-exists-p info-file)
+          (with-temp-file info-file
+            (insert (format "[Trash Info]\nPath=%s\nDeletionDate=%s\n"
+                            filename (format-time-string "%Y-%m-%dT%H:%M:%S"))))))
+      (let* ((is-dir (file-directory-p filename))
+             (origin-buf (current-buffer))
+             (proc (if is-dir
+                       (start-process "trash" nil "mv" filename trash-file)
+                     (start-process "trash" nil "rsync" "-a" "--remove-source-files"
+                                    "--info=progress2" filename trash-file)))
+             (buf (generate-new-buffer
+                   (format "*trash %s*" (file-name-nondirectory filename)))))
+        (set-process-buffer proc buf)
+        (set-process-filter proc #'my/async-transfer--filter)
+        (push proc my/async-transfer-rsync-jobs)
+        (my/async-transfer-header-start)
+        (set-process-sentinel
+         proc
+         (lambda (proc event)
+           (setq my/async-transfer-rsync-progress nil)
+           (my/async-transfer-header-update)
+           (cond
+            ((string= event "finished\n")
+             (when (and is-dir (file-directory-p filename))
+               (ignore-errors (delete-directory filename t)))
+             (when (buffer-live-p origin-buf)
+               (with-current-buffer origin-buf
+                 (when (derived-mode-p 'dired-mode)
+                   (revert-buffer)))))
+            ((string-prefix-p "exited abnormally" event)
+             (message "Trash failed for %s" (file-name-nondirectory filename))
+             (when (buffer-live-p origin-buf)
+               (with-current-buffer origin-buf
+                 (when (derived-mode-p 'dired-mode)
+                   (revert-buffer)))))))))))))
 
 (defun my/dired-async-do-delete (&optional arg)
   "Delete marked files, trashing asynchronously via rsync or PowerShell.
@@ -706,8 +693,8 @@ When `my/async-trash-enabled' is nil, delegates to the standard
                    (funcall dired-deletion-confirmer
                             (format (if arg "Permanently delete %d file%s? "
                                       "Trash %d file%s? ")
-                                (length files)
-                                (if (= 1 (length files)) "" "s")))))
+                                    (length files)
+                                    (if (= 1 (length files)) "" "s")))))
           (dolist (file files)
             (if arg
                 (progn
@@ -743,7 +730,7 @@ When `my/async-trash-enabled' is nil, delegates to the standard
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
-  '(default ((t (:family "Monospace" :foundry "ADBO" :slant normal :weight regular :height 100 :width normal))))
+ '(default ((t (:family "Monospace" :foundry "ADBO" :slant normal :weight regular :height 100 :width normal))))
  '(mode-line ((t (:height 140 :underline nil :overline nil :box nil))))
  '(mode-line-inactive ((t (:height 140 :underline nil :overline nil :box nil))))
  '(org-level-1 ((t (:inherit default :weight bold :height 1.0))))
@@ -1010,7 +997,7 @@ awk -v base=%s 'BEGIN{print \"SIZE\\tFILES\\tNAME\"}
                    (with-current-buffer buf
                      (goto-char (point-min))
                      (insert (format "Disk usage for %s (depth %d, largest first)\n\n"
-                                   current-dir depth))))))
+                                     current-dir depth))))))
               (pop-to-buffer buf))))
       (message "The current point is not a directory."))))
 
