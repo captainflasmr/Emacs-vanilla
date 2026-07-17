@@ -524,6 +524,26 @@ Now the generic completing-read stuff
 (define-key icomplete-minibuffer-map (kbd "C-p") 'icomplete-backward-completions)
 #+end_src
 
+* global-overrides
+
+Infrastructure for global keybinding overrides that take precedence over major mode maps.
+
+#+begin_src elisp
+;;
+;; -> global-overrides
+;;
+(defvar my-overrides-mode-map (make-sparse-keymap)
+  "Keymap for the `my-overrides-mode'.")
+
+(define-minor-mode my-overrides-mode
+  "Activate the `my-overrides-mode-map'."
+  :global t
+  :init-value nil
+  :keymap my-overrides-mode-map)
+
+(my-overrides-mode 1)
+#+end_src
+
 * keys-navigation-core
 
 Defines custom keybindings for navigating through files and Emacs features like tabs, dired, and scratch buffers.
@@ -1531,7 +1551,7 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (global-set-key (kbd "M-g o") #'org-goto)
 (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
-(global-set-key (kbd "M-o") #'bookmark-jump)
+(define-key my-overrides-mode-map (kbd "M-o") #'bookmark-jump)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "C-c U") #'my/disk-space-query)

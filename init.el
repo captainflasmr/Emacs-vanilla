@@ -65,6 +65,20 @@
 (define-key icomplete-minibuffer-map (kbd "C-p") 'icomplete-backward-completions)
 
 ;;
+;; -> global-overrides
+;;
+(defvar my-overrides-mode-map (make-sparse-keymap)
+  "Keymap for the `my-overrides-mode'.")
+
+(define-minor-mode my-overrides-mode
+  "Activate the `my-overrides-mode-map'."
+  :global t
+  :init-value nil
+  :keymap my-overrides-mode-map)
+
+(my-overrides-mode 1)
+
+;;
 ;; -> keys-navigation-core
 ;;
 (defvar my-jump-keymap (make-sparse-keymap))
@@ -354,7 +368,7 @@
 (global-set-key (kbd "M-g o") #'org-goto)
 (global-set-key (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (global-set-key (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
-(global-set-key (kbd "M-o") #'bookmark-jump)
+(define-key my-overrides-mode-map (kbd "M-o") #'bookmark-jump)
 (global-set-key (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (global-set-key (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
