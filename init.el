@@ -109,7 +109,6 @@
 (global-set-key (kbd "C-x C-k") 'kill-region)
 
 ;; 2. Clear out C-w to act as a prefix key instead 
-(global-unset-key (kbd "C-w"))
 (define-prefix-command 'my-window-map)
 
 ;; 3. Bind your hjkl keys (vim C-w compatibility)
@@ -384,8 +383,6 @@
 (global-set-key (kbd "M-z") #'visual-line-mode)
 (global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
 (global-set-key (kbd "M-s u") #'my/org-promote-all-headings)
-(global-unset-key (kbd "C-h h"))
-(global-unset-key (kbd "C-t"))
 (defun my/vc-dir-diff-stay ()
   "Show the file at point from vc-dir, keeping point in the vc-dir window.
 For unregistered files just display the file in another window;
@@ -2957,12 +2954,13 @@ EXCLUDE-PATTERNS is an optional list of regex patterns to exclude files/director
           (message "All operations completed!"))
       (message "No files found to process"))))
 
-(global-set-key (kbd "C-t t") 'my/picture-tag-rename-and-update)
+(define-key my-overrides-mode-map (kbd "C-t t") 'my/picture-tag-rename-and-update)
 
 ;; Set up keybindings for both dired and image-dired
 (defun my/setup-picture-keybindings ()
-  "Set up consistent keybindings for picture operations."
-  (local-set-key (kbd "C-t t") 'my/picture-tag-rename-and-update))
+   "Set up consistent keybindings for picture operations."
+   (define-key my-overrides-mode-map (kbd "C-t t") 'my/picture-tag-rename-and-update))
+
 
 ;; Apply to both modes
 (add-hook 'dired-mode-hook 'my/setup-picture-keybindings)
