@@ -85,7 +85,7 @@
 (global-set-key (kbd "M-l") my-jump-keymap)
 (define-key my-jump-keymap (kbd "=") #'tab-bar-new-tab)
 (define-key my-jump-keymap (kbd "b") (lambda () (interactive) (find-file "~/bin")))
-(define-key my-jump-keymap (kbd "d") (lambda () (interactive) (find-file (expand-file-name diary-file))))
+(define-key my-jump-keymap (kbd "d") (lambda () (interactive) (find-file "~/Downloads")))
 (define-key my-jump-keymap (kbd "e")
             (lambda ()
               (interactive)
