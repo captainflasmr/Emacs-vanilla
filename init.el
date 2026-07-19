@@ -100,9 +100,11 @@
               (find-file (if (eq system-type 'windows-nt)
                              (or (getenv "USERPROFILE") "~")
                            "~"))))
+(define-key my-jump-keymap (kbd "i") (lambda () (interactive) (find-file "~/.emacs.d/Emacs-vanilla")))
 (define-key my-jump-keymap (kbd "l") #'my/fido-recentf)
 (define-key my-jump-keymap (kbd "r") (lambda () (interactive) (switch-to-buffer "*scratch*")))
 (define-key my-jump-keymap (kbd "s") (lambda () (interactive) (find-file "~/source")))
+(define-key my-jump-keymap (kbd "y") (lambda () (interactive) (find-file "~/.emacs.d/Emacs-DIYer")))
 (define-key my-jump-keymap (kbd "-") #'tab-close)
 
 ;; 1. First, rescue 'kill-region' by binding it to something else
