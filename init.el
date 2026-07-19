@@ -367,6 +367,7 @@
 (define-key my-overrides-mode-map (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
 (define-key my-overrides-mode-map (kbd "M-a") #'save-buffer)
 (define-key my-overrides-mode-map (kbd "M-;") #'my/quick-window-jump)
+(define-key my-overrides-mode-map (kbd "M-o") #'other-window)
 
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
 (global-set-key (kbd "M-z") #'visual-line-mode)
