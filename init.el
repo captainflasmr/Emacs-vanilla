@@ -310,6 +310,7 @@
 (global-set-key (kbd "C-c b") #'my/copy-buffer-to-kill-ring)
 (global-set-key (kbd "C-c f") #'my/find-file)
 (global-set-key (kbd "C-c g") #'my/grep)
+(define-key my-overrides-mode-map (kbd "C-c o") #'bookmark-jump)
 
 ;;
 ;; -> keybinding-core
