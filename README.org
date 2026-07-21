@@ -1482,6 +1482,7 @@ Configures a sparse keymap for miscellaneous actions like evaluating expressions
 (global-set-key (kbd "M-s =") #'ediff-buffers)
 (global-set-key (kbd "M-s +") #'ediff-regions-linewise)
 (define-key my-overrides-mode-map (kbd "M-h") #'my/mark-block)
+(global-set-key (kbd "M-c") #'occur)
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
 (global-set-key (kbd "C-c b") #'my/copy-buffer-to-kill-ring)
 (global-set-key (kbd "C-c f") #'my/find-file)
