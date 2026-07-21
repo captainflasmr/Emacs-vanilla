@@ -3282,6 +3282,22 @@ active or in WDired."
   :lighter nil
   :keymap my-dired-clipboard-mode-map)
 
+(defun my/dired-sort-by-size ()
+  (interactive)
+  (dired-sort-other "-alGghS"))
+
+(defun my/dired-sort-by-date ()
+  (interactive)
+  (dired-sort-other "-alGght"))
+
+(defun my/dired-sort-by-name ()
+  (interactive)
+  (dired-sort-other "-alGgh"))
+
+(defun my/dired-sort-by-extension ()
+  (interactive)
+  (dired-sort-other "-alGghX"))
+
 (with-eval-after-load 'dired
   (add-hook 'dired-mode-hook (lambda () (my-dired-clipboard-mode 1)))
   (define-key dired-mode-map (kbd "D") #'my/dired-async-do-delete)
@@ -3295,7 +3311,11 @@ active or in WDired."
   (define-key dired-mode-map (kbd "j") #'dired-next-line)
   (define-key dired-mode-map (kbd "k") #'dired-previous-line)
   (define-key dired-mode-map (kbd "l") #'dired-find-file)
-  (define-key dired-mode-map (kbd "h") #'dired-up-directory))
+  (define-key dired-mode-map (kbd "h") #'dired-up-directory)
+  (define-key dired-mode-map (kbd "3") #'my/dired-sort-by-size)
+  (define-key dired-mode-map (kbd "4") #'my/dired-sort-by-date)
+  (define-key dired-mode-map (kbd "5") #'my/dired-sort-by-name)
+  (define-key dired-mode-map (kbd "6") #'my/dired-sort-by-extension))
 
 (defun my-dired-switch-to-destination ()
   "Switch to the destination window after copying in Dired."
