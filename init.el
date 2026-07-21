@@ -306,7 +306,16 @@
 (global-set-key (kbd "M-s =") #'ediff-buffers)
 (global-set-key (kbd "M-s +") #'ediff-regions-linewise)
 (define-key my-overrides-mode-map (kbd "M-h") #'my/mark-block)
+(defun my/occur-from-isearch (&optional nlines)
+  "Run `occur' with the current isearch string, using global `case-fold-search'."
+  (interactive "P")
+  (occur (if isearch-regexp
+             isearch-string
+           (regexp-quote isearch-string))
+         nlines))
 (global-set-key (kbd "M-c") #'occur)
+(with-eval-after-load 'isearch
+  (define-key isearch-mode-map (kbd "M-c") #'my/occur-from-isearch))
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
 (global-set-key (kbd "C-c b") #'my/copy-buffer-to-kill-ring)
 (global-set-key (kbd "C-c f") #'my/find-file)
