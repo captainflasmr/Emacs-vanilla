@@ -134,6 +134,7 @@
 (define-key my-window-map (kbd "q") 'delete-window)
 (define-key my-window-map (kbd "c") 'delete-window)
 (define-key my-window-map (kbd "o") 'delete-other-windows)
+(define-key my-overrides-mode-map (kbd "C-c c") 'delete-other-windows)
 
 ;; 6. Cycle
 (define-key my-window-map (kbd "w") 'other-window)
