@@ -3994,6 +3994,32 @@ Curates configurations specific to Linux, making adjustments for paths, fonts, a
 
 (import-shell-environment "PATH")
 
+;;
+;; -> ssh-agent-core
+;;
+(defconst my/ssh-auth-sock
+  (let ((gcr     (format "/run/user/%d/gcr/ssh" (user-uid)))
+        (keyring (format "/run/user/%d/keyring/ssh" (user-uid))))
+    (cond ((file-exists-p gcr)     gcr)
+          ((file-exists-p keyring) keyring)))
+  "Discovered SSH agent socket for the current user, or nil.
+
+When sway launches Emacs directly, SSH_AUTH_SOCK is not inherited, so
+`git push' from vc-dir/magit cannot reach the gcr agent that already
+holds the key and fails with
+`ssh_askpass: exec(/usr/lib/ssh/ssh-askpass): No such file or directory'.")
+
+(when (and my/ssh-auth-sock
+           (not (getenv "SSH_AUTH_SOCK")))
+  (setenv "SSH_AUTH_SOCK" my/ssh-auth-sock))
+
+(unless (getenv "SSH_ASKPASS")
+  (let ((askpass "/usr/bin/ksshaskpass"))
+    (when (file-exists-p askpass)
+      (setenv "SSH_ASKPASS" askpass)
+      (unless (getenv "SSH_ASKPASS_REQUIRE")
+        (setenv "SSH_ASKPASS_REQUIRE" "prefer")))))
+
 ;; org babel
 (require 'org)
 (org-babel-do-load-languages
