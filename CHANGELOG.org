@@ -10,6 +10,14 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-07-23>
+
+Add swaywm-style tiling split and restore ace-style window jump
+
+- `my/quick-window-jump` is restored to ace-window-style jumping (now on `M-a`); with a single window it messages instead of splitting. Window jumping across many windows still uses `M-o` (`other-window`).
+- New `my/tiling-split` (bound on `M-;`): a swaywm-style dynamic tiling split whose direction follows the selected window's geometry rather than blind alternation -- the frame grows as vertical columns, so an empty frame splits side-by-side, a full-height column stacks top-to-bottom, and a shorter pane starts a new column to its right. All live windows are rebalanced after each split.
+- `save-buffer` is no longer on an `M-` key; use `C-x C-s`.
+
 ** <2026-06-26>
 
 Add vc-dir integration for git skip-worktree

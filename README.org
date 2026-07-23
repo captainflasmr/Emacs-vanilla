@@ -588,40 +588,7 @@ Defines custom keybindings for navigating through files and Emacs features like 
 ;; 1. First, rescue 'kill-region' by binding it to something else
 (global-set-key (kbd "C-x C-k") 'kill-region)
 
-;; 2. Clear out C-w to act as a prefix key instead 
-(define-prefix-command 'my-window-map)
-
-;; 3. Bind your hjkl keys (vim C-w compatibility)
-(define-key my-window-map (kbd "h") 'windmove-left)
-(define-key my-window-map (kbd "j") 'windmove-down)
-(define-key my-window-map (kbd "k") 'windmove-up)
-(define-key my-window-map (kbd "l") 'windmove-right)
-
-;; 4. Splits
-(define-key my-window-map (kbd "s") 'split-window-below)
-(define-key my-window-map (kbd "v") 'split-window-right)
-
-;; 5. Close / other
-(define-key my-window-map (kbd "q") 'delete-window)
-(define-key my-window-map (kbd "c") 'delete-window)
-(define-key my-window-map (kbd "o") 'delete-other-windows)
 (define-key my-overrides-mode-map (kbd "C-c c") 'delete-other-windows)
-
-;; 6. Cycle
-(define-key my-window-map (kbd "w") 'other-window)
-
-;; 7. Resize
-(define-key my-window-map (kbd "=") 'balance-windows)
-(define-key my-window-map (kbd "+") 'enlarge-window)
-(define-key my-window-map (kbd "-") 'shrink-window)
-(define-key my-window-map (kbd ">") 'enlarge-window-horizontally)
-(define-key my-window-map (kbd "<") 'shrink-window-horizontally)
-
-;; 8. Move window position
-(define-key my-window-map (kbd "H") 'windmove-swap-states-left)
-(define-key my-window-map (kbd "J") 'windmove-swap-states-down)
-(define-key my-window-map (kbd "K") 'windmove-swap-states-up)
-(define-key my-window-map (kbd "L") 'windmove-swap-states-right)
 
 #+end_src
 
@@ -1559,15 +1526,15 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (define-key my-overrides-mode-map (kbd "M-e") #'my/dired-jump-or-up)
 (global-set-key (kbd "M-g i") #'imenu)
 (global-set-key (kbd "M-g o") #'org-goto)
-(define-key my-overrides-mode-map (kbd "C-w") 'my-window-map)
+
 (define-key my-overrides-mode-map (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (define-key my-overrides-mode-map (kbd "M-i") #'tab-bar-switch-to-next-tab)
 (define-key my-overrides-mode-map (kbd "C-x [") #'beginning-of-buffer)
 (define-key my-overrides-mode-map (kbd "C-x ]") #'end-of-buffer)
 (define-key my-overrides-mode-map (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (define-key my-overrides-mode-map (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
-(define-key my-overrides-mode-map (kbd "M-a") #'save-buffer)
-(define-key my-overrides-mode-map (kbd "M-;") #'my/quick-window-jump)
+(define-key my-overrides-mode-map (kbd "M-a") #'my/quick-window-jump)
+(define-key my-overrides-mode-map (kbd "M-;") #'my/tiling-split)
 (define-key my-overrides-mode-map (kbd "M-o") #'other-window)
 
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
