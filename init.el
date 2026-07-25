@@ -329,7 +329,6 @@
 (global-set-key (kbd "C-x x g") #'revert-buffer)
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
-(define-key my-overrides-mode-map (kbd "M-0") 'delete-window)
 (define-key my-overrides-mode-map (kbd "M-1") #'delete-other-windows)
 (define-key my-overrides-mode-map (kbd "M-2") #'split-window-vertically)
 (define-key my-overrides-mode-map (kbd "M-3") #'split-window-horizontally)
@@ -352,8 +351,8 @@
 (define-key my-overrides-mode-map (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
 (define-key my-overrides-mode-map (kbd "M-a") #'my/quick-window-jump)
 (define-key my-overrides-mode-map (kbd "M-;") #'my/tiling-split)
-(define-key my-overrides-mode-map (kbd "C-o") (lambda () (interactive) (other-window -1)))
-(define-key my-overrides-mode-map (kbd "M-o") #'other-window)
+(define-key my-overrides-mode-map (kbd "M-n") #'other-window)
+(define-key my-overrides-mode-map (kbd "M-p") (lambda () (interactive) (other-window -1)))
 (define-key my-overrides-mode-map (kbd "C-w") #'save-buffer)
 
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
