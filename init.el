@@ -329,9 +329,6 @@
 (global-set-key (kbd "C-x x g") #'revert-buffer)
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
-(define-key my-overrides-mode-map (kbd "M-1") #'delete-other-windows)
-(define-key my-overrides-mode-map (kbd "M-2") #'split-window-vertically)
-(define-key my-overrides-mode-map (kbd "M-3") #'split-window-horizontally)
 (setq tab-bar-select-tab-modifiers '(control))
 (defun my/dired-jump-or-up ()
   "If in Dired, go up a directory; otherwise dired-jump for current buffer."
