@@ -117,8 +117,6 @@
 ;; 1. First, rescue 'kill-region' by binding it to something else
 (global-set-key (kbd "C-x C-k") 'kill-region)
 
-(define-key my-overrides-mode-map (kbd "C-c c") 'delete-other-windows)
-
 ;;
 ;; -> keys-visual-core
 ;;
@@ -346,7 +344,8 @@
 (define-key my-overrides-mode-map (kbd "C-x ]") #'end-of-buffer)
 (define-key my-overrides-mode-map (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (define-key my-overrides-mode-map (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
-(define-key my-overrides-mode-map (kbd "M-a") #'my/quick-window-jump)
+(define-key my-overrides-mode-map (kbd "M-a") #'delete-other-windows)
+(define-key my-overrides-mode-map (kbd "M-o") #'my/quick-window-jump)
 (define-key my-overrides-mode-map (kbd "M-;") #'my/tiling-split)
 (define-key my-overrides-mode-map (kbd "M-n") #'other-window)
 (define-key my-overrides-mode-map (kbd "M-p") (lambda () (interactive) (other-window -1)))
