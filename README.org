@@ -1561,6 +1561,8 @@ otherwise run `vc-diff'."
   (vc-dir default-directory))
 (with-eval-after-load 'dired
   (define-key dired-mode-map (kbd "C-x v D") #'my/vc-dir-here))
+(with-eval-after-load 'project
+  (define-key project-prefix-map (kbd "V") #'my/vc-dir-here))
 (with-eval-after-load 'diff-mode
   (define-key diff-mode-map (kbd "M-j") #'nil)
   (define-key diff-mode-map (kbd "M-k") #'nil))
