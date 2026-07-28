@@ -347,7 +347,6 @@
 (define-key my-overrides-mode-map (kbd "M-a") #'delete-other-windows)
 (define-key my-overrides-mode-map (kbd "M-o") #'my/quick-window-jump)
 (define-key my-overrides-mode-map (kbd "M-;") (lambda () (interactive) (select-window (split-window-horizontally))))
-(define-key my-overrides-mode-map (kbd "M-q") #'delete-window)
 (define-key my-overrides-mode-map (kbd "M-m") (lambda () (interactive) (select-window (split-window-vertically))))
 (define-key my-overrides-mode-map (kbd "M-n") #'other-window)
 (define-key my-overrides-mode-map (kbd "M-p") (lambda () (interactive) (other-window -1)))
