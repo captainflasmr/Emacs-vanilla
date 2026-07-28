@@ -1724,6 +1724,17 @@ Turns on various modes like `global-font-lock-mode` for syntax highlighting and 
 (repeat-mode 1)
 #+end_src
 
+* jsonc-core
+
+Associates =.jsonc= files (JSON with comments, used by VS Code and many modern tools) with Emacs's built-in =js-json-mode=, which provides syntax highlighting and indentation for JSON. No package is required: =js-json-mode= is built in and autoloaded since Emacs 27.1.
+
+#+begin_src elisp
+;;
+;; -> jsonc-core
+;;
+(add-to-list 'auto-mode-alist '("\\.jsonc\\'" . js-json-mode))
+#+end_src
+
 * bell-core
 
 Suppresses the auditory bell function in Emacs and opts for a visible bell or completely ignores bell triggers, improving the user interface experience during invalid operations.

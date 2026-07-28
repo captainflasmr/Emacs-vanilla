@@ -527,6 +527,11 @@ buffer's file otherwise.  No-op if the bit is not set."
 (repeat-mode 1)
 
 ;;
+;; -> jsonc-core
+;;
+(add-to-list 'auto-mode-alist '("\\.jsonc\\'" . js-json-mode))
+
+;;
 ;; -> bell-core
 ;;
 (setq visible-bell t)
