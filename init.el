@@ -719,7 +719,8 @@ When `my/async-trash-enabled' is nil, delegates to the standard
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:family "Monospace" :foundry "ADBO" :slant normal :weight regular :height 100 :width normal))))
+ '(default ((t (:family "Monospace" :foundry "ADBO" :slant normal :weight regular :height 105 :width normal))))
+ '(variable-pitch ((t (:family "Sans" :height 115))))
  '(mode-line ((t (:height 140 :underline nil :overline nil :box nil))))
  '(mode-line-inactive ((t (:height 140 :underline nil :overline nil :box nil))))
  '(org-level-1 ((t (:inherit default :weight bold :height 1.0))))
