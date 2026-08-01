@@ -527,6 +527,30 @@ buffer's file otherwise.  No-op if the bit is not set."
 (repeat-mode 1)
 
 ;;
+;; -> tab-bar-format
+;;
+;; Uniform, small, fixed-width tab-bar tabs that don't autofit.
+;; Tweak `tab-bar-tab-name-truncated-max` to change the tab width.
+(setq tab-bar-auto-width nil)
+(setq tab-bar-tab-name-truncated-max 14)
+
+(defun my/tab-bar-tab-name-format-fixed (name _tab _i)
+  "Truncate and right-pad NAME to `tab-bar-tab-name-truncated-max'.
+This makes every tab bar tab the same uniform width."
+  (let* ((width tab-bar-tab-name-truncated-max)
+         (ell (or tab-bar-tab-name-ellipsis "…"))
+         (trunc (if (> (string-width name) width)
+                    (truncate-string-to-width name width nil nil ell)
+                  name)))
+    (concat trunc
+            (make-string (max 0 (- width (string-width trunc))) ?\s))))
+
+(add-hook 'tab-bar-tab-name-format-functions
+          #'my/tab-bar-tab-name-format-fixed -90)
+
+(force-mode-line-update t)
+
+;;
 ;; -> jsonc-core
 ;;
 (add-to-list 'auto-mode-alist '("\\.jsonc\\'" . js-json-mode))

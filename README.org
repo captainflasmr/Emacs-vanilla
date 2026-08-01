@@ -1724,6 +1724,36 @@ Turns on various modes like `global-font-lock-mode` for syntax highlighting and 
 (repeat-mode 1)
 #+end_src
 
+* tab-bar-format
+
+Configures the tab bar to display uniform, small, fixed-width tabs that don't autofit. Sets =tab-bar-auto-width= to nil to prevent tabs from auto-resizing to fill the bar, and defines a custom format function that truncates and right-pads each tab name to =tab-bar-tab-name-truncated-max= so every tab is the same width. Tweak =tab-bar-tab-name-truncated-max= to change the tab width.
+
+#+begin_src elisp
+;;
+;; -> tab-bar-format
+;;
+;; Uniform, small, fixed-width tab-bar tabs that don't autofit.
+;; Tweak `tab-bar-tab-name-truncated-max` to change the tab width.
+(setq tab-bar-auto-width nil)
+(setq tab-bar-tab-name-truncated-max 14)
+
+(defun my/tab-bar-tab-name-format-fixed (name _tab _i)
+  "Truncate and right-pad NAME to `tab-bar-tab-name-truncated-max'.
+This makes every tab bar tab the same uniform width."
+  (let* ((width tab-bar-tab-name-truncated-max)
+         (ell (or tab-bar-tab-name-ellipsis "…"))
+         (trunc (if (> (string-width name) width)
+                    (truncate-string-to-width name width nil nil ell)
+                  name)))
+    (concat trunc
+            (make-string (max 0 (- width (string-width trunc))) ?\s))))
+
+(add-hook 'tab-bar-tab-name-format-functions
+          #'my/tab-bar-tab-name-format-fixed -90)
+
+(force-mode-line-update t)
+#+end_src
+
 * jsonc-core
 
 Associates =.jsonc= files (JSON with comments, used by VS Code and many modern tools) with Emacs's built-in =js-json-mode=, which provides syntax highlighting and indentation for JSON. No package is required: =js-json-mode= is built in and autoloaded since Emacs 27.1.
