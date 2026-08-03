@@ -1449,6 +1449,93 @@ On Windows the command is run through bash (from PortableGit) since
 (setq dired-deletion-confirmer (lambda (_x) t))
 (setq dired-recursive-deletes 'always)
 
+(defvar my/terminal-candidates
+  '(("kitty" . "-e")
+    ("alacritty" . "-e")
+    ("wezterm" . "-e")
+    ("foot" . "-e")
+    ("gnome-terminal" . "--")
+    ("konsole" . "-e")
+    ("xfce4-terminal" . "-e")
+    ("mate-terminal" . "-e")
+    ("lxterminal" . "-e")
+    ("terminator" . "-e")
+    ("tilix" . "-e")
+    ("x-terminal-emulator" . "-e")
+    ("urxvt" . "-e")
+    ("rxvt" . "-e")
+    ("uxterm" . "-e")
+    ("xterm" . "-e")
+    ("sakura" . "-e"))
+  "Known terminal emulators, each with the flag that runs a command.")
+
+(defun my/terminal-for-desktop (desktop)
+  "Return a terminal emulator hinted by the XDG desktop name DESKTOP."
+  (pcase desktop
+    ((pred (string-match-p "GNOME")) "gnome-terminal")
+    ((pred (string-match-p "Cinnamon")) "gnome-terminal")
+    ((pred (string-match-p "KDE")) "konsole")
+    ((pred (string-match-p "XFCE")) "xfce4-terminal")
+    ((pred (string-match-p "MATE")) "mate-terminal")
+    ((pred (string-match-p "LXQt")) "lxterminal")
+    ((pred (string-match-p "LXDE")) "lxterminal")
+    (_ nil)))
+
+(defun my/terminal-posix-args (dir)
+  "Return start-process args to open DIR in a POSIX terminal, or nil.
+Checks xdg-terminal-exec, $TERMINAL, $XDG_CURRENT_DESKTOP hints, then
+`my/terminal-candidates' via `executable-find'."
+  (let ((shell-cmd (format "cd %s && exec \"$SHELL\""
+                           (shell-quote-argument dir))))
+    (or
+     (when-let ((xdg (executable-find "xdg-terminal-exec")))
+       (list xdg "--" "sh" "-lc" shell-cmd))
+     (when-let ((tname (getenv "TERMINAL"))
+                (path (executable-find tname)))
+       (list path "-e" "sh" "-lc" shell-cmd))
+     (when-let* ((desk (getenv "XDG_CURRENT_DESKTOP"))
+                 (name (my/terminal-for-desktop desk))
+                 (path (executable-find name)))
+       (list path "-e" "sh" "-lc" shell-cmd))
+     (seq-some (lambda (cand)
+                 (when-let ((path (executable-find (car cand))))
+                   (list path (cdr cand) "sh" "-lc" shell-cmd)))
+               my/terminal-candidates))))
+
+(defun my/terminal-windows-args (dir)
+  "Return start-process args to open DIR in a Windows terminal, or nil.
+Checks wt (Windows Terminal), powershell, then cmd.exe."
+  (or (when-let ((wt (executable-find "wt.exe")))
+        (list wt "-d" dir))
+      (when-let ((pwsh (executable-find "powershell.exe")))
+        (list pwsh "-NoExit" "-Command"
+              (format "Set-Location -LiteralPath %s"
+                      (shell-quote-argument dir))))
+      (when-let ((cmd (executable-find "cmd.exe")))
+        (list cmd "/K" (format "cd /d %s" (shell-quote-argument dir))))))
+
+(defun my/terminal-macos-args (dir)
+  "Return start-process args to open DIR in Terminal.app, or nil."
+  (when-let ((open (executable-find "open")))
+    (list open "-a" "Terminal" dir)))
+
+(defun my/dired-open-terminal ()
+  "Open the current directory in an external terminal.
+Honors $TERMINAL, then XDG hints (xdg-terminal-exec, XDG_CURRENT_DESKTOP),
+then common emulators via `executable-find'.  Supports Windows and macOS.
+Runs the terminal detached so Emacs never blocks on it."
+  (interactive)
+  (let* ((dir (if (derived-mode-p 'dired-mode)
+                  (dired-current-directory)
+                default-directory))
+         (args (or (pcase system-type
+                     ((or 'windows-nt 'ms-dos) (my/terminal-windows-args dir))
+                     ('darwin (my/terminal-macos-args dir))
+                     (_ (my/terminal-posix-args dir))))))
+    (if args
+        (apply #'start-process "my-external-terminal" nil args)
+      (user-error "No external terminal found (set $TERMINAL or install a terminal emulator)"))))
+
 ;;
 ;; -> async-transfer-header-line
 ;;
@@ -2028,7 +2115,8 @@ active or in WDired."
   (define-key dired-mode-map (kbd "3") #'my/dired-sort-by-size)
   (define-key dired-mode-map (kbd "4") #'my/dired-sort-by-date)
   (define-key dired-mode-map (kbd "5") #'my/dired-sort-by-name)
-  (define-key dired-mode-map (kbd "6") #'my/dired-sort-by-extension))
+  (define-key dired-mode-map (kbd "6") #'my/dired-sort-by-extension)
+  (define-key dired-mode-map (kbd "C-c t") #'my/dired-open-terminal))
 
 (defun my-dired-switch-to-destination ()
   "Switch to the destination window after copying in Dired."
