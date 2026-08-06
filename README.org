@@ -1527,6 +1527,8 @@ Demonstrates a broad set of global keybindings for common actions like saving bu
 (define-key my-overrides-mode-map (kbd "C-x ]") #'end-of-buffer)
 (define-key my-overrides-mode-map (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (define-key my-overrides-mode-map (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
+(define-key my-overrides-mode-map (kbd "M-J") #'(lambda ()(interactive)(scroll-up nil)))
+(define-key my-overrides-mode-map (kbd "M-K") #'(lambda ()(interactive)(scroll-down nil)))
 (define-key my-overrides-mode-map (kbd "M-a") #'delete-other-windows)
 (define-key my-overrides-mode-map (kbd "M-o") #'my/quick-window-jump)
 (define-key my-overrides-mode-map (kbd "M-;") (lambda () (interactive) (select-window (split-window-horizontally))))
