@@ -291,19 +291,6 @@
 ;;
 ;; -> keybinding-core
 ;;
-(put 'windmove-left  'repeat-map 'windmove-repeat-map)
-(put 'windmove-right 'repeat-map 'windmove-repeat-map)
-(put 'windmove-up    'repeat-map 'windmove-repeat-map)
-(put 'windmove-down  'repeat-map 'windmove-repeat-map)
-
-(defvar windmove-repeat-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "h") #'windmove-left)
-    (define-key map (kbd "j") #'windmove-down)
-    (define-key map (kbd "k") #'windmove-up)
-    (define-key map (kbd "l") #'windmove-right)
-    map))
-
 (defun my/previous-window ()
   "Select the previous window in the cyclic window order."
   (interactive)
@@ -312,7 +299,9 @@
 (defvar my/window-nav-repeat-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "n") #'other-window)
+    (define-key map (kbd "o") #'other-window)
     (define-key map (kbd "p") #'my/previous-window)
+    (define-key map (kbd "C-x o") #'other-window)
     map))
 
 (put 'other-window 'repeat-map 'my/window-nav-repeat-map)
