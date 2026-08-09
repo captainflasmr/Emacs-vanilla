@@ -304,6 +304,20 @@
     (define-key map (kbd "l") #'windmove-right)
     map))
 
+(defun my/previous-window ()
+  "Select the previous window in the cyclic window order."
+  (interactive)
+  (other-window -1))
+
+(defvar my/window-nav-repeat-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "n") #'other-window)
+    (define-key map (kbd "p") #'my/previous-window)
+    map))
+
+(put 'other-window 'repeat-map 'my/window-nav-repeat-map)
+(put 'my/previous-window 'repeat-map 'my/window-nav-repeat-map)
+
 (define-key my-overrides-mode-map (kbd "C-M-l") (lambda () (interactive)
                               (my/adaptive-resize t -2)))
 (define-key my-overrides-mode-map (kbd "C-M-h") (lambda () (interactive)
@@ -352,7 +366,7 @@
 (define-key my-overrides-mode-map (kbd "M-'") #'delete-window)
 (define-key my-overrides-mode-map (kbd "M-m") (lambda () (interactive) (select-window (split-window-vertically))))
 (define-key my-overrides-mode-map (kbd "M-n") #'other-window)
-(define-key my-overrides-mode-map (kbd "M-p") (lambda () (interactive) (other-window -1)))
+(define-key my-overrides-mode-map (kbd "M-p") #'my/previous-window)
 (define-key my-overrides-mode-map (kbd "C-w") #'save-buffer)
 
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
