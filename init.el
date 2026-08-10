@@ -301,6 +301,8 @@
     (define-key map (kbd "n") #'other-window)
     (define-key map (kbd "o") #'other-window)
     (define-key map (kbd "p") #'my/previous-window)
+    (define-key map (kbd "M-n") #'other-window)
+    (define-key map (kbd "M-p") #'my/previous-window)
     (define-key map (kbd "C-x o") #'other-window)
     map))
 
