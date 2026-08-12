@@ -79,6 +79,49 @@
 (my-overrides-mode 1)
 
 ;;
+;; -> fill
+;;
+(defun my/fill-org-protected-blocks ()
+  "Return (BEG . END) pairs of literal blocks in the current Org buffer.
+Includes src, example, export, verbatim, comment and fixed-width
+blocks — content that must never be touched by filling."
+  (let (regions)
+    (org-element-map (org-element-parse-buffer)
+        '(src-block example-block export-block verbatim-block
+                    comment-block fixed-width)
+      (lambda (el)
+        (push (cons (org-element-property :begin el)
+                    (org-element-property :end el))
+              regions)))
+    (sort regions (lambda (a b) (< (car a) (car b))))))
+
+(defun my/fill-individual-paragraphs-buffer ()
+  "Fill every paragraph in the buffer at the current `fill-column'.
+In Org buffers, literal blocks (src, example, export, verbatim,
+comment, fixed-width) are left untouched; only surrounding paragraphs
+are filled.  Elsewhere the whole buffer is filled.
+Set `fill-column' (e.g. to 999 to collapse each paragraph to one line),
+then run this to fill the whole document in one keystroke."
+  (interactive)
+  (save-excursion
+    (save-restriction
+      (widen)
+      (if (derived-mode-p 'org-mode)
+          (let ((beg (point-min)))
+            (dolist (blk (my/fill-org-protected-blocks))
+              (let ((b (car blk))
+                    (e (cdr blk)))
+                (when (> b beg)
+                  (fill-individual-paragraphs beg b))
+                (setq beg e)))
+            (when (> (point-max) beg)
+              (fill-individual-paragraphs beg (point-max))))
+        (fill-individual-paragraphs (point-min) (point-max))))))
+
+(define-key my-overrides-mode-map (kbd "C-x M-q")
+            #'my/fill-individual-paragraphs-buffer)
+
+;;
 ;; -> keys-navigation-core
 ;;
 (defvar my-jump-keymap (make-sparse-keymap))

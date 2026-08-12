@@ -544,6 +544,57 @@ Infrastructure for global keybinding overrides that take precedence over major m
 (my-overrides-mode 1)
 #+end_src
 
+* fill
+
+Whole-buffer paragraph filling. =C-x M-q= fills every paragraph in the buffer at the current =fill-column= — set the column (e.g. to 999 to collapse each paragraph onto a single line) and fill the whole document in one keystroke. Unlike =M-q= (=fill-paragraph=, one paragraph) this uses =fill-individual-paragraphs=, so each change of indentation starts a new paragraph and keeps its own indentation.
+
+In Org buffers the literal blocks (=src=, =example=, =export=, =verbatim=, =comment=, fixed-width) are protected: their contents are left untouched and only the surrounding paragraphs are filled.
+
+#+begin_src elisp
+;;
+;; -> fill
+;;
+(defun my/fill-org-protected-blocks ()
+  "Return (BEG . END) pairs of literal blocks in the current Org buffer.
+Includes src, example, export, verbatim, comment and fixed-width
+blocks — content that must never be touched by filling."
+  (let (regions)
+    (org-element-map (org-element-parse-buffer)
+        '(src-block example-block export-block verbatim-block
+                    comment-block fixed-width)
+      (lambda (el)
+        (push (cons (org-element-property :begin el)
+                    (org-element-property :end el))
+              regions)))
+    (sort regions (lambda (a b) (< (car a) (car b))))))
+
+(defun my/fill-individual-paragraphs-buffer ()
+  "Fill every paragraph in the buffer at the current `fill-column'.
+In Org buffers, literal blocks (src, example, export, verbatim,
+comment, fixed-width) are left untouched; only surrounding paragraphs
+are filled.  Elsewhere the whole buffer is filled.
+Set `fill-column' (e.g. to 999 to collapse each paragraph to one line),
+then run this to fill the whole document in one keystroke."
+  (interactive)
+  (save-excursion
+    (save-restriction
+      (widen)
+      (if (derived-mode-p 'org-mode)
+          (let ((beg (point-min)))
+            (dolist (blk (my/fill-org-protected-blocks))
+              (let ((b (car blk))
+                    (e (cdr blk)))
+                (when (> b beg)
+                  (fill-individual-paragraphs beg b))
+                (setq beg e)))
+            (when (> (point-max) beg)
+              (fill-individual-paragraphs beg (point-max))))
+        (fill-individual-paragraphs (point-min) (point-max))))))
+
+(define-key my-overrides-mode-map (kbd "C-x M-q")
+            #'my/fill-individual-paragraphs-buffer)
+#+end_src
+
 * keys-navigation-core
 
 Defines custom keybindings for navigating through files and Emacs features like tabs, dired, and scratch buffers.
@@ -728,13 +779,9 @@ Displays eldoc documentation in a child frame positioned near point.  Supports s
 
 * container-core
 
-Container management UI for Docker and Podman.  Provides tabulated list views
-for containers, images, and volumes, plus a transient menu for compose
-operations and container actions.  Inspired by emacs-solo-container.
+Container management UI for Docker and Podman.  Provides tabulated list views for containers, images, and volumes, plus a transient menu for compose operations and container actions.  Inspired by emacs-solo-container.
 
-Keybindings in list buffers: =n/p= navigate, =m= mark, =M= unmark all,
-=s/S/r= stop/start/restart, =D= remove, =o= logs, =e= shell, =w= copy ID,
-=g= refresh, =i= images, =v= volumes, =?= menu.
+Keybindings in list buffers: =n/p= navigate, =m= mark, =M= unmark all, =s/S/r= stop/start/restart, =D= remove, =o= logs, =e= shell, =w= copy ID, =g= refresh, =i= images, =v= volumes, =?= menu.
 
 #+begin_src elisp :tangle no
 ;;
