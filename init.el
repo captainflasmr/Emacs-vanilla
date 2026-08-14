@@ -95,11 +95,33 @@ blocks — content that must never be touched by filling."
               regions)))
     (sort regions (lambda (a b) (< (car a) (car b))))))
 
+(defun my/fill-org-protected-p (pos blocks)
+  "Return non-nil if POS lies within one of BLOCKS ((BEG . END) ...)."
+  (catch 'found
+    (dolist (b blocks)
+      (when (and (>= pos (car b)) (< pos (cdr b)))
+        (throw 'found t)))))
+
+(defun my/fill-org-paragraphs ()
+  "Fill every Org paragraph element, leaving literal blocks alone.
+Paragraph elements include list items, so wrapped item text is
+joined while the items themselves stay separate.  Fills from the
+end of the buffer backwards so earlier element positions remain
+valid as lines get joined."
+  (let ((blocks (my/fill-org-protected-blocks))
+        (paras (org-element-map (org-element-parse-buffer) 'paragraph
+                (lambda (el)
+                  (cons (org-element-property :begin el)
+                        (org-element-property :end el))))))
+    (dolist (p (nreverse paras))
+      (unless (my/fill-org-protected-p (car p) blocks)
+        (fill-region-as-paragraph (car p) (cdr p))))))
+
 (defun my/fill-individual-paragraphs-buffer ()
   "Fill every paragraph in the buffer at the current `fill-column'.
 In Org buffers, literal blocks (src, example, export, verbatim,
-comment, fixed-width) are left untouched; only surrounding paragraphs
-are filled.  Elsewhere the whole buffer is filled.
+comment, fixed-width) are left untouched and list items are filled
+as their own paragraphs; elsewhere the whole buffer is filled.
 Set `fill-column' (e.g. to 999 to collapse each paragraph to one line),
 then run this to fill the whole document in one keystroke."
   (interactive)
@@ -107,15 +129,7 @@ then run this to fill the whole document in one keystroke."
     (save-restriction
       (widen)
       (if (derived-mode-p 'org-mode)
-          (let ((beg (point-min)))
-            (dolist (blk (my/fill-org-protected-blocks))
-              (let ((b (car blk))
-                    (e (cdr blk)))
-                (when (> b beg)
-                  (fill-individual-paragraphs beg b))
-                (setq beg e)))
-            (when (> (point-max) beg)
-              (fill-individual-paragraphs beg (point-max))))
+          (my/fill-org-paragraphs)
         (fill-individual-paragraphs (point-min) (point-max))))))
 
 (define-key my-overrides-mode-map (kbd "C-x M-q")
@@ -2805,6 +2819,8 @@ EXCLUDE-PATTERNS is an optional list of regex patterns to exclude files/director
                            "\\.jpg$" "\\.jpeg$" "\\.png$" "\\.gif$" "\\.pdf$" "\\.zip$" "\\.csproj" "\\.gitignore"
                            "\\.tar$" "\\.gz$" "\\.exe$" "\\.dll$" "\\.class$")))
     (setq exclude-patterns (append default-exclude exclude-patterns))
+    (push (regexp-quote (file-relative-name (expand-file-name output-file) root-dir))
+          exclude-patterns)
     
     (with-temp-buffer
       (insert (format "=== PROJECT CONCATENATION ===\n"))
@@ -2839,18 +2855,21 @@ EXCLUDE-PATTERNS is an optional list of regex patterns to exclude files/director
   "Get all text files in DIR recursively, excluding files matching EXCLUDE-PATTERNS."
   (let ((files '()))
     (dolist (file (directory-files-recursively dir ".*" nil))
-      (unless (concatenate-project-files--should-exclude-p file exclude-patterns)
+      (unless (concatenate-project-files--should-exclude-p file exclude-patterns dir)
         (when (concatenate-project-files--is-text-file-p file)
           (push file files))))
     (sort files 'string<)))
 
-(defun concatenate-project-files--should-exclude-p (file exclude-patterns)
-  "Check if FILE should be excluded based on EXCLUDE-PATTERNS."
-  (catch 'excluded
-    (dolist (pattern exclude-patterns)
-      (when (string-match pattern file)
-        (throw 'excluded t)))
-    nil))
+(defun concatenate-project-files--should-exclude-p (file exclude-patterns root-dir)
+  "Check if FILE should be excluded based on EXCLUDE-PATTERNS.
+
+Patterns are matched against FILE relative to ROOT-DIR."
+  (let ((rel (file-relative-name file root-dir)))
+    (catch 'excluded
+      (dolist (pattern exclude-patterns)
+        (when (string-match pattern rel)
+          (throw 'excluded t)))
+      nil)))
 
 (defun concatenate-project-files--is-text-file-p (file)
   "Check if FILE is likely a text file by examining its content."
@@ -2872,7 +2891,12 @@ EXCLUDE-PATTERNS is an optional list of regex patterns to exclude files/director
     (concatenate-project-files git-root output-file gitignore-patterns)))
 
 (defun concatenate-project-files--parse-gitignore (gitignore-file)
-  "Parse .gitignore file and return list of regex patterns."
+  "Parse .gitignore file and return list of regex patterns.
+
+Patterns are converted to regexps matching paths relative to the
+project root.  A leading \"/\" anchors the pattern to the root, a
+trailing \"/\" matches a directory (and its contents), and file
+patterns are anchored at the end of the path."
   (when (file-exists-p gitignore-file)
     (with-temp-buffer
       (insert-file-contents gitignore-file)
@@ -2882,11 +2906,31 @@ EXCLUDE-PATTERNS is an optional list of regex patterns to exclude files/director
           (let ((line (string-trim (thing-at-point 'line t))))
             (when (and (> (length line) 0)
                        (not (string-prefix-p "#" line)))
-              ;; Convert gitignore pattern to regex
-              (let ((pattern (replace-regexp-in-string "\\*" ".*" line)))
-                (push pattern patterns))))
+              (push (concatenate-project-files--gitignore-to-regex line)
+                    patterns)))
           (forward-line 1))
         patterns))))
+
+(defun concatenate-project-files--gitignore-to-regex (line)
+  "Convert a gitignore LINE to a regexp matching relative paths."
+  (let* ((anchored (string-prefix-p "/" line))
+         (dir-only (string-suffix-p "/" line))
+         (base (cond ((and anchored dir-only) (substring line 1 -1))
+                     (anchored (substring line 1))
+                     (dir-only (substring line 0 -1))
+                     (t line))))
+    (when (string-empty-p base)
+      (setq base ".*"))
+    (let* ((escaped (replace-regexp-in-string
+                     "\\([\\\\\\.^$+\\[\\]|(){}]\\)" "\\\\\\1" base nil t))
+           (no-doubles (replace-regexp-in-string "\\*\\*" ".*" escaped nil t))
+           (no-singles (replace-regexp-in-string "\\*" "[^/]*" no-doubles nil t))
+           (converted (replace-regexp-in-string "\\?" "[^/]" no-singles nil t)))
+      (concat (if anchored "^" "")
+              converted
+              (cond (dir-only "/")
+                    ((not anchored) "$")
+                    (t ""))))))
 
 ;;
 ;; -> flymake-core

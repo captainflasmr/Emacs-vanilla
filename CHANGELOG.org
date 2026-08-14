@@ -10,6 +10,15 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-08-14>
+
+Restore and fix concatenate-project-files in the literate config
+
+- `concatenate-project-files` and its helpers (`concatenate-git-project`, `concatenate-project-files--parse-gitignore`, etc.) had diverged: the fixes existed only in the tangled `init.el`, not in the literate `README.org` source, so re-tangling reverted them. The fixed block now lives in `README.org` and is re-tangled to `init.el`, keeping both files in sync
+- `concatenate-project-files--should-exclude-p` now matches patterns against the file path relative to `root-dir` instead of the absolute path, so patterns like `\.git/` and `node_modules/` match correctly
+- The concatenated `output-file` is added to the exclusion list via its relative path, so the output never includes itself
+- `concatenate-project-files--parse-gitignore` now converts `.gitignore` patterns to proper regexps via the new `concatenate-project-files--gitignore-to-regex`: a leading `/` anchors the pattern to the project root, a trailing `/` matches a directory and its contents, file patterns are anchored at the end of the path, `**` expands to `.*`, `*` to `[^/]*`, and `?` to `[^/]`
+
 ** <2026-07-23>
 
 Add swaywm-style tiling split and restore ace-style window jump
