@@ -343,7 +343,6 @@ then run this to fill the whole document in one keystroke."
 (global-set-key (kbd "C-c b") #'my/copy-buffer-to-kill-ring)
 (global-set-key (kbd "C-c f") #'my/find-file)
 (global-set-key (kbd "C-c g") #'my/grep)
-(define-key my-overrides-mode-map (kbd "C-c o") #'bookmark-jump)
 
 ;;
 ;; -> keybinding-core
@@ -1357,6 +1356,65 @@ On Windows the command is run through bash (from PortableGit) since
 
 (with-eval-after-load 'vc-hooks
   (define-key vc-prefix-map (kbd "K") #'my/vc-git-reset-and-clean))
+
+;;
+;; -> vc-git-tags-core
+;;
+(defun my/vc-git-tags ()
+  "Return a list of tag names in the current git repository."
+  (let ((root (vc-git-root default-directory)))
+    (when root
+      (with-temp-buffer
+        (let ((default-directory root))
+          (vc-git-command (current-buffer) 0 nil "tag"))
+        (split-string (buffer-string) "\n" t)))))
+
+(defun my/vc-git-remotes ()
+  "Return a list of remote names in the current git repository."
+  (let ((root (vc-git-root default-directory)))
+    (when root
+      (with-temp-buffer
+        (let ((default-directory root))
+          (vc-git-command (current-buffer) 0 nil "remote"))
+        (split-string (buffer-string) "\n" t)))))
+
+(defun my/vc-git-tag (tag-name &optional prefix)
+  "Create a git tag TAG-NAME at the tip of the current branch.
+With a prefix argument create a lightweight tag; otherwise an
+annotated tag, prompting for a message."
+  (interactive
+   (if (vc-git-root default-directory)
+       (list (read-string "Tag name: ")
+             current-prefix-arg)
+     (error "Not in a Git repository")))
+  (let ((root (vc-git-root default-directory)))
+    (unless root (error "Not in a Git repository"))
+    (let ((default-directory root))
+      (if prefix
+          (vc-git-command nil 0 nil "tag" tag-name)
+        (vc-git-command nil 0 nil "tag" "-a" tag-name "-m"
+                        (read-string "Tag message: " tag-name)))
+      (message "Created tag %s" tag-name))))
+
+(defun my/vc-git-push-tag (tag remote)
+  "Push git TAG to REMOTE."
+  (interactive
+   (let ((root (vc-git-root default-directory)))
+     (unless root (error "Not in a Git repository"))
+     (list (completing-read "Tag to push: " (my/vc-git-tags) nil t)
+           (completing-read "Remote: " (my/vc-git-remotes) nil t
+                            nil nil "origin"))))
+  (let ((root (vc-git-root default-directory)))
+    (let ((default-directory root))
+      (vc-git-command nil 0 nil "push" remote tag)
+      (message "Pushed tag %s to %s" tag remote))))
+
+(with-eval-after-load 'vc-dir
+  (define-key vc-dir-mode-map (kbd "t") #'my/vc-git-tag)
+  (define-key vc-dir-mode-map (kbd "T") #'my/vc-git-push-tag))
+
+(with-eval-after-load 'vc-hooks
+  (define-key vc-prefix-map (kbd "t") #'my/vc-git-tag))
 
 ;;
 ;; -> window-positioning-core
