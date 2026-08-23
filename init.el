@@ -361,6 +361,50 @@ then run this to fill the whole document in one keystroke."
 (put 'other-window 'repeat-map 'my/window-nav-repeat-map)
 (put 'my/previous-window 'repeat-map 'my/window-nav-repeat-map)
 
+;;
+;; -> window-swap
+;;
+(require 'windmove)
+
+(defun my/window-swap (win1 win2)
+  "Swap the buffers and scroll positions of WIN1 and WIN2."
+  (let ((buf1 (window-buffer win1))
+        (buf2 (window-buffer win2))
+        (start1 (window-start win1))
+        (start2 (window-start win2))
+        (point1 (window-point win1))
+        (point2 (window-point win2))
+        (hscroll1 (window-hscroll win1))
+        (hscroll2 (window-hscroll win2)))
+    (set-window-buffer win1 buf2)
+    (set-window-start win1 start2)
+    (set-window-hscroll win1 hscroll2)
+    (set-window-point win1 point2)
+    (set-window-buffer win2 buf1)
+    (set-window-start win2 start1)
+    (set-window-hscroll win2 hscroll1)
+    (set-window-point win2 point1)))
+
+(defun my/window-swap-direction (direction)
+  "Swap the selected window with the nearest window in DIRECTION.
+DIRECTION is one of left, right, up, down.  Uses windmove's
+geometry-based lookup, so it works across nested splits."
+  (interactive)
+  (let ((target (windmove-find-other-window direction)))
+    (when (and target (not (eq target (selected-window))))
+      (my/window-swap (selected-window) target)
+      (select-window target))))
+
+(defun my/window-swap-left () (interactive) (my/window-swap-direction 'left))
+(defun my/window-swap-right () (interactive) (my/window-swap-direction 'right))
+(defun my/window-swap-up () (interactive) (my/window-swap-direction 'up))
+(defun my/window-swap-down () (interactive) (my/window-swap-direction 'down))
+
+(define-key my-overrides-mode-map (kbd "M-s-h") #'my/window-swap-left)
+(define-key my-overrides-mode-map (kbd "M-s-l") #'my/window-swap-right)
+(define-key my-overrides-mode-map (kbd "M-s-k") #'my/window-swap-up)
+(define-key my-overrides-mode-map (kbd "M-s-j") #'my/window-swap-down)
+
 (define-key my-overrides-mode-map (kbd "C-M-l") (lambda () (interactive)
                               (my/adaptive-resize t -2)))
 (define-key my-overrides-mode-map (kbd "C-M-h") (lambda () (interactive)
