@@ -1590,10 +1590,10 @@ geometry-based lookup, so it works across nested splits."
 (defun my/window-swap-up () (interactive) (my/window-swap-direction 'up))
 (defun my/window-swap-down () (interactive) (my/window-swap-direction 'down))
 
-(define-key my-overrides-mode-map (kbd "M-s-h") #'my/window-swap-left)
-(define-key my-overrides-mode-map (kbd "M-s-l") #'my/window-swap-right)
-(define-key my-overrides-mode-map (kbd "M-s-k") #'my/window-swap-up)
-(define-key my-overrides-mode-map (kbd "M-s-j") #'my/window-swap-down)
+(define-key my-overrides-mode-map (kbd "M-H") #'my/window-swap-left)
+(define-key my-overrides-mode-map (kbd "M-L") #'my/window-swap-right)
+(define-key my-overrides-mode-map (kbd "M-K") #'my/window-swap-up)
+(define-key my-overrides-mode-map (kbd "M-J") #'my/window-swap-down)
 
 (define-key my-overrides-mode-map (kbd "C-M-l") (lambda () (interactive)
                               (my/adaptive-resize t -2)))
@@ -1635,8 +1635,6 @@ geometry-based lookup, so it works across nested splits."
 (define-key my-overrides-mode-map (kbd "C-x ]") #'end-of-buffer)
 (define-key my-overrides-mode-map (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
 (define-key my-overrides-mode-map (kbd "M-k") #'(lambda ()(interactive)(scroll-down (/ (window-height) 4))))
-(define-key my-overrides-mode-map (kbd "M-J") #'(lambda ()(interactive)(scroll-up nil)))
-(define-key my-overrides-mode-map (kbd "M-K") #'(lambda ()(interactive)(scroll-down nil)))
 (define-key my-overrides-mode-map (kbd "M-a") #'delete-other-windows)
 (define-key my-overrides-mode-map (kbd "M-o") #'my/quick-window-jump)
 (define-key my-overrides-mode-map (kbd "M-;") (lambda () (interactive) (select-window (split-window-horizontally))))
