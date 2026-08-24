@@ -2319,6 +2319,45 @@ active or in WDired."
   (define-key isearch-mode-map (kbd "C-j") #'my/dired-isearch-find-file))
 
 ;;
+;; -> terminal-explorer-core
+;;
+(defun my/open-file-manager ()
+  "Reveal the current buffer's file in the native file manager.
+A directory opens the manager at it; a file shows its parent folder.
+Windows uses Explorer, macOS uses Finder (open -R), and Linux/BSD picks
+the first installed manager by name, with xdg-open as the last resort."
+  (interactive)
+  (let* ((path (if (derived-mode-p 'dired-mode)
+                   (ignore-errors (dired-get-file-for-visit))
+                 buffer-file-name))
+         (path (or path default-directory))
+         (is-dir (file-directory-p path))
+         (dir (if is-dir path (or (file-name-directory path) default-directory))))
+    (pcase system-type
+      ('windows-nt
+       (start-process "my-file-manager" nil "explorer.exe" dir))
+      ('darwin
+       (if is-dir
+           (start-process "my-file-manager" nil "open" dir)
+         (start-process "my-file-manager" nil "open" "-R" path)))
+      (_
+       (let* ((managers '(("nautilus")
+                          ("thunar")
+                          ("dolphin" "--select")
+                          ("nemo")
+                          ("caja")
+                          ("pcmanfm")
+                          ("pcmanfm-qt")))
+              (cmd (or (seq-some (lambda (m) (when (executable-find (car m)) m))
+                                 managers)
+                       '("xdg-open"))))
+         (apply #'start-process "my-file-manager" nil
+                (append cmd (list dir))))))))
+
+(global-set-key (kbd "C-x T") #'my/dired-open-terminal)
+(global-set-key (kbd "C-x E") #'my/open-file-manager)
+
+;;
 ;; -> visuals-core
 ;;
 (menu-bar-mode -1)
