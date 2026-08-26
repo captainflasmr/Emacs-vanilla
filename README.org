@@ -1612,6 +1612,22 @@ geometry-based lookup, so it works across nested splits."
                               (my/adaptive-resize nil 1)))
 (global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
+(defun my/global-font-size-change (delta)
+  "Change the default face height by DELTA steps on all frames.
+DELTA is in 0.1pt units; updates future frames via `default-frame-alist'."
+  (interactive "p")
+  (let* ((step (* delta 10))
+         (height (max 40 (+ (face-attribute 'default :height) step)))
+         (font-spec (font-spec :family (face-attribute 'default :family)
+                               :height height)))
+    (set-face-attribute 'default nil :height height)
+    (setq default-frame-alist
+          (cons (cons 'font font-spec)
+                (assq-delete-all 'font default-frame-alist)))))
+(define-key my-overrides-mode-map (kbd "C-M--")
+            (lambda () (interactive) (my/global-font-size-change -1)))
+(define-key my-overrides-mode-map (kbd "C-M-=")
+            (lambda () (interactive) (my/global-font-size-change 1)))
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "<f12>") #'(lambda ()(interactive)(async-shell-command "do_backup home" "*backup*")))
 (global-set-key (kbd "C-c c") #'org-capture)
