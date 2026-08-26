@@ -437,6 +437,7 @@ geometry-based lookup, so it works across nested splits."
     (dired-jump)))
 (define-key my-overrides-mode-map (kbd "M-e") #'my/dired-jump-or-up)
 (global-set-key (kbd "M-g i") #'imenu)
+(global-set-key (kbd "C-O") #'imenu)
 (global-set-key (kbd "M-g o") #'org-goto)
 
 (define-key my-overrides-mode-map (kbd "M-u") #'tab-bar-switch-to-prev-tab)
