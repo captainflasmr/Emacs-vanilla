@@ -1639,6 +1639,25 @@ geometry-based lookup, so it works across nested splits."
 
 (define-key my-overrides-mode-map (kbd "M-u") #'tab-bar-switch-to-prev-tab)
 (define-key my-overrides-mode-map (kbd "M-i") #'tab-bar-switch-to-next-tab)
+(defun my/tab-bar-push-window (direction)
+  "Push the selected window's buffer to the tab DIRECTION tabs away.
+DIRECTION is -1 for the left tab and 1 for the right tab."
+  (interactive)
+  (let* ((buf (window-buffer))
+         (current (tab-bar--current-tab-index))
+         (tabs (tab-bar-tabs))
+         (target (mod (+ current direction) (length tabs))))
+    (unless (eq target current)
+      (tab-bar-select-tab (1+ target))
+      (switch-to-buffer buf)
+      (tab-bar-select-tab (1+ current))
+      (if (one-window-p)
+          (switch-to-buffer (other-buffer buf))
+        (delete-window)))))
+(define-key my-overrides-mode-map (kbd "M-s u")
+            (lambda () (interactive) (my/tab-bar-push-window -1)))
+(define-key my-overrides-mode-map (kbd "M-s i")
+            (lambda () (interactive) (my/tab-bar-push-window 1)))
 (define-key my-overrides-mode-map (kbd "C-x [") #'beginning-of-buffer)
 (define-key my-overrides-mode-map (kbd "C-x ]") #'end-of-buffer)
 (define-key my-overrides-mode-map (kbd "M-j") #'(lambda ()(interactive)(scroll-up (/ (window-height) 4))))
@@ -1655,8 +1674,6 @@ geometry-based lookup, so it works across nested splits."
 
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
 (global-set-key (kbd "M-z") #'visual-line-mode)
-(global-set-key (kbd "M-s i") #'my/convert-markdown-clipboard-to-org)
-(global-set-key (kbd "M-s u") #'my/org-promote-all-headings)
 (defun my/vc-dir-diff-stay ()
   "Show the file at point from vc-dir, keeping point in the vc-dir window.
 For unregistered files just display the file in another window;
