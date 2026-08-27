@@ -343,6 +343,7 @@ then run this to fill the whole document in one keystroke."
 (global-set-key (kbd "C-c b") #'my/copy-buffer-to-kill-ring)
 (global-set-key (kbd "C-c f") #'my/find-file)
 (global-set-key (kbd "C-c g") #'my/grep)
+(global-set-key (kbd "C-c S") #'sort-lines)
 
 ;;
 ;; -> keybinding-core
