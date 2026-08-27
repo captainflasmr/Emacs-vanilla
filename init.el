@@ -2775,6 +2775,281 @@ With a prefix argument, forget every remembered xref."
       xref-show-xrefs-function       #'xref-show-definitions-buffer)
 
 ;;
+;; -> xsd-xref
+;;
+;; Custom xref backend for XSD schemas: `xref-find-definitions' (M-.)
+;; jumps from `type=', `base=' and `ref=' attribute values to the global
+;; simpleType / complexType / element / attribute / attributeGroup /
+;; group declaration with that name, in the current file or in sibling
+;; .xsd files.  `xref-find-references' (M-?) lists all occurrences.
+;; Indexes are built with libxml (falling back to regex scanning) and
+;; cached per file by mtime.
+
+(defconst my/xsd-xref-global-tags
+  '("simpleType" "complexType" "element" "attribute" "attributeGroup" "group")
+  "XSD element names that declare global schema components.")
+
+(defconst my/xsd-xref-tag-re
+  "\\(?:simpleType\\|complexType\\|element\\|attribute\\|attributeGroup\\|group\\)"
+  "Matches an XSD global declaration tag name.")
+
+(defvar my/xsd-xref-file-cache (make-hash-table :test 'equal)
+  "Cache of parsed XSD indexes: truename -> (mtime . INDEX).")
+
+(defvar-local my/xsd-xref-buffer-index nil
+  "Cached index of the current XSD buffer
+\(see `my/xsd-xref--current-index').")
+
+(defvar-local my/xsd-xref-buffer-tick nil
+  "Modification tick the cached buffer index was built from.")
+
+(defun my/xsd-xref--open-tag-re (tag)
+  "Return a regex matching the opening tag of XSD declaration TAG."
+  (concat "<\\(?:[A-Za-z_][A-Za-z0-9_.-]*:\\)?"
+          (regexp-quote tag) "[^>]*>"))
+
+(defun my/xsd-xref--local-name (id)
+  "Return the local part of ID, stripping any namespace prefix."
+  (if (string-match ":[^:]*\\'" id)
+      (substring id (1+ (match-beginning 0)))
+    id))
+
+(defun my/xsd-xref--prefix (id)
+  "Return the namespace prefix of ID (before the last colon), or nil."
+  (if (string-match ":[^:]*\\'" id)
+      (substring id 0 (match-beginning 0))
+    nil))
+
+(defun my/xsd-xref--attr (node attr)
+  "Return attribute ATTR (a symbol) of libxml parse NODE, or nil."
+  (cdr (assq attr (cadr node))))
+
+(defun my/xsd-xref--inside-comment-p (pos)
+  "Return non-nil if POS lies inside an XML comment."
+  (let ((start (save-excursion
+                 (goto-char pos)
+                 (search-backward "<!--" nil t))))
+    (and start
+         (not (save-excursion
+                (goto-char start)
+                (search-forward "-->" pos t))))))
+
+(defun my/xsd-xref--next-open-tag (re from)
+  "Return end of the first match of RE at or after FROM, skipping
+comment spans.  Leaves point at the match end; nil if no match."
+  (goto-char from)
+  (let ((pos (re-search-forward re nil t)))
+    (while (and pos (my/xsd-xref--inside-comment-p (match-beginning 0)))
+      (setq pos (and (search-forward "-->" nil t)
+                     (re-search-forward re nil t))))
+    pos))
+
+(defun my/xsd-xref--walk-tree (nodes cursor)
+  "Walk libxml NODES in document order, matching each opening tag
+against CURSOR.  Return (DECLS . NEW-CURSOR) where DECLS is a list
+of (NAME LINE COLUMN) triples for global declarations."
+  (let ((decls nil))
+    (dolist (node nodes)
+      (when (consp node)
+        (let* ((tag (symbol-name (car node)))
+               (end (my/xsd-xref--next-open-tag
+                     (my/xsd-xref--open-tag-re tag) cursor)))
+          (when end
+            (setq cursor end)
+            (when (and (member tag my/xsd-xref-global-tags)
+                       (assq 'name (cadr node)))
+              (push (list (cdr (assq 'name (cadr node)))
+                          (line-number-at-pos (match-beginning 0))
+                          (- (match-beginning 0) (line-beginning-position)))
+                    decls))
+            (let ((sub (my/xsd-xref--walk-tree (cddr node) cursor)))
+              (setq decls (nconc decls (car sub)))
+              (setq cursor (cdr sub)))))))
+    (cons decls cursor)))
+
+(defun my/xsd-xref--buffer-prefixes ()
+  "Return alist of (PREFIX . URI) declared on the schema root element."
+  (let ((result nil))
+    (save-excursion
+      (goto-char (point-min))
+      (when (re-search-forward
+             (concat "<\\(?:[A-Za-z_][A-Za-z0-9_.-]*:\\)?schema[^>]*>") nil t)
+        (let ((end (match-end 0)))
+          (goto-char (match-beginning 0))
+          (while (re-search-forward
+                  "xmlns:\\([A-Za-z_][A-Za-z0-9_.-]*\\)=\"\\([^\"]+\\)\""
+                  end t)
+            (push (cons (match-string-no-properties 1)
+                        (match-string-no-properties 2))
+                  result)))))
+    result))
+
+(defun my/xsd-xref--index-buffer ()
+  "Return the index plist (:target-ns :decls :prefixes) of the
+current buffer."
+  (let ((root (ignore-errors
+                (libxml-parse-xml-region (point-min) (point-max)))))
+    (if (not (consp root))
+        (my/xsd-xref--index-buffer-regex)
+      (list :target-ns (cdr (assq 'targetNamespace (nth 1 root)))
+            :decls (car (my/xsd-xref--walk-tree (cddr root) (point-min)))
+            :prefixes (my/xsd-xref--buffer-prefixes)))))
+
+(defun my/xsd-xref--index-buffer-regex ()
+  "Regex-scan fallback indexer for `my/xsd-xref--index-buffer'.
+Less precise than the libxml walk: local element/attribute
+declarations may be indexed as well."
+  (let ((decls nil) (target-ns nil))
+    (save-excursion
+      (goto-char (point-min))
+      (when (re-search-forward
+             "<\\(?:[A-Za-z_][A-Za-z0-9_.-]*:\\)?schema[^>]*targetNamespace=\"\\([^\"]+\\)\""
+             nil t)
+        (setq target-ns (match-string-no-properties 1)))
+      (goto-char (point-min))
+      (while (re-search-forward
+              (concat "<\\(?:[A-Za-z_][A-Za-z0-9_.-]*:\\)?"
+                      my/xsd-xref-tag-re
+                      "[^>]*name=\"\\([^\"]+\\)\"")
+              nil t)
+        (push (list (match-string-no-properties 1)
+                    (line-number-at-pos (match-beginning 1))
+                    (- (match-beginning 1) (line-beginning-position)))
+              decls)))
+    (list :target-ns target-ns :decls decls :prefixes nil)))
+
+(defun my/xsd-xref--current-index ()
+  "Return the index of the current buffer, cached per modification tick."
+  (unless (and my/xsd-xref-buffer-index
+               (eq my/xsd-xref-buffer-tick (buffer-chars-modified-tick)))
+    (setq my/xsd-xref-buffer-index (my/xsd-xref--index-buffer)
+          my/xsd-xref-buffer-tick (buffer-chars-modified-tick)))
+  my/xsd-xref-buffer-index)
+
+(defun my/xsd-xref--index-file (file)
+  "Return the index plist of XSD FILE, cached by mtime."
+  (let* ((truename (file-truename file))
+         (attrs (file-attributes truename))
+         (mtime (and attrs (nth 5 attrs)))
+         (cached (gethash truename my/xsd-xref-file-cache)))
+    (if (and cached (equal (car cached) mtime))
+        (cdr cached)
+      (let ((index (with-temp-buffer
+                     (insert-file-contents truename)
+                     (my/xsd-xref--index-buffer))))
+        (puthash truename (cons mtime index) my/xsd-xref-file-cache)
+        index))))
+
+(defun my/xsd-xref--lookup-buffer (decls id)
+  "Return xref items for ID among DECLS of the current buffer."
+  (let ((name (my/xsd-xref--local-name id)))
+    (cl-loop for (n line col) in decls
+             when (string= n name)
+             collect (save-excursion
+                       (goto-char (point-min))
+                       (forward-line (1- line))
+                       (xref-make (format "%s %s" (buffer-name) name)
+                                  (xref-make-buffer-location
+                                   (current-buffer) (+ (point) col)))))))
+
+(defun my/xsd-xref--lookup-file (decls id file)
+  "Return xref items for ID among DECLS of FILE."
+  (let ((name (my/xsd-xref--local-name id)))
+    (cl-loop for (n line col) in decls
+             when (string= n name)
+             collect (xref-make (format "%s:%d %s"
+                                        (file-name-nondirectory file) line name)
+                                (xref-make-file-location file line col)))))
+
+(defun my/xsd-xref--sibling-files ()
+  "Return the .xsd files in the current file's directory, excluding it."
+  (let ((dir (and buffer-file-name (file-name-directory buffer-file-name))))
+    (when dir
+      (cl-remove-if
+       (lambda (f) (string= (file-truename f)
+                            (file-truename buffer-file-name)))
+       (directory-files dir t "\\.xsd\\'" t)))))
+
+(defun my/xsd-xref--find-definitions (id)
+  "Return xref items for definitions of ID: first the current file,
+then sibling .xsd files whose target namespace matches the prefix
+of ID, then any sibling file."
+  (let* ((local (my/xsd-xref--current-index))
+         (defs (my/xsd-xref--lookup-buffer (plist-get local :decls) id)))
+    (or defs
+        (let* ((prefix (my/xsd-xref--prefix id))
+               (ns (and prefix
+                        (cdr (assoc prefix (plist-get local :prefixes))))))
+          (cl-loop for file in (my/xsd-xref--sibling-files)
+                   for idx = (my/xsd-xref--index-file file)
+                   when (or (null ns)
+                            (string= ns (plist-get idx :target-ns)))
+                   append (my/xsd-xref--lookup-file
+                           (plist-get idx :decls) id file))))))
+
+(defun my/xsd-xref--find-references (id)
+  "Return xref items for every occurrence of ID in the current file."
+  (let ((name (my/xsd-xref--local-name id))
+        (spots nil))
+    (dolist (pattern (list (concat "\"" (regexp-quote id) "\"")
+                           (concat "\"" (regexp-quote name) "\"")))
+      (save-excursion
+        (goto-char (point-min))
+        (while (re-search-forward pattern nil t)
+          (let ((line (line-number-at-pos (match-beginning 0)))
+                (col (- (match-beginning 0) (line-beginning-position))))
+            (push (cons line col) spots)))))
+    (mapcar (lambda (spot)
+              (save-excursion
+                (goto-char (point-min))
+                (forward-line (1- (car spot)))
+                (xref-make (format "%s:%d %s" (buffer-name) (car spot) name)
+                           (xref-make-buffer-location
+                            (current-buffer) (+ (point) (cdr spot))))))
+            (sort (delete-dups spots)
+                  (lambda (a b)
+                    (or (< (car a) (car b))
+                        (and (= (car a) (car b)) (< (cdr a) (cdr b)))))))))
+
+(defun my/xsd-xref--identifier-at-point ()
+  "Return the XML Name at or immediately before point, or nil."
+  (when (> (point) (point-min))
+    (let ((at (char-after)))
+      (unless (and at (string-match-p "[A-Za-z0-9_.:-]" (string at)))
+        (backward-char 1)))
+    (let ((start (point)))
+      (skip-chars-backward "A-Za-z0-9_.:-")
+      (setq start (point))
+      (skip-chars-forward "A-Za-z0-9_.:-")
+      (when (> (point) start)
+        (buffer-substring-no-properties start (point))))))
+
+(defun my/xsd-xref-backend ()
+  "Xref backend for XSD buffers; see `xref-backend-functions'."
+  (when (derived-mode-p 'nxml-mode 'xml-mode 'xml-ts-mode 'sgml-mode)
+    'my-xsd-xref-backend))
+
+(cl-defmethod xref-backend-major-mode ((_backend (eql my-xsd-xref-backend)))
+  'nxml-mode)
+
+(cl-defmethod xref-backend-identifier-at-point ((_backend (eql my-xsd-xref-backend)))
+  (my/xsd-xref--identifier-at-point))
+
+(cl-defmethod xref-backend-identifier-completion-table
+    ((_backend (eql my-xsd-xref-backend)))
+  (cl-loop for (name _line _col)
+           in (plist-get (my/xsd-xref--current-index) :decls)
+           collect name))
+
+(cl-defmethod xref-backend-definitions ((_backend (eql my-xsd-xref-backend)) id)
+  (my/xsd-xref--find-definitions id))
+
+(cl-defmethod xref-backend-references ((_backend (eql my-xsd-xref-backend)) id)
+  (my/xsd-xref--find-references id))
+
+(add-hook 'xref-backend-functions #'my/xsd-xref-backend -100)
+
+;;
 ;; -> indentation-core
 ;;
 (setq-default indent-tabs-mode nil)
