@@ -4451,6 +4451,14 @@ of ID, then any sibling file."
 
 (add-hook 'xref-backend-functions #'my/xsd-xref-backend -100)
 
+(defun my/xsd-xref--local-activate ()
+  "Register the XSD xref backend buffer-locally in nxml-mode, ahead
+of eglot's buffer-local backend, so `M-.' keeps using exact
+schema-index jumps even while a language server is connected."
+  (add-hook 'xref-backend-functions #'my/xsd-xref-backend -100 t))
+
+(add-hook 'nxml-mode-hook #'my/xsd-xref--local-activate)
+
 #+end_src
 
 * indentation-core
