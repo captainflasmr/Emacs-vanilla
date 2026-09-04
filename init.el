@@ -495,8 +495,20 @@ DIRECTION is -1 for the left tab and 1 for the right tab."
 (define-key my-overrides-mode-map (kbd "M-;") (lambda () (interactive) (select-window (split-window-horizontally))))
 (define-key my-overrides-mode-map (kbd "M-'") #'delete-window)
 (define-key my-overrides-mode-map (kbd "M-m") (lambda () (interactive) (select-window (split-window-vertically))))
-(define-key my-overrides-mode-map (kbd "M-n") #'other-window)
-(define-key my-overrides-mode-map (kbd "M-p") #'my/previous-window)
+
+(defun my/window-nav-minibuffer-filter (binding)
+  "Return BINDING for window navigation, except in the minibuffer.
+Used as a `menu-item' :filter for the global M-n/M-p window
+bindings below.  Returning nil in the minibuffer lets lookup fall
+through to the minibuffer maps, preserving M-p/M-n history
+navigation (`previous-history-element' / `next-history-element').
+From the minibuffer, use C-x o to change windows instead."
+  (unless (minibufferp) binding))
+
+(define-key my-overrides-mode-map (kbd "M-n")
+            '(menu-item "" other-window :filter my/window-nav-minibuffer-filter))
+(define-key my-overrides-mode-map (kbd "M-p")
+            '(menu-item "" my/previous-window :filter my/window-nav-minibuffer-filter))
 
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
 (global-set-key (kbd "M-z") #'visual-line-mode)
