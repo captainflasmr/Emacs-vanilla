@@ -678,7 +678,7 @@ Any functions that are run being associated with a mode.
 
 * eldoc-box-core
 
-Displays eldoc documentation in a child frame positioned near point.  Supports syntax highlighting for tree-sitter major modes.  The frame auto-closes when point moves.  Press =C-c h= to show, then =q= to close or =o= to open in a full window.
+Displays eldoc documentation in a child frame positioned near point.  Supports syntax highlighting for tree-sitter major modes.  The frame auto-closes when point moves.  Press =C-c H= to show, then =q= to close or =o= to open in a full window.
 
 #+begin_src elisp
 ;;
@@ -798,7 +798,13 @@ Displays eldoc documentation in a child frame positioned near point.  Supports s
   (setq my/eldoc-box--last-point (point))
   (add-hook 'post-command-hook #'my/eldoc-box--maybe-close-frame))
 
-(global-set-key (kbd "C-c h") #'my/eldoc-box--make-frame)
+(defun my/display-welcome-screen ()
+  "Display the Emacs welcome (startup) screen."
+  (interactive)
+  (display-startup-screen))
+
+(global-set-key (kbd "C-c h") #'my/display-welcome-screen)
+(global-set-key (kbd "C-c H") #'my/eldoc-box--make-frame)
 #+end_src
 
 * container-core
@@ -4700,7 +4706,12 @@ cannot handle."
     (error nil)))
 (advice-add 'vc-svn-registered :around #'my/vc-svn-registered-silent)
 
-(global-set-key (kbd "C-c l") 'my/selective-display-fold)
+(defun my/switch-to-messages-buffer ()
+  "Switch to the *Messages* buffer."
+  (interactive)
+  (switch-to-buffer "*Messages*"))
+
+(global-set-key (kbd "C-c l") #'my/switch-to-messages-buffer)
 
 (defun my/selective-display-fold (&optional level)
   "Fold text indented same of more than the cursor.

@@ -296,7 +296,13 @@ then run this to fill the whole document in one keystroke."
   (setq my/eldoc-box--last-point (point))
   (add-hook 'post-command-hook #'my/eldoc-box--maybe-close-frame))
 
-(global-set-key (kbd "C-c h") #'my/eldoc-box--make-frame)
+(defun my/display-welcome-screen ()
+  "Display the Emacs welcome (startup) screen."
+  (interactive)
+  (display-startup-screen))
+
+(global-set-key (kbd "C-c h") #'my/display-welcome-screen)
+(global-set-key (kbd "C-c H") #'my/eldoc-box--make-frame)
 
 ;;
 ;; -> keys-visual-core
@@ -3257,7 +3263,12 @@ cannot handle."
     (error nil)))
 (advice-add 'vc-svn-registered :around #'my/vc-svn-registered-silent)
 
-(global-set-key (kbd "C-c l") 'my/selective-display-fold)
+(defun my/switch-to-messages-buffer ()
+  "Switch to the *Messages* buffer."
+  (interactive)
+  (switch-to-buffer "*Messages*"))
+
+(global-set-key (kbd "C-c l") #'my/switch-to-messages-buffer)
 
 (defun my/selective-display-fold (&optional level)
   "Fold text indented same of more than the cursor.
