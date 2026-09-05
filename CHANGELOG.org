@@ -10,6 +10,26 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-09-05>
+
+Magit-style branch and worktree first actions for vc and vc-dir
+
+- New worktree commands in =vc-git-worktree-core=: =my/vc-git-worktree-checkout= checks out an existing branch in a new worktree, =my/vc-git-worktree-branch= creates a new branch from a start point in a new worktree (Magit's two most common first actions, both defaulting to a sibling directory named <project>-<branch>), and =my/vc-git-worktree-move= relocates a worktree; =my/vc-git-worktree-add= now shares the same internal worker
+- New =vc-git-branch-core= section filling the gaps around stock =C-x v b s= (switch), =b c= (create) and =b l= (log): =my/vc-git-merge-branch= (plain merge, squash or ff-only), =my/vc-git-rename-branch= (works on the checked-out branch), =my/vc-git-delete-branch= (prefix forces with =-D=, checked-out branch protected), and =my/vc-git-branch-list= showing current mark, upstream and subject with =RET= checking out
+- In =vc-dir=: =W c=, =W b=, =W m= for worktrees and =B m=, =B r=, =B d= (=B k=), =B l= for branches; globally under =C-x v w …= and =C-x v B …=
+- =B= in =vc-dir= is now a branch prefix, so the DIYer branches-and-tags header refresh (which also runs automatically on its hook) moves to =B B=
+- =my/vc-git-merge-branch= merges a branch into the current one as a plain merge, squash (staged for a later commit) or fast-forward-only; stock =C-x v m= is file-oriented and a verified no-op for git branch merges, so merging gets its own command on =B m= (=C-x v B m=)
+
+** <2026-09-04>
+
+Add git worktree lifecycle support to vc and vc-dir
+
+- New =vc-git-worktree-core= section: built-in =vc= already tracks files inside a worktree, but had no commands to create, switch, remove, prune or list worktrees
+- =my/vc-git-worktree-add= creates a worktree at a prompted location (defaulting to a sibling directory named after the branch) and opens =vc-dir= there; empty branch checks out =HEAD=, prefix argument creates a new branch from a prompted start point
+- =my/vc-git-worktree-switch= selects a worktree with branch annotations and opens =vc-dir=; =my/vc-git-worktree-remove= deletes one after confirmation (prefix forces, and a =vc-dir= sitting inside the removed tree falls back to the main root); =my/vc-git-worktree-prune= clears stale metadata
+- =my/vc-git-worktree-list= shows all worktrees (branch, short HEAD, bare/detached/locked/prunable flags parsed from =git worktree list --porcelain=) with =RET= jumping to =vc-dir=
+- In =vc-dir=: =W a=, =W s=, =W r= (=W k=), =W p=, =W l=; globally: =C-x v w a=, =w s=, =w r=, =w k=, =w p=, =w l=
+
 ** <2026-08-14>
 
 Restore and fix concatenate-project-files in the literate config

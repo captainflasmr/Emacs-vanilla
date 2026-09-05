@@ -1513,6 +1513,546 @@ annotated tag, prompting for a message."
   (define-key vc-prefix-map (kbd "t") #'my/vc-git-tag))
 
 ;;
+;; -> vc-git-worktree-core
+;;
+(defun my/vc-git-branches ()
+  "Return a list of local branch names in the current git repository."
+  (let ((root (vc-git-root default-directory)))
+    (when root
+      (with-temp-buffer
+        (let ((default-directory root))
+          (vc-git-command (current-buffer) 0 nil
+                          "branch" "--format=%(refname:short)"))
+        (split-string (buffer-string) "\n" t)))))
+
+(defun my/vc-git--worktree-root ()
+  "Return the git worktree root for `default-directory'.
+Signal a `user-error' when not inside a Git repository."
+  (or (vc-git-root default-directory)
+      (user-error "Not in a Git repository")))
+
+(defun my/vc-git-worktree-entries ()
+  "Return the worktrees of the current repository as a list of plists.
+Each plist has keys :path, :head, :branch, :detached, :bare,
+:locked and :prunable, parsed from `git worktree list --porcelain'."
+  (let ((root (my/vc-git--worktree-root))
+        entries current)
+    (with-temp-buffer
+      (let ((default-directory root))
+        (vc-git-command (current-buffer) 0 nil
+                        "worktree" "list" "--porcelain"))
+      (goto-char (point-min))
+      (while (not (eobp))
+        (let ((line (buffer-substring-no-properties
+                     (line-beginning-position) (line-end-position))))
+          (cond
+           ((string-prefix-p "worktree " line)
+            (when current (push current entries))
+            (setq current (list :path (substring line 9))))
+           ((string-prefix-p "HEAD " line)
+            (setq current (plist-put current :head (substring line 5))))
+           ((string-prefix-p "branch " line)
+            (let ((ref (substring line 7)))
+              (setq current
+                    (plist-put current :branch
+                               (if (string-prefix-p "refs/heads/" ref)
+                                   (substring ref 11)
+                                 ref)))))
+           ((string= line "detached")
+            (setq current (plist-put current :detached t)))
+           ((string= line "bare")
+            (setq current (plist-put current :bare t)))
+           ((string-prefix-p "locked" line)
+            (setq current
+                  (plist-put current :locked
+                               (if (> (length line) 6)
+                                   (substring line 7)
+                                 t))))
+           ((string-prefix-p "prunable" line)
+            (setq current
+                  (plist-put current :prunable
+                               (if (> (length line) 8)
+                                   (substring line 9)
+                                 t))))))
+        (forward-line 1)))
+    (when current (push current entries))
+    (nreverse entries)))
+
+(defun my/vc-git--default-worktree-path (root branch)
+  "Return a default new-worktree path for BRANCH next to ROOT.
+The default is a sibling directory of ROOT prefixed with the project
+name, e.g. <parent>/myproj-feature for branch feature of myproj.
+Slashes in BRANCH become dashes so hierarchical branches cannot
+collide; an empty BRANCH falls back to <project>-worktree."
+  (let ((project (file-name-nondirectory
+                  (directory-file-name (expand-file-name root)))))
+    (expand-file-name
+     (concat project "-"
+             (if (string-empty-p branch)
+                 "worktree"
+               (replace-regexp-in-string "/" "-" branch)))
+     (file-name-directory (directory-file-name (expand-file-name root))))))
+
+(defun my/vc-git-worktree-add (path branch &optional new-branch start-point)
+  "Create a Git worktree at PATH checking out BRANCH, then open `vc-dir'.
+An empty BRANCH checks out HEAD.  With prefix argument NEW-BRANCH,
+create BRANCH as a new branch from START-POINT (defaulting to HEAD)
+instead of checking out an existing branch or revision."
+  (interactive
+   (let* ((root (my/vc-git--worktree-root))
+          (branches (or (my/vc-git-branches) '()))
+          (make-new (if current-prefix-arg t nil))
+          (branch (if make-new
+                      (read-string "New branch name: ")
+                    (completing-read "Checkout branch (empty = HEAD): "
+                                     branches nil nil)))
+          (default-path (my/vc-git--default-worktree-path root branch))
+          (path (read-file-name "Worktree location: "
+                                (file-name-directory default-path)
+                                nil nil
+                                (file-name-nondirectory default-path)))
+          (start (and make-new
+                      (completing-read "Start point: "
+                                       (delete-dups
+                                        (append (list "HEAD") branches
+                                                (my/vc-git-tags)))
+                                       nil nil nil nil "HEAD"))))
+     (list (expand-file-name path) branch make-new start)))
+  (my/vc-git-worktree--create path branch new-branch start-point))
+
+(defun my/vc-git-worktree--create (path branch new-branch start-point)
+  "Create a Git worktree at PATH and open `vc-dir' there.
+BRANCH names an existing branch or revision, unless NEW-BRANCH is
+non-nil, in which case BRANCH is created from START-POINT first."
+  (let ((root (my/vc-git--worktree-root))
+        (expanded (expand-file-name path)))
+    (let ((default-directory root))
+      (cond
+       (new-branch
+        (when (string-empty-p branch)
+          (user-error "New branch name must not be empty"))
+        (vc-git-command nil 0 nil "worktree" "add" "-b" branch expanded
+                        (if (string-empty-p start-point) "HEAD" start-point)))
+       ((string-empty-p branch)
+        (vc-git-command nil 0 nil "worktree" "add" expanded))
+       (t
+        (vc-git-command nil 0 nil "worktree" "add" expanded branch))))
+    (message "Created worktree %s" expanded)
+    (vc-dir expanded)))
+
+(defun my/vc-git-worktree-checkout (path branch)
+  "Check out existing BRANCH in a new worktree at PATH, then open `vc-dir'.
+The Magit-style `magit-worktree-checkout' first action: the location
+defaults to a sibling directory named <project>-<branch>."
+  (interactive
+   (let* ((root (my/vc-git--worktree-root))
+          (branches (or (my/vc-git-branches) '()))
+          (branch (completing-read "Checkout branch in new worktree: "
+                                   branches nil nil))
+          (default-path (my/vc-git--default-worktree-path root branch))
+          (path (read-file-name "Worktree location: "
+                                (file-name-directory default-path)
+                                nil nil
+                                (file-name-nondirectory default-path))))
+     (list (expand-file-name path) branch)))
+  (when (string-empty-p branch)
+    (user-error "Branch must not be empty"))
+  (my/vc-git-worktree--create path branch nil nil))
+
+(defun my/vc-git-worktree-branch (path branch start-point)
+  "Create new BRANCH from START-POINT in a new worktree at PATH.
+Then open `vc-dir'.  The Magit-style `magit-worktree-branch' first
+action: the location defaults to a sibling directory named <project>-<branch>."
+  (interactive
+   (let* ((root (my/vc-git--worktree-root))
+          (branches (or (my/vc-git-branches) '()))
+          (branch (read-string "New branch name: "))
+          (start (completing-read "Start point: "
+                                  (delete-dups
+                                   (append (list "HEAD") branches
+                                           (my/vc-git-tags)))
+                                  nil nil nil nil "HEAD"))
+          (default-path (my/vc-git--default-worktree-path root branch))
+          (path (read-file-name "Worktree location: "
+                                (file-name-directory default-path)
+                                nil nil
+                                (file-name-nondirectory default-path))))
+     (list (expand-file-name path) branch start)))
+  (my/vc-git-worktree--create path branch t start-point))
+
+(defun my/vc-git-worktree-move (path new-path)
+  "Move the Git worktree at PATH to NEW-PATH (`git worktree move').
+Interactively, prompt for a worktree, defaulting to the current one."
+  (interactive
+   (let* ((entries (my/vc-git-worktree-entries))
+          (paths (mapcar (lambda (e) (plist-get e :path)) entries))
+          (current (my/vc-git--worktree-root)))
+     (unless paths (user-error "No Git worktrees found"))
+     (let ((path (completing-read "Move worktree: " paths
+                                  nil t nil nil current)))
+       (list path (read-file-name
+                   "Move to: "
+                   (file-name-directory
+                    (directory-file-name (expand-file-name path)))
+                   nil nil)))))
+  (let* ((root (my/vc-git--worktree-root))
+         (expanded (expand-file-name path))
+         (target (expand-file-name new-path)))
+    (let ((default-directory root))
+      (vc-git-command nil 0 nil "worktree" "move" expanded target))
+    (message "Moved worktree %s to %s" expanded target)
+    (when (derived-mode-p 'vc-dir-mode) (vc-dir-refresh))))
+
+(defun my/vc-git-worktree-switch (path)
+  "Interactively select an existing Git worktree and open `vc-dir' in it."
+  (interactive
+   (let* ((entries (my/vc-git-worktree-entries))
+          (table (mapcar (lambda (e)
+                           (cons (plist-get e :path) e))
+                         entries))
+          (current (my/vc-git--worktree-root)))
+     (unless table (user-error "No Git worktrees found"))
+     (let ((completion-extra-properties
+            (list :annotation-function
+                  (lambda (cand)
+                    (let ((e (cdr (assoc cand table))))
+                      (when e
+                        (concat "  ["
+                                (or (plist-get e :branch)
+                                    (and (plist-get e :detached)
+                                         "detached")
+                                    "?")
+                                (when (plist-get e :bare) ", bare")
+                                "]")))))))
+       (list (completing-read "Switch to worktree: " table
+                              nil t nil nil current)))))
+  (vc-dir path))
+
+(defun my/vc-git-worktree-remove (path &optional force)
+  "Remove the Git worktree at PATH, prompting first for confirmation.
+With prefix argument FORCE, pass --force to git.
+Interactively, prompt for a worktree, defaulting to the current one."
+  (interactive
+   (let* ((entries (my/vc-git-worktree-entries))
+          (paths (mapcar (lambda (e) (plist-get e :path)) entries))
+          (current (my/vc-git--worktree-root)))
+     (unless paths (user-error "No Git worktrees found"))
+     (list (completing-read "Remove worktree: " paths
+                            nil t nil nil current)
+           (if current-prefix-arg t nil))))
+  (let* ((root (my/vc-git--worktree-root))
+         (expanded (expand-file-name path))
+         (main-root (plist-get (car (my/vc-git-worktree-entries)) :path))
+         (here (file-truename default-directory))
+         (gone (file-truename expanded)))
+    (when (yes-or-no-p (format "Remove worktree %s%s? "
+                               expanded (if force " (forced)" "")))
+      (let ((default-directory root))
+        (if force
+            (vc-git-command nil 0 nil "worktree" "remove" "--force" expanded)
+          (vc-git-command nil 0 nil "worktree" "remove" expanded)))
+      (message "Removed worktree %s" expanded)
+      (when (derived-mode-p 'vc-dir-mode)
+        (if (string-prefix-p gone here)
+            (vc-dir (or main-root root))
+          (vc-dir-refresh))))))
+
+(defun my/vc-git-worktree-prune ()
+  "Prune stale Git worktree metadata (`git worktree prune')."
+  (interactive)
+  (let ((root (my/vc-git--worktree-root)))
+    (let ((default-directory root))
+      (vc-git-command nil 0 nil "worktree" "prune"))
+    (message "Pruned worktrees in %s" root)
+    (when (derived-mode-p 'vc-dir-mode) (vc-dir-refresh))))
+
+(defvar-local my/vc-git-worktree-list--root nil
+  "Repository root shown in the current worktree list buffer.")
+
+(defvar my/vc-git-worktree-list-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") #'my/vc-git-worktree-list-visit)
+    (define-key map (kbd "g") #'my/vc-git-worktree-list)
+    (define-key map (kbd "q") #'quit-window)
+    map)
+  "Keymap for `my/vc-git-worktree-list-mode'.")
+
+(define-derived-mode my/vc-git-worktree-list-mode special-mode "Worktrees"
+  "Major mode for listing Git worktrees.
+\\{my/vc-git-worktree-list-mode-map}")
+
+(defun my/vc-git-worktree-list-visit ()
+  "Open `vc-dir' for the worktree on the current line."
+  (interactive)
+  (let* ((here (line-number-at-pos))
+         (btn (or (button-at (point))
+                  (save-excursion
+                    (beginning-of-line)
+                    (next-button (point) t))))
+         (ok (and btn (= here (line-number-at-pos (button-start btn))))))
+    (if ok
+        (vc-dir (button-label btn))
+      (user-error "No worktree on this line"))))
+
+(defun my/vc-git-worktree-list ()
+  "List Git worktrees of the current repository in a dedicated buffer.
+RET on a path opens `vc-dir' there; `g' refreshes the list, `q' quits."
+  (interactive)
+  (let* ((root (if (derived-mode-p 'my/vc-git-worktree-list-mode)
+                   (or my/vc-git-worktree-list--root
+                       (my/vc-git--worktree-root))
+                 (my/vc-git--worktree-root)))
+         (default-directory root)
+         (entries (my/vc-git-worktree-entries)))
+    (unless entries (user-error "No Git worktrees found"))
+    (with-current-buffer (get-buffer-create "*vc-git worktrees*")
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (my/vc-git-worktree-list-mode)
+        (setq my/vc-git-worktree-list--root root)
+        (setq default-directory root)
+        (insert (format "Worktrees for %s\n\n" root))
+        (dolist (e entries)
+          (let* ((path (plist-get e :path))
+                 (head (or (plist-get e :head) ""))
+                 (short (if (> (length head) 7) (substring head 0 7) head))
+                 (flags (string-join
+                         (delq nil
+                               (list (when (plist-get e :bare) "bare")
+                                     (when (plist-get e :detached) "detached")
+                                     (when (plist-get e :locked) "locked")
+                                     (when (plist-get e :prunable)
+                                       "prunable")))
+                         ",")))
+            (insert-button path
+                           'action (lambda (btn)
+                                      (vc-dir (button-label btn)))
+                           'follow-link t)
+            (insert (format "  [%s] %s%s\n"
+                            (or (plist-get e :branch) "HEAD")
+                            short
+                            (if (string-empty-p flags)
+                                ""
+                              (concat " (" flags ")")))))))
+      (goto-char (point-min))
+      (pop-to-buffer (current-buffer)))))
+
+(with-eval-after-load 'vc-dir
+  (define-key vc-dir-mode-map (kbd "W a") #'my/vc-git-worktree-add)
+  (define-key vc-dir-mode-map (kbd "W c") #'my/vc-git-worktree-checkout)
+  (define-key vc-dir-mode-map (kbd "W b") #'my/vc-git-worktree-branch)
+  (define-key vc-dir-mode-map (kbd "W m") #'my/vc-git-worktree-move)
+  (define-key vc-dir-mode-map (kbd "W s") #'my/vc-git-worktree-switch)
+  (define-key vc-dir-mode-map (kbd "W r") #'my/vc-git-worktree-remove)
+  (define-key vc-dir-mode-map (kbd "W k") #'my/vc-git-worktree-remove)
+  (define-key vc-dir-mode-map (kbd "W p") #'my/vc-git-worktree-prune)
+  (define-key vc-dir-mode-map (kbd "W l") #'my/vc-git-worktree-list))
+
+(with-eval-after-load 'vc-hooks
+  (define-key vc-prefix-map (kbd "w a") #'my/vc-git-worktree-add)
+  (define-key vc-prefix-map (kbd "w c") #'my/vc-git-worktree-checkout)
+  (define-key vc-prefix-map (kbd "w b") #'my/vc-git-worktree-branch)
+  (define-key vc-prefix-map (kbd "w m") #'my/vc-git-worktree-move)
+  (define-key vc-prefix-map (kbd "w s") #'my/vc-git-worktree-switch)
+  (define-key vc-prefix-map (kbd "w r") #'my/vc-git-worktree-remove)
+  (define-key vc-prefix-map (kbd "w k") #'my/vc-git-worktree-remove)
+  (define-key vc-prefix-map (kbd "w p") #'my/vc-git-worktree-prune)
+  (define-key vc-prefix-map (kbd "w l") #'my/vc-git-worktree-list))
+
+;;
+;; -> vc-git-branch-core
+;;
+(defun my/vc-git-current-branch ()
+  "Return the current branch name, or nil when HEAD is detached."
+  (let ((root (vc-git-root default-directory)))
+    (when root
+      (with-temp-buffer
+        (let ((default-directory root))
+          (vc-git-command (current-buffer) 0 nil
+                          "branch" "--show-current"))
+        (let ((out (string-trim (buffer-string))))
+          (unless (string-empty-p out) out))))))
+
+(defun my/vc-git-merge-branch (branch &optional how)
+  "Merge Git BRANCH into the current branch.
+HOW selects the method: \"merge\" (the default), \"squash\" or \"ff-only\".
+\"merge\" creates a merge commit without opening an editor, \"squash\"
+stages the changes for a later commit with `vc-next-action', and
+\"ff-only\" fast-forwards or fails when that is impossible.
+Merging the checked-out branch into itself is refused."
+  (interactive
+   (let* ((branches (or (my/vc-git-branches) '()))
+          (current (my/vc-git-current-branch)))
+     (unless branches (user-error "No branches found"))
+     (list (completing-read "Merge branch: "
+                            (delete current branches) nil nil)
+           (completing-read "How: " '("merge" "squash" "ff-only")
+                            nil t nil nil "merge"))))
+  (let ((root (my/vc-git--worktree-root))
+        (current (my/vc-git-current-branch))
+        (method (or how "merge")))
+    (when (string-empty-p branch)
+      (user-error "Branch must not be empty"))
+    (when (and current (equal branch current))
+      (user-error "Cannot merge %s into itself" branch))
+    (let ((default-directory root))
+      (pcase method
+        ("squash"
+         (vc-git-command nil 0 nil "merge" "--squash" branch))
+        ("ff-only"
+         (vc-git-command nil 0 nil "merge" "--ff-only" branch))
+        (_
+         (vc-git-command nil 0 nil "merge" "--no-edit" branch))))
+    (if (equal method "squash")
+        (message "Squashed %s; commit with C-x v v" branch)
+      (message "Merged %s into %s" branch (or current "HEAD")))
+    (vc-resynch-buffer root t t)
+    (when (derived-mode-p 'vc-dir-mode) (vc-dir-refresh))))
+
+(defun my/vc-git-rename-branch (old new)
+  "Rename Git branch OLD to NEW (`git branch -m').
+Interactively, default OLD to the current branch.
+Renaming the checked-out branch is allowed."
+  (interactive
+   (let* ((branches (or (my/vc-git-branches) '()))
+          (current (my/vc-git-current-branch)))
+     (unless branches (user-error "No branches found"))
+     (let ((old (completing-read "Rename branch: " branches
+                                 nil t nil nil current)))
+       (list old (read-string (format "Rename %s to: " old))))))
+  (let ((root (my/vc-git--worktree-root)))
+    (when (string-empty-p new)
+      (user-error "New branch name must not be empty"))
+    (let ((default-directory root))
+      (if (equal old (my/vc-git-current-branch))
+          (vc-git-command nil 0 nil "branch" "-m" new)
+        (vc-git-command nil 0 nil "branch" "-m" old new)))
+    (message "Renamed branch %s to %s" old new)
+    (when (derived-mode-p 'vc-dir-mode) (vc-dir-refresh))))
+
+(defun my/vc-git-delete-branch (branch &optional force)
+  "Delete Git BRANCH (`git branch -d', or `-D' with prefix FORCE).
+Refuses the checked-out branch; switch away first."
+  (interactive
+   (let* ((branches (or (my/vc-git-branches) '()))
+          (current (my/vc-git-current-branch)))
+     (unless branches (user-error "No branches found"))
+     (list (completing-read "Delete branch: "
+                            (delete current branches) nil t)
+           (if current-prefix-arg t nil))))
+  (let ((root (my/vc-git--worktree-root)))
+    (when (equal branch (my/vc-git-current-branch))
+      (user-error "Branch %s is checked out; switch away first" branch))
+    (when (yes-or-no-p (format "Delete branch %s%s? "
+                               branch (if force " (forced)" "")))
+      (let ((default-directory root))
+        (if force
+            (vc-git-command nil 0 nil "branch" "-D" branch)
+          (vc-git-command nil 0 nil "branch" "-d" branch)))
+      (message "Deleted branch %s" branch)
+      (when (derived-mode-p 'vc-dir-mode) (vc-dir-refresh)))))
+
+(defun my/vc-git-branch-entries ()
+  "Return local branches as plists with :branch, :current, :upstream
+and :subject keys, parsed from `git for-each-ref'."
+  (let ((root (my/vc-git--worktree-root))
+        (current (my/vc-git-current-branch))
+        entries)
+    (with-temp-buffer
+      (let ((default-directory root))
+        (vc-git-command (current-buffer) 0 nil "for-each-ref"
+                        "--format=%(refname:short)%09%(upstream:short)%09%(subject)"
+                        "refs/heads"))
+      (goto-char (point-min))
+      (while (not (eobp))
+        (let ((parts (split-string (buffer-substring-no-properties
+                                    (line-beginning-position)
+                                    (line-end-position))
+                                   "\t")))
+          (push (list :branch (or (nth 0 parts) "")
+                      :current (equal (nth 0 parts) current)
+                      :upstream (nth 1 parts)
+                      :subject (or (nth 2 parts) ""))
+                entries))
+        (forward-line 1)))
+    (nreverse entries)))
+
+(defvar-local my/vc-git-branch-list--root nil
+  "Repository root shown in the current branch list buffer.")
+
+(defvar my/vc-git-branch-list-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") #'my/vc-git-branch-list-visit)
+    (define-key map (kbd "g") #'my/vc-git-branch-list)
+    (define-key map (kbd "q") #'quit-window)
+    map)
+  "Keymap for `my/vc-git-branch-list-mode'.")
+
+(define-derived-mode my/vc-git-branch-list-mode special-mode "Branches"
+  "Major mode for listing Git branches.
+\\{my/vc-git-branch-list-mode-map}")
+
+(defun my/vc-git-branch-list-visit ()
+  "Check out the branch on the current line."
+  (interactive)
+  (let* ((here (line-number-at-pos))
+         (btn (or (button-at (point))
+                  (save-excursion
+                    (beginning-of-line)
+                    (next-button (point) t))))
+         (ok (and btn (= here (line-number-at-pos (button-start btn))))))
+    (if ok
+        (vc-switch-branch my/vc-git-branch-list--root (button-label btn))
+      (user-error "No branch on this line"))))
+
+(defun my/vc-git-branch-list ()
+  "List local Git branches in a dedicated buffer.
+The current branch is marked with `*', with upstream and subject shown.
+RET checks out the branch at point; `g' refreshes, `q' quits."
+  (interactive)
+  (let* ((root (if (derived-mode-p 'my/vc-git-branch-list-mode)
+                   (or my/vc-git-branch-list--root
+                       (my/vc-git--worktree-root))
+                 (my/vc-git--worktree-root)))
+         (default-directory root)
+         (entries (my/vc-git-branch-entries)))
+    (unless entries (user-error "No branches found"))
+    (with-current-buffer (get-buffer-create "*vc-git branches*")
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (my/vc-git-branch-list-mode)
+        (setq my/vc-git-branch-list--root root)
+        (setq default-directory root)
+        (insert (format "Branches for %s\n\n" root))
+        (dolist (e entries)
+          (insert (if (plist-get e :current) "* " "  "))
+          (insert-button (plist-get e :branch)
+                         'action (lambda (btn)
+                                    (vc-switch-branch
+                                     my/vc-git-branch-list--root
+                                     (button-label btn)))
+                         'follow-link t)
+          (insert (format "  %-24s %s\n"
+                          (or (plist-get e :upstream) "")
+                          (or (plist-get e :subject) "")))))
+      (goto-char (point-min))
+      (pop-to-buffer (current-buffer)))))
+
+(with-eval-after-load 'vc-dir
+  (define-key vc-dir-mode-map (kbd "B m") #'my/vc-git-merge-branch)
+  (define-key vc-dir-mode-map (kbd "B r") #'my/vc-git-rename-branch)
+  (define-key vc-dir-mode-map (kbd "B d") #'my/vc-git-delete-branch)
+  (define-key vc-dir-mode-map (kbd "B k") #'my/vc-git-delete-branch)
+  (define-key vc-dir-mode-map (kbd "B l") #'my/vc-git-branch-list))
+
+(with-eval-after-load 'vc-hooks
+  (define-key vc-prefix-map (kbd "B m") #'my/vc-git-merge-branch)
+  (define-key vc-prefix-map (kbd "B r") #'my/vc-git-rename-branch)
+  (define-key vc-prefix-map (kbd "B d") #'my/vc-git-delete-branch)
+  (define-key vc-prefix-map (kbd "B k") #'my/vc-git-delete-branch)
+  (define-key vc-prefix-map (kbd "B l") #'my/vc-git-branch-list))
+
+;;
 ;; -> window-positioning-core
 ;;
 (add-to-list 'display-buffer-alist
