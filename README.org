@@ -36,9 +36,10 @@ Magit-style branch and worktree first actions for vc and vc-dir
 
 - New worktree commands in =vc-git-worktree-core=: =my/vc-git-worktree-checkout= checks out an existing branch in a new worktree, =my/vc-git-worktree-branch= creates a new branch from a start point in a new worktree (Magit's two most common first actions, both defaulting to a sibling directory named <project>-<branch>), and =my/vc-git-worktree-move= relocates a worktree; =my/vc-git-worktree-add= now shares the same internal worker
 - New =vc-git-branch-core= section filling the gaps around stock =C-x v b s= (switch), =b c= (create) and =b l= (log): =my/vc-git-merge-branch= (plain merge, squash or ff-only), =my/vc-git-rename-branch= (works on the checked-out branch), =my/vc-git-delete-branch= (prefix forces with =-D=, checked-out branch protected), and =my/vc-git-branch-list= showing current mark, upstream and subject with =RET= checking out
-- In =vc-dir=: =W c=, =W b=, =W m= for worktrees and =B m=, =B r=, =B d= (=B k=), =B l= for branches; globally under =C-x v w …= and =C-x v B …=
-- =B= in =vc-dir= is now a branch prefix, so the DIYer branches-and-tags header refresh (which also runs automatically on its hook) moves to =B B=
-- =my/vc-git-merge-branch= merges a branch into the current one as a plain merge, squash (staged for a later commit) or fast-forward-only; stock =C-x v m= is file-oriented and a verified no-op for git branch merges, so merging gets its own command on =B m= (=C-x v B m=)
+- In =vc-dir=: =Z a=, =Z b=, =Z c=, =Z g=, =Z k=, =Z l=, =Z m=, =Z p= for worktrees and =b b=, =b m=, =b M=, =b k=, =b L= for branches (sharing stock's lowercase =b= prefix); globally under =C-x v z …= and =C-x v b …=
+- Key prefixes now match Magit for muscle memory, prompted by Bozhidar Batsov's [[https://emacsredux.com/blog/2026/09/02/working-with-git-worktrees-in-magit/][Working with Git Worktrees in Magit]]: worktrees moved =W …= → =Z …= with Magit's own =b=/=c= semantics (=Z b= checks out an existing branch, =Z c= creates a new one), =W s= → =Z g= like =magit-worktree-status=, and the branch commands merged into stock's lowercase =b= prefix (list on =b L=, since stock owns =b l=); the DIYer header refresh returns to plain =B=
+- =my/vc-git-merge-branch= merges a branch into the current one as a plain merge, squash (staged for a later commit) or fast-forward-only; stock =C-x v m= is file-oriented and a verified no-op for git branch merges, so merging gets its own command on =b M= (=C-x v b M=)
+- Branch keys audited against Magit's branch transient source (=magit-branch.el=): rename =b r= → =b m=, merge =b m= → =b M= (bare =m= means mark in =vc-dir=), switch gains a =b b= checkout alias; =b s= and =b l= stay stock (spin-off and checkout-local have no equivalents here), =b x= left free
 
 ** <2026-09-04>
 
@@ -2818,7 +2819,7 @@ annotated tag, prompting for a message."
 
 * vc-git-worktree-core
 
-Built-in =vc= tracks files inside a Git worktree automatically (the =.git= pointer file resolves transparently, so diffs, commits and =vc-dir= just work per worktree) but offers no commands to manage the worktree lifecycle itself. This section adds worktree support mirroring the tag helpers above: from a =vc-dir= buffer press =W a= to create a worktree at a prompted location checking out an existing branch (empty input checks out =HEAD=; =C-u W a= creates a new branch from a prompted start point instead, defaulting the location to a sibling directory named <project>-<branch>), =W c= to check out an existing branch in a new worktree and =W b= to create a new branch in a new worktree (the two Magit-style first actions, each defaulting the location the same way), =W m= to move a worktree, =W s= to switch to another worktree in =vc-dir= with branch annotations, =W r= (=W k=) to remove one after confirmation (prefix forces), =W p= to prune stale metadata, and =W l= to list all worktrees in a buffer where =RET= jumps to =vc-dir=. The same commands are available globally as =C-x v w a=, =w c=, =w b=, =w m=, =w s=, =w r=, =w k=, =w p= and =w l= from any file buffer.
+Built-in =vc= tracks files inside a Git worktree automatically (the =.git= pointer file resolves transparently, so diffs, commits and =vc-dir= just work per worktree) but offers no commands to manage the worktree lifecycle itself. This section adds worktree support mirroring the tag helpers above, deliberately keyed like Magit's worktree map (see Bozhidar Batsov's [[https://emacsredux.com/blog/2026/09/02/working-with-git-worktrees-in-magit/][Working with Git Worktrees in Magit]]): from a =vc-dir= buffer press =Z b= to check out an existing branch in a new worktree and =Z c= to create a new branch in a new worktree (the two Magit-style first actions, matching =magit-worktree-checkout= and =magit-worktree-branch= key for key, each defaulting the location to a sibling directory named <project>-<branch>), =Z a= for the general case (empty input checks out =HEAD=; =C-u Z a= creates a new branch from a prompted start point instead), =Z g= to jump to another worktree's =vc-dir= like =magit-worktree-status=, =Z m= to move a worktree and =Z k= to remove one after confirmation (prefix forces) exactly as in Magit, plus =Z l= to list all worktrees in a buffer where =RET= jumps to =vc-dir= and =Z p= to prune stale metadata, two extras with no Magit equivalent. A =vc-dir= sitting inside a removed tree falls back to the main root rather than dying. The same commands are available globally as =C-x v z a=, =z b=, =z c=, =z g=, =z m=, =z k=, =z l= and =z p= from any file buffer.
 
 #+begin_src elisp
 ;;
@@ -3147,31 +3148,29 @@ RET on a path opens `vc-dir' there; `g' refreshes the list, `q' quits."
       (pop-to-buffer (current-buffer)))))
 
 (with-eval-after-load 'vc-dir
-  (define-key vc-dir-mode-map (kbd "W a") #'my/vc-git-worktree-add)
-  (define-key vc-dir-mode-map (kbd "W c") #'my/vc-git-worktree-checkout)
-  (define-key vc-dir-mode-map (kbd "W b") #'my/vc-git-worktree-branch)
-  (define-key vc-dir-mode-map (kbd "W m") #'my/vc-git-worktree-move)
-  (define-key vc-dir-mode-map (kbd "W s") #'my/vc-git-worktree-switch)
-  (define-key vc-dir-mode-map (kbd "W r") #'my/vc-git-worktree-remove)
-  (define-key vc-dir-mode-map (kbd "W k") #'my/vc-git-worktree-remove)
-  (define-key vc-dir-mode-map (kbd "W p") #'my/vc-git-worktree-prune)
-  (define-key vc-dir-mode-map (kbd "W l") #'my/vc-git-worktree-list))
+  (define-key vc-dir-mode-map (kbd "Z a") #'my/vc-git-worktree-add)
+  (define-key vc-dir-mode-map (kbd "Z b") #'my/vc-git-worktree-checkout)
+  (define-key vc-dir-mode-map (kbd "Z c") #'my/vc-git-worktree-branch)
+  (define-key vc-dir-mode-map (kbd "Z g") #'my/vc-git-worktree-switch)
+  (define-key vc-dir-mode-map (kbd "Z k") #'my/vc-git-worktree-remove)
+  (define-key vc-dir-mode-map (kbd "Z l") #'my/vc-git-worktree-list)
+  (define-key vc-dir-mode-map (kbd "Z m") #'my/vc-git-worktree-move)
+  (define-key vc-dir-mode-map (kbd "Z p") #'my/vc-git-worktree-prune))
 
 (with-eval-after-load 'vc-hooks
-  (define-key vc-prefix-map (kbd "w a") #'my/vc-git-worktree-add)
-  (define-key vc-prefix-map (kbd "w c") #'my/vc-git-worktree-checkout)
-  (define-key vc-prefix-map (kbd "w b") #'my/vc-git-worktree-branch)
-  (define-key vc-prefix-map (kbd "w m") #'my/vc-git-worktree-move)
-  (define-key vc-prefix-map (kbd "w s") #'my/vc-git-worktree-switch)
-  (define-key vc-prefix-map (kbd "w r") #'my/vc-git-worktree-remove)
-  (define-key vc-prefix-map (kbd "w k") #'my/vc-git-worktree-remove)
-  (define-key vc-prefix-map (kbd "w p") #'my/vc-git-worktree-prune)
-  (define-key vc-prefix-map (kbd "w l") #'my/vc-git-worktree-list))
+  (define-key vc-prefix-map (kbd "z a") #'my/vc-git-worktree-add)
+  (define-key vc-prefix-map (kbd "z b") #'my/vc-git-worktree-checkout)
+  (define-key vc-prefix-map (kbd "z c") #'my/vc-git-worktree-branch)
+  (define-key vc-prefix-map (kbd "z g") #'my/vc-git-worktree-switch)
+  (define-key vc-prefix-map (kbd "z k") #'my/vc-git-worktree-remove)
+  (define-key vc-prefix-map (kbd "z l") #'my/vc-git-worktree-list)
+  (define-key vc-prefix-map (kbd "z m") #'my/vc-git-worktree-move)
+  (define-key vc-prefix-map (kbd "z p") #'my/vc-git-worktree-prune))
 #+end_src
 
 * vc-git-branch-core
 
-Stock =vc= already covers switching (=C-x v b s=), creating (=C-x v b c=) and logging (=C-x v b l=) branches, so this section only fills the remaining Magit-style gaps: merging, renaming, deleting and listing. (Note =C-x v m= is file-oriented and a no-op for git branch merges, so merging gets its own command here.) From a =vc-dir= buffer press =B m= to merge a branch into the current one, choosing a plain merge commit, a squash staged for a later commit, or fast-forward-only; =B r= to rename a branch (defaulting to the current one; renaming the checked-out branch works), =B d= (=B k=) to delete one after confirmation (prefix forces with =-D=; the checked-out branch is protected, switch away first), and =B l= to list local branches with the current branch marked, upstream and subject shown, where =RET= checks out the branch at point. The same commands are available globally as =C-x v B m=, =C-x v B r=, =B d=, =B k= and =B l= from any file buffer.
+Stock =vc= already covers switching (=C-x v b s=), creating (=C-x v b c=) and logging (=C-x v b l=) branches, and this section hangs the rest on that very same lowercase =b= prefix — audited key-for-key against Magit's own branch transient, so =b b= checks out (aliasing stock's =b s= switch), =b m= renames exactly like =magit-branch-rename= (git's own =-m= flag), and =b k= deletes exactly like =magit-branch-delete=. Two Magit letters mean something else here and are deliberately left alone: =b s= stays stock switch (Magit’s is spin-off, which has no equivalent) and =b l= stays stock log (Magit’s checks out the local branch). Merge has no slot under Magit’s =b= either — over there it lives on the top-level =m= transient, but in =vc-dir= bare =m= means mark — so it takes the nearest free key =b M=. (Note =C-x v m= itself is file-oriented and a no-op for git branch merges, so merging gets its own command regardless.) From a =vc-dir= buffer: =b m= renames a branch (defaulting to the current one; renaming the checked-out branch works); =b M= merges (plain commit, squash staged for later, or fast-forward-only); =b k= deletes after confirmation (prefix forces =-D=; the checked-out branch is protected, switch away first); =b L= lists local branches with the current branch marked, upstream and subject shown, where =RET= checks out the branch at point (capital =L=, since stock owns =b l=). The same commands are available globally as =C-x v b b=, =b m=, =b M=, =b k= and =b L= from any file buffer.
 
 #+begin_src elisp
 ;;
@@ -3354,18 +3353,18 @@ RET checks out the branch at point; `g' refreshes, `q' quits."
       (pop-to-buffer (current-buffer)))))
 
 (with-eval-after-load 'vc-dir
-  (define-key vc-dir-mode-map (kbd "B m") #'my/vc-git-merge-branch)
-  (define-key vc-dir-mode-map (kbd "B r") #'my/vc-git-rename-branch)
-  (define-key vc-dir-mode-map (kbd "B d") #'my/vc-git-delete-branch)
-  (define-key vc-dir-mode-map (kbd "B k") #'my/vc-git-delete-branch)
-  (define-key vc-dir-mode-map (kbd "B l") #'my/vc-git-branch-list))
+  (define-key vc-dir-mode-map (kbd "b b") #'vc-switch-branch)
+  (define-key vc-dir-mode-map (kbd "b m") #'my/vc-git-rename-branch)
+  (define-key vc-dir-mode-map (kbd "b M") #'my/vc-git-merge-branch)
+  (define-key vc-dir-mode-map (kbd "b k") #'my/vc-git-delete-branch)
+  (define-key vc-dir-mode-map (kbd "b L") #'my/vc-git-branch-list))
 
 (with-eval-after-load 'vc-hooks
-  (define-key vc-prefix-map (kbd "B m") #'my/vc-git-merge-branch)
-  (define-key vc-prefix-map (kbd "B r") #'my/vc-git-rename-branch)
-  (define-key vc-prefix-map (kbd "B d") #'my/vc-git-delete-branch)
-  (define-key vc-prefix-map (kbd "B k") #'my/vc-git-delete-branch)
-  (define-key vc-prefix-map (kbd "B l") #'my/vc-git-branch-list))
+  (define-key vc-prefix-map (kbd "b b") #'vc-switch-branch)
+  (define-key vc-prefix-map (kbd "b m") #'my/vc-git-rename-branch)
+  (define-key vc-prefix-map (kbd "b M") #'my/vc-git-merge-branch)
+  (define-key vc-prefix-map (kbd "b k") #'my/vc-git-delete-branch)
+  (define-key vc-prefix-map (kbd "b L") #'my/vc-git-branch-list))
 #+end_src
 
 * window-positioning-core

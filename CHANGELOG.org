@@ -16,9 +16,10 @@ Magit-style branch and worktree first actions for vc and vc-dir
 
 - New worktree commands in =vc-git-worktree-core=: =my/vc-git-worktree-checkout= checks out an existing branch in a new worktree, =my/vc-git-worktree-branch= creates a new branch from a start point in a new worktree (Magit's two most common first actions, both defaulting to a sibling directory named <project>-<branch>), and =my/vc-git-worktree-move= relocates a worktree; =my/vc-git-worktree-add= now shares the same internal worker
 - New =vc-git-branch-core= section filling the gaps around stock =C-x v b s= (switch), =b c= (create) and =b l= (log): =my/vc-git-merge-branch= (plain merge, squash or ff-only), =my/vc-git-rename-branch= (works on the checked-out branch), =my/vc-git-delete-branch= (prefix forces with =-D=, checked-out branch protected), and =my/vc-git-branch-list= showing current mark, upstream and subject with =RET= checking out
-- In =vc-dir=: =W c=, =W b=, =W m= for worktrees and =B m=, =B r=, =B d= (=B k=), =B l= for branches; globally under =C-x v w …= and =C-x v B …=
-- =B= in =vc-dir= is now a branch prefix, so the DIYer branches-and-tags header refresh (which also runs automatically on its hook) moves to =B B=
-- =my/vc-git-merge-branch= merges a branch into the current one as a plain merge, squash (staged for a later commit) or fast-forward-only; stock =C-x v m= is file-oriented and a verified no-op for git branch merges, so merging gets its own command on =B m= (=C-x v B m=)
+- In =vc-dir=: =Z a=, =Z b=, =Z c=, =Z g=, =Z k=, =Z l=, =Z m=, =Z p= for worktrees and =b b=, =b m=, =b M=, =b k=, =b L= for branches (sharing stock's lowercase =b= prefix); globally under =C-x v z …= and =C-x v b …=
+- Key prefixes now match Magit for muscle memory, prompted by the Emacs Redux piece "Working with Git Worktrees in Magit": worktrees moved =W …= → =Z …= with Magit's own =b=/=c= semantics (=Z b= checks out an existing branch, =Z c= creates a new one), =W s= → =Z g= like =magit-worktree-status=, and the branch commands merged into stock's lowercase =b= prefix (list on =b L=, since stock owns =b l=); the DIYer header refresh returns to plain =B=
+- =my/vc-git-merge-branch= merges a branch into the current one as a plain merge, squash (staged for a later commit) or fast-forward-only; stock =C-x v m= is file-oriented and a verified no-op for git branch merges, so merging gets its own command on =b M= (=C-x v b M=)
+- Branch keys audited against Magit's branch transient source (=magit-branch.el=): rename =b r= → =b m=, merge =b m= → =b M= (bare =m= means mark in =vc-dir=), switch gains a =b b= checkout alias; =b s= and =b l= stay stock (spin-off and checkout-local have no equivalents here), =b x= left free
 
 ** <2026-09-04>
 

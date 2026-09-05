@@ -1838,26 +1838,24 @@ RET on a path opens `vc-dir' there; `g' refreshes the list, `q' quits."
       (pop-to-buffer (current-buffer)))))
 
 (with-eval-after-load 'vc-dir
-  (define-key vc-dir-mode-map (kbd "W a") #'my/vc-git-worktree-add)
-  (define-key vc-dir-mode-map (kbd "W c") #'my/vc-git-worktree-checkout)
-  (define-key vc-dir-mode-map (kbd "W b") #'my/vc-git-worktree-branch)
-  (define-key vc-dir-mode-map (kbd "W m") #'my/vc-git-worktree-move)
-  (define-key vc-dir-mode-map (kbd "W s") #'my/vc-git-worktree-switch)
-  (define-key vc-dir-mode-map (kbd "W r") #'my/vc-git-worktree-remove)
-  (define-key vc-dir-mode-map (kbd "W k") #'my/vc-git-worktree-remove)
-  (define-key vc-dir-mode-map (kbd "W p") #'my/vc-git-worktree-prune)
-  (define-key vc-dir-mode-map (kbd "W l") #'my/vc-git-worktree-list))
+  (define-key vc-dir-mode-map (kbd "Z a") #'my/vc-git-worktree-add)
+  (define-key vc-dir-mode-map (kbd "Z b") #'my/vc-git-worktree-checkout)
+  (define-key vc-dir-mode-map (kbd "Z c") #'my/vc-git-worktree-branch)
+  (define-key vc-dir-mode-map (kbd "Z g") #'my/vc-git-worktree-switch)
+  (define-key vc-dir-mode-map (kbd "Z k") #'my/vc-git-worktree-remove)
+  (define-key vc-dir-mode-map (kbd "Z l") #'my/vc-git-worktree-list)
+  (define-key vc-dir-mode-map (kbd "Z m") #'my/vc-git-worktree-move)
+  (define-key vc-dir-mode-map (kbd "Z p") #'my/vc-git-worktree-prune))
 
 (with-eval-after-load 'vc-hooks
-  (define-key vc-prefix-map (kbd "w a") #'my/vc-git-worktree-add)
-  (define-key vc-prefix-map (kbd "w c") #'my/vc-git-worktree-checkout)
-  (define-key vc-prefix-map (kbd "w b") #'my/vc-git-worktree-branch)
-  (define-key vc-prefix-map (kbd "w m") #'my/vc-git-worktree-move)
-  (define-key vc-prefix-map (kbd "w s") #'my/vc-git-worktree-switch)
-  (define-key vc-prefix-map (kbd "w r") #'my/vc-git-worktree-remove)
-  (define-key vc-prefix-map (kbd "w k") #'my/vc-git-worktree-remove)
-  (define-key vc-prefix-map (kbd "w p") #'my/vc-git-worktree-prune)
-  (define-key vc-prefix-map (kbd "w l") #'my/vc-git-worktree-list))
+  (define-key vc-prefix-map (kbd "z a") #'my/vc-git-worktree-add)
+  (define-key vc-prefix-map (kbd "z b") #'my/vc-git-worktree-checkout)
+  (define-key vc-prefix-map (kbd "z c") #'my/vc-git-worktree-branch)
+  (define-key vc-prefix-map (kbd "z g") #'my/vc-git-worktree-switch)
+  (define-key vc-prefix-map (kbd "z k") #'my/vc-git-worktree-remove)
+  (define-key vc-prefix-map (kbd "z l") #'my/vc-git-worktree-list)
+  (define-key vc-prefix-map (kbd "z m") #'my/vc-git-worktree-move)
+  (define-key vc-prefix-map (kbd "z p") #'my/vc-git-worktree-prune))
 
 ;;
 ;; -> vc-git-branch-core
@@ -2039,18 +2037,18 @@ RET checks out the branch at point; `g' refreshes, `q' quits."
       (pop-to-buffer (current-buffer)))))
 
 (with-eval-after-load 'vc-dir
-  (define-key vc-dir-mode-map (kbd "B m") #'my/vc-git-merge-branch)
-  (define-key vc-dir-mode-map (kbd "B r") #'my/vc-git-rename-branch)
-  (define-key vc-dir-mode-map (kbd "B d") #'my/vc-git-delete-branch)
-  (define-key vc-dir-mode-map (kbd "B k") #'my/vc-git-delete-branch)
-  (define-key vc-dir-mode-map (kbd "B l") #'my/vc-git-branch-list))
+  (define-key vc-dir-mode-map (kbd "b b") #'vc-switch-branch)
+  (define-key vc-dir-mode-map (kbd "b m") #'my/vc-git-rename-branch)
+  (define-key vc-dir-mode-map (kbd "b M") #'my/vc-git-merge-branch)
+  (define-key vc-dir-mode-map (kbd "b k") #'my/vc-git-delete-branch)
+  (define-key vc-dir-mode-map (kbd "b L") #'my/vc-git-branch-list))
 
 (with-eval-after-load 'vc-hooks
-  (define-key vc-prefix-map (kbd "B m") #'my/vc-git-merge-branch)
-  (define-key vc-prefix-map (kbd "B r") #'my/vc-git-rename-branch)
-  (define-key vc-prefix-map (kbd "B d") #'my/vc-git-delete-branch)
-  (define-key vc-prefix-map (kbd "B k") #'my/vc-git-delete-branch)
-  (define-key vc-prefix-map (kbd "B l") #'my/vc-git-branch-list))
+  (define-key vc-prefix-map (kbd "b b") #'vc-switch-branch)
+  (define-key vc-prefix-map (kbd "b m") #'my/vc-git-rename-branch)
+  (define-key vc-prefix-map (kbd "b M") #'my/vc-git-merge-branch)
+  (define-key vc-prefix-map (kbd "b k") #'my/vc-git-delete-branch)
+  (define-key vc-prefix-map (kbd "b L") #'my/vc-git-branch-list))
 
 ;;
 ;; -> window-positioning-core
