@@ -36,8 +36,9 @@ Magit-style branch and worktree first actions for vc and vc-dir
 
 - New worktree commands in =vc-git-worktree-core=: =my/vc-git-worktree-checkout= checks out an existing branch in a new worktree, =my/vc-git-worktree-branch= creates a new branch from a start point in a new worktree (Magit's two most common first actions, both defaulting to a sibling directory named <project>-<branch>), and =my/vc-git-worktree-move= relocates a worktree; =my/vc-git-worktree-add= now shares the same internal worker
 - New =vc-git-branch-core= section filling the gaps around stock =C-x v b s= (switch), =b c= (create) and =b l= (log): =my/vc-git-merge-branch= (plain merge, squash or ff-only), =my/vc-git-rename-branch= (works on the checked-out branch), =my/vc-git-delete-branch= (prefix forces with =-D=, checked-out branch protected), and =my/vc-git-branch-list= showing current mark, upstream and subject with =RET= checking out
-- In =vc-dir=: =Z a=, =Z b=, =Z c=, =Z g=, =Z k=, =Z l=, =Z m=, =Z p= for worktrees and =b b=, =b m=, =b M=, =b k=, =b L= for branches (sharing stock's lowercase =b= prefix); globally under =C-x v z …= and =C-x v b …=
-- Key prefixes now match Magit for muscle memory, prompted by Bozhidar Batsov's [[https://emacsredux.com/blog/2026/09/02/working-with-git-worktrees-in-magit/][Working with Git Worktrees in Magit]]: worktrees moved =W …= → =Z …= with Magit's own =b=/=c= semantics (=Z b= checks out an existing branch, =Z c= creates a new one), =W s= → =Z g= like =magit-worktree-status=, and the branch commands merged into stock's lowercase =b= prefix (list on =b L=, since stock owns =b l=); the DIYer header refresh returns to plain =B=
+- In =vc-dir=: =Z a=, =Z b=, =Z c=, =Z g=, =Z k=, =Z l=, =Z m=, =Z p= for worktrees and =b b=, =b m=, =b M=, =b k=, =b B= for branches (sharing stock's lowercase =b= prefix); globally under =C-x v z …= and =C-x v b …=
+- Emacs 31 alignment: our branch list moved =b L= → =b B= (31 binds =b L= to =vc-print-root-branch-log=); the rest of our =Z= and =b= maps are collision-free against 31's new =C-x v w= working-tree commands, whose differing semantics (=w k= kills buffers rather than removing the tree, =w s= switches projects rather than opening =vc-dir=) are exactly why the Magit-style =Z= prefix stays
+- Key prefixes now match Magit for muscle memory, prompted by Bozhidar Batsov's [[https://emacsredux.com/blog/2026/09/02/working-with-git-worktrees-in-magit/][Working with Git Worktrees in Magit]]: worktrees moved =W …= → =Z …= with Magit's own =b=/=c= semantics (=Z b= checks out an existing branch, =Z c= creates a new one), =W s= → =Z g= like =magit-worktree-status=, and the branch commands merged into stock's lowercase =b= prefix (list on =b B=); the DIYer header refresh returns to plain =B=
 - =my/vc-git-merge-branch= merges a branch into the current one as a plain merge, squash (staged for a later commit) or fast-forward-only; stock =C-x v m= is file-oriented and a verified no-op for git branch merges, so merging gets its own command on =b M= (=C-x v b M=)
 - Branch keys audited against Magit's branch transient source (=magit-branch.el=): rename =b r= → =b m=, merge =b m= → =b M= (bare =m= means mark in =vc-dir=), switch gains a =b b= checkout alias; =b s= and =b l= stay stock (spin-off and checkout-local have no equivalents here), =b x= left free
 
@@ -3170,7 +3171,7 @@ RET on a path opens `vc-dir' there; `g' refreshes the list, `q' quits."
 
 * vc-git-branch-core
 
-Stock =vc= already covers switching (=C-x v b s=), creating (=C-x v b c=) and logging (=C-x v b l=) branches, and this section hangs the rest on that very same lowercase =b= prefix — audited key-for-key against Magit's own branch transient, so =b b= checks out (aliasing stock's =b s= switch), =b m= renames exactly like =magit-branch-rename= (git's own =-m= flag), and =b k= deletes exactly like =magit-branch-delete=. Two Magit letters mean something else here and are deliberately left alone: =b s= stays stock switch (Magit’s is spin-off, which has no equivalent) and =b l= stays stock log (Magit’s checks out the local branch). Merge has no slot under Magit’s =b= either — over there it lives on the top-level =m= transient, but in =vc-dir= bare =m= means mark — so it takes the nearest free key =b M=. (Note =C-x v m= itself is file-oriented and a no-op for git branch merges, so merging gets its own command regardless.) From a =vc-dir= buffer: =b m= renames a branch (defaulting to the current one; renaming the checked-out branch works); =b M= merges (plain commit, squash staged for later, or fast-forward-only); =b k= deletes after confirmation (prefix forces =-D=; the checked-out branch is protected, switch away first); =b L= lists local branches with the current branch marked, upstream and subject shown, where =RET= checks out the branch at point (capital =L=, since stock owns =b l=). The same commands are available globally as =C-x v b b=, =b m=, =b M=, =b k= and =b L= from any file buffer.
+Stock =vc= already covers switching (=C-x v b s=), creating (=C-x v b c=) and logging (=C-x v b l=) branches, and this section hangs the rest on that very same lowercase =b= prefix — audited key-for-key against Magit's own branch transient, so =b b= checks out (aliasing stock's =b s= switch), =b m= renames exactly like =magit-branch-rename= (git's own =-m= flag), and =b k= deletes exactly like =magit-branch-delete=. Two Magit letters mean something else here and are deliberately left alone: =b s= stays stock switch (Magit’s is spin-off, which has no equivalent) and =b l= stays stock log (Magit’s checks out the local branch). Merge has no slot under Magit’s =b= either — over there it lives on the top-level =m= transient, but in =vc-dir= bare =m= means mark — so it takes the nearest free key =b M=. (Note =C-x v m= itself is file-oriented and a no-op for git branch merges, so merging gets its own command regardless.) From a =vc-dir= buffer: =b m= renames a branch (defaulting to the current one; renaming the checked-out branch works); =b M= merges (plain commit, squash staged for later, or fast-forward-only); =b k= deletes after confirmation (prefix forces =-D=; the checked-out branch is protected, switch away first); =b B= lists local branches with the current branch marked, upstream and subject shown, where =RET= checks out the branch at point (capital =B= for Branches; =b L= belongs to 31's =vc-print-root-branch-log=). The same commands are available globally as =C-x v b b=, =b m=, =b M=, =b k= and =b B= from any file buffer.
 
 #+begin_src elisp
 ;;
@@ -3357,14 +3358,14 @@ RET checks out the branch at point; `g' refreshes, `q' quits."
   (define-key vc-dir-mode-map (kbd "b m") #'my/vc-git-rename-branch)
   (define-key vc-dir-mode-map (kbd "b M") #'my/vc-git-merge-branch)
   (define-key vc-dir-mode-map (kbd "b k") #'my/vc-git-delete-branch)
-  (define-key vc-dir-mode-map (kbd "b L") #'my/vc-git-branch-list))
+  (define-key vc-dir-mode-map (kbd "b B") #'my/vc-git-branch-list))
 
 (with-eval-after-load 'vc-hooks
   (define-key vc-prefix-map (kbd "b b") #'vc-switch-branch)
   (define-key vc-prefix-map (kbd "b m") #'my/vc-git-rename-branch)
   (define-key vc-prefix-map (kbd "b M") #'my/vc-git-merge-branch)
   (define-key vc-prefix-map (kbd "b k") #'my/vc-git-delete-branch)
-  (define-key vc-prefix-map (kbd "b L") #'my/vc-git-branch-list))
+  (define-key vc-prefix-map (kbd "b B") #'my/vc-git-branch-list))
 #+end_src
 
 * window-positioning-core

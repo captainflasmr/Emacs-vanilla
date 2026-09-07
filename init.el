@@ -2041,14 +2041,14 @@ RET checks out the branch at point; `g' refreshes, `q' quits."
   (define-key vc-dir-mode-map (kbd "b m") #'my/vc-git-rename-branch)
   (define-key vc-dir-mode-map (kbd "b M") #'my/vc-git-merge-branch)
   (define-key vc-dir-mode-map (kbd "b k") #'my/vc-git-delete-branch)
-  (define-key vc-dir-mode-map (kbd "b L") #'my/vc-git-branch-list))
+  (define-key vc-dir-mode-map (kbd "b B") #'my/vc-git-branch-list))
 
 (with-eval-after-load 'vc-hooks
   (define-key vc-prefix-map (kbd "b b") #'vc-switch-branch)
   (define-key vc-prefix-map (kbd "b m") #'my/vc-git-rename-branch)
   (define-key vc-prefix-map (kbd "b M") #'my/vc-git-merge-branch)
   (define-key vc-prefix-map (kbd "b k") #'my/vc-git-delete-branch)
-  (define-key vc-prefix-map (kbd "b L") #'my/vc-git-branch-list))
+  (define-key vc-prefix-map (kbd "b B") #'my/vc-git-branch-list))
 
 ;;
 ;; -> window-positioning-core
