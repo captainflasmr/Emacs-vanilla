@@ -8,13 +8,22 @@ set -eo pipefail
 BUILD_ROOT="$HOME/emacs-builds"
 INSTALL_ROOT="$HOME/emacs-versions"
 
-# Build dependencies for different distributions
-ARCH_BUILD_DEPS="base-devel gtk2 gtk3 libxpm libjpeg-turbo libpng libtiff giflib libxml2 gnutls librsvg"
-SLES_BUILD_DEPS="gcc gcc-c++ make automake texinfo gtk2-devel gtk3-devel libXpm-devel libjpeg8-devel libpng16-devel libtiff-devel giflib-devel libxml2-devel gnutls-devel cairo-devel harfbuzz-devel librsvg-devel"
+# Build dependencies for different distributions.
+# NOTE: ARCH_BUILD_DEPS covers both classic X11/GTK3 builds AND Wayland-native
+# PGTK builds (--with-pgtk). PGTK needs gtk3 + wayland plus the modern feature
+# libs (jansson, tree-sitter, libgccjit for native-comp, sqlite, webp, lcms2,
+# libotf, m17n-lib, libsystemd) and the autotools chain for git checkouts.
+ARCH_BUILD_DEPS="base-devel gtk3 wayland libxpm libjpeg-turbo libpng libtiff giflib libxml2 gnutls librsvg cairo harfbuzz jansson tree-sitter libgccjit sqlite libsystemd webp lcms2 libotf m17n-lib texinfo autoconf automake git pkgconf"
+SLES_BUILD_DEPS="gcc gcc-c++ make automake autoconf texinfo gtk3-devel libXpm-devel libjpeg8-devel libpng16-devel libtiff-devel giflib-devel libxml2-devel gnutls-devel cairo-devel harfbuzz-devel librsvg-devel jansson-devel libtree-sitter-devel libgccjit-devel sqlite3-devel libwebp-devel lcms2-devel git"
+
+# Upstream git for bleeding-edge (Wayland-native PGTK) builds.
+EMACS_GIT_URL="https://git.savannah.gnu.org/git/emacs.git"
+EMACS_GIT_SRC="$BUILD_ROOT/emacs-git"
 
 # 27.2 2021-03-25
 # 28.2 2022-09-12
 # 29.4 2024-06-22
+# 30.1 2025-02-23 / 30.2 2025-08 (current pacman emacs-wayland 30.2-3 is PGTK)
 DEFAULT_VERSIONS=(
     "emacs-27.2"
     "emacs-28.2"
@@ -22,12 +31,21 @@ DEFAULT_VERSIONS=(
     "emacs-30.1"
 )
 
-# If a single version arg is given (e.g. "27.2" or "emacs-27.2") build just
-# that one; otherwise build the default set above.
+# If a single version arg is given (e.g. "27.2", "emacs-27.2", "master",
+# "git", "pgtk", "emacs-master") build just that one; otherwise build the
+# default set above. "master" means bleeding-edge from Savannah git with
+# Wayland-native PGTK + native-comp + tree-sitter.
 if [[ $# -ge 1 && -n "$1" ]]; then
     v="$1"
-    [[ "$v" == emacs-* ]] || v="emacs-$v"
-    VERSIONS=("$v")
+    case "$v" in
+        master|git|pgtk|emacs-master|emacs-git|emacs-pgtk)
+            VERSIONS=("emacs-master")
+            ;;
+        *)
+            [[ "$v" == emacs-* ]] || v="emacs-$v"
+            VERSIONS=("$v")
+            ;;
+    esac
 else
     VERSIONS=("${DEFAULT_VERSIONS[@]}")
 fi
@@ -133,20 +151,46 @@ function build_emacs() {
             --with-xml2 \
             --with-rsvg
     else
-        # Newer versions use GTK3
-        ./configure \
-            --prefix="$install_dir" \
-            --with-x-toolkit=gtk3 \
-            --with-xpm \
-            --with-jpeg \
-            --with-png \
-            --with-gif \
-            --with-tiff \
-            --with-gnutls \
-            --with-xml2 \
-            --with-cairo \
-            --with-harfbuzz \
-            --with-rsvg
+        # Newer versions use GTK3 (X11). Modern feature flags are appended
+        # where supported; very old releases ignore unknown --with-* options
+        # only if configure tolerates them, so keep the X11 set conservative
+        # for <29 and full-featured for >=29.
+        if [[ "$version" == emacs-29* || "$version" == emacs-30* || "$version" == emacs-31* ]]; then
+            ./configure \
+                --prefix="$install_dir" \
+                --with-x-toolkit=gtk3 \
+                --with-xpm \
+                --with-jpeg \
+                --with-png \
+                --with-gif \
+                --with-tiff \
+                --with-gnutls \
+                --with-xml2 \
+                --with-cairo \
+                --with-harfbuzz \
+                --with-rsvg \
+                --with-json \
+                --with-sqlite3 \
+                --with-webp \
+                --with-lcms2 \
+                --with-modules \
+                --with-tree-sitter \
+                --with-native-compilation=aot
+        else
+            ./configure \
+                --prefix="$install_dir" \
+                --with-x-toolkit=gtk3 \
+                --with-xpm \
+                --with-jpeg \
+                --with-png \
+                --with-gif \
+                --with-tiff \
+                --with-gnutls \
+                --with-xml2 \
+                --with-cairo \
+                --with-harfbuzz \
+                --with-rsvg
+        fi
     fi
     
     # Use all available cores for compilation. set -e aborts on failure; the
@@ -155,6 +199,68 @@ function build_emacs() {
     make install     || { echo "ERROR: make install failed for $version" >&2; exit 1; }
 
     echo "$version installed to $install_dir"
+}
+
+function build_emacs_master() {
+    # Bleeding-edge Wayland-native build from Savannah master.
+    # Mirrors Arch extra/emacs-wayland flags: PGTK + cairo + harfbuzz +
+    # libsystemd + modules + native-comp (aot) + tree-sitter, plus json /
+    # sqlite / webp / lcms2 / rsvg autodetected via pkg-config.
+    local version="emacs-master"
+    local install_dir="$INSTALL_ROOT/$version"
+
+    echo "Building $version (git master, PGTK/Wayland) ..."
+
+    mkdir -p "$BUILD_ROOT"
+    mkdir -p "$INSTALL_ROOT"
+
+    if [[ -d "$EMACS_GIT_SRC/.git" ]]; then
+        echo "Updating existing checkout at $EMACS_GIT_SRC ..."
+        git -C "$EMACS_GIT_SRC" fetch --all --prune
+        git -C "$EMACS_GIT_SRC" checkout master
+        git -C "$EMACS_GIT_SRC" pull --ff-only
+    else
+        echo "Cloning $EMACS_GIT_URL -> $EMACS_GIT_SRC ..."
+        rm -rf "$EMACS_GIT_SRC"
+        git clone "$EMACS_GIT_URL" "$EMACS_GIT_SRC"
+    fi
+
+    cd "$EMACS_GIT_SRC"
+
+    echo "Running autogen.sh ..."
+    ./autogen.sh
+
+    # NOTE: no --with-json flag on master (>=31): libjansson support is
+    # autodetected and the option was removed from configure.
+    echo "Configuring $version with PGTK ..."
+    ./configure \
+        --prefix="$install_dir" \
+        --with-pgtk \
+        --with-cairo \
+        --with-harfbuzz \
+        --with-libsystemd \
+        --with-modules \
+        --with-native-compilation=aot \
+        --with-tree-sitter \
+        --with-sqlite3 \
+        --with-webp \
+        --with-lcms2 \
+        --with-rsvg \
+        --with-xml2 \
+        --with-gnutls \
+        --with-xpm \
+        --with-jpeg \
+        --with-png \
+        --with-gif \
+        --with-tiff
+
+    # Use all available cores for compilation. set -e aborts on failure; the
+    # explicit messages make the failing phase obvious in long build logs.
+    make -j"$(nproc)" || { echo "ERROR: make failed for $version" >&2; exit 1; }
+    make install     || { echo "ERROR: make install failed for $version" >&2; exit 1; }
+
+    echo "$version installed to $install_dir"
+    "$install_dir/bin/emacs" --version | head -n 3
 }
 
 function create_pkgbuild() {
@@ -226,17 +332,42 @@ fi
 
 case $build_method in
     1)
-        prepare_environment
+        # SKIP_PREPARE=1 skips pacman/zypper installs (deps already present).
+        if [[ -z "${SKIP_PREPARE:-}" ]]; then
+            prepare_environment
+        else
+            echo "Skipping prepare_environment (SKIP_PREPARE set)..."
+            mkdir -p "$BUILD_ROOT" "$INSTALL_ROOT"
+        fi
         for version in "${VERSIONS[@]}"; do
-            build_emacs "$version"
+            if [[ "$version" == "emacs-master" ]]; then
+                build_emacs_master
+            else
+                build_emacs "$version"
+            fi
         done
-        
+
         # Create convenience symlinks
         mkdir -p "$HOME/bin"
         echo "Creating version-specific symlinks..."
         for version in "${VERSIONS[@]}"; do
             ln -sf "$INSTALL_ROOT/$version/bin/emacs" "$HOME/bin/emacs-${version#emacs-}"
         done
+        # If master was built, point bare ~/bin/emacs at it so it shadows
+        # /usr/bin/emacs (~/bin precedes /usr/bin in PATH). Back up any
+        # existing ~/bin/emacs symlink first. Pass MAKE_DEFAULT=no to skip.
+        if [[ " ${VERSIONS[*]} " == *" emacs-master "* && "${MAKE_DEFAULT:-yes}" != "no" ]]; then
+            if [[ -e "$HOME/bin/emacs" && ! -L "$HOME/bin/emacs" ]]; then
+                echo "NOTE: $HOME/bin/emacs is a regular file; leaving it alone."
+            else
+                echo "Pointing $HOME/bin/emacs -> emacs-master (backs up old link)..."
+                [[ -L "$HOME/bin/emacs" ]] && cp -P "$HOME/bin/emacs" "$HOME/bin/emacs.prev-link"
+                ln -sf "$INSTALL_ROOT/emacs-master/bin/emacs" "$HOME/bin/emacs"
+            fi
+            echo "Master is now the default 'emacs' in PATH. Verify with:"
+            echo "  hash -r; emacs --version; emacs --batch --eval '(message \"%s\" system-configuration-features)'"
+            echo "To revert to pacman emacs-wayland: rm ~/bin/emacs (restores /usr/bin/emacs 30.2)."
+        fi
         ;;
         
     2)
@@ -263,3 +394,8 @@ echo "Build complete. You can run specific versions using:"
 for version in "${VERSIONS[@]}"; do
     echo "emacs-${version#emacs-}"
 done
+echo ""
+echo "Usage notes:"
+echo "  ./build-emacs-versions.sh master   # bleeding-edge PGTK/Wayland -> ~/emacs-versions/emacs-master"
+echo "  ./build-emacs-versions.sh 30.2     # stable tarball (X11/GTK3)"
+echo "  MAKE_DEFAULT=no ./build-emacs-versions.sh master  # skip ~/bin/emacs repoint"
