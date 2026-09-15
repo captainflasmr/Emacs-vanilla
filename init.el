@@ -2383,9 +2383,9 @@ ARCHIVE-CMD is the command pattern for directories, using %i/%o placeholders.
 For tar.gz, FILE-CMD is nil because single files should use gzip instead.")
 
 (transient-define-prefix my/dired-compress-transient ()
-  "Compress or uncompress marked files in Dired with format selection."
+  "Compress, encrypt or uncompress marked files in Dired with format selection."
   [:description
-   (lambda () (format "Compress %s"
+   (lambda () (format "Compress or encrypt %s"
                       (if-let ((files (dired-get-marked-files nil nil nil nil t)))
                           (mapconcat #'file-name-nondirectory files ", ")
                         "nothing")))
@@ -2395,7 +2395,9 @@ For tar.gz, FILE-CMD is nil because single files should use gzip instead.")
    ("b" "bzip2  – good ratio, medium"   my/dired-compress-bzip2)
    ("s" "zstd   – fast, good ratio"     my/dired-compress-zstd)
    ("l" "lzip   – best ratio, slow"     my/dired-compress-lzip)
-   ("7" "7z     – best ratio, slow"      my/dired-compress-7z)])
+   ("7" "7z     – best ratio, slow"      my/dired-compress-7z)
+   ("e" "gpg    – symmetric encrypt"     my/dired-encrypt)
+   ("c" "gpg    – tar.gz + encrypt"      my/dired-compress-encrypt)])
 
 (defun my/dired-compress-with (key)
   "Compress marked files using format assocated with KEY from `my/dired-compress-formats'.
@@ -2655,22 +2657,185 @@ Each file is dispatched on its extension via `my/dired-decompress-formats'."
         (my/dired-decompress-file file)))
     (dired-post-do-command)))
 
+;;
+;; -> dired-gpg-encryption
+;;
+(defconst my/dired-encrypt-suffix ".gpg"
+  "Suffix added by `my/dired-encrypt' and stripped by `my/dired-decrypt'.")
+
+(defun my/dired--busy-header (text)
+  "Show TEXT in the Dired header line while an async operation runs."
+  (when my/dired--header-timer
+    (cancel-timer my/dired--header-timer))
+  (setq header-line-format
+        (concat (propertize " ● " 'face 'warning)
+                (propertize text 'face 'warning)
+                (propertize " ●" 'face 'warning)))
+  (force-mode-line-update t))
+
+(defun my/dired--read-gpg-passphrase (confirm)
+  "Read a GPG passphrase, asking twice when CONFIRM is non-nil.
+Signal a `user-error' when the entries differ or the passphrase is empty."
+  (let ((passphrase (read-passwd "GPG passphrase: ")))
+    (when (and confirm
+               (not (equal passphrase (read-passwd "Confirm passphrase: "))))
+      (user-error "Passphrases do not match"))
+    (when (string-empty-p passphrase)
+      (user-error "Empty passphrase"))
+    passphrase))
+
+(defun my/dired--gpg-process (name action output command passphrase)
+  "Start COMMAND asynchronously, tracking it via `my/dired-compress-sentinel'.
+NAME is used in the process and buffer names, ACTION is the verb shown
+in the header-line, OUTPUT is the file produced on success and
+PASSPHRASE, when non-nil, is written to the process standard input
+(gpg reads it via --passphrase-fd 0)."
+  (let* ((default-directory (file-name-directory (expand-file-name output)))
+         (process-connection-type nil)
+         (process (start-file-process
+                   (format "%s-%s" (downcase action) name)
+                   (generate-new-buffer (format " *%s-%s*" (downcase action) name))
+                   shell-file-name shell-command-switch command)))
+    (process-put process 'my-dir default-directory)
+    (process-put process 'my-cmd-name name)
+    (process-put process 'my-dired-buffer (current-buffer))
+    (process-put process 'my-newname (expand-file-name output))
+    (process-put process 'my-action action)
+    (set-process-sentinel process #'my/dired-compress-sentinel)
+    (set-process-query-on-exit-flag process nil)
+    (when passphrase
+      (process-send-string process (concat passphrase "\n"))
+      (process-send-eof process))
+    process))
+
+(defun my/dired-encrypt-file (file passphrase)
+  "Encrypt FILE symmetrically with GPG, asynchronously, to FILE.gpg.
+PASSPHRASE is piped to gpg; the original file is kept."
+  (let* ((file (expand-file-name file))
+         (output (concat file my/dired-encrypt-suffix)))
+    (when (string-suffix-p my/dired-encrypt-suffix file)
+      (user-error "%s is already encrypted" (file-name-nondirectory file)))
+    (when (and (file-exists-p output)
+               (not (y-or-n-p (format "%s exists, overwrite? "
+                                      (abbreviate-file-name output)))))
+      (user-error "Aborted"))
+    (message "Encrypting %s... (async)" (file-name-nondirectory file))
+    (my/dired--gpg-process
+     (file-name-nondirectory file) "Encrypt" output
+     (concat "gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0"
+             " --symmetric --cipher-algo AES256 --output "
+             (shell-quote-argument (file-local-name output))
+             " " (shell-quote-argument (file-local-name file)))
+     passphrase)))
+
+(defun my/dired-encrypt (&optional arg)
+  "Encrypt marked (or next ARG) files symmetrically with GPG.
+Each file is encrypted to FILE.gpg; the passphrase is read once and the
+original files are kept."
+  (interactive "P" dired-mode)
+  (let ((files (dired-get-marked-files nil arg nil nil t)))
+    (when files
+      (let ((passphrase (my/dired--read-gpg-passphrase t)))
+        (my/dired--busy-header
+         (format "Encrypting %d file%s" (length files)
+                 (if (= (length files) 1) "" "s")))
+        (dolist (file files)
+          (my/dired-encrypt-file file passphrase))
+        (dired-post-do-command)))))
+
+(defun my/dired-decrypt-file (file passphrase)
+  "Decrypt FILE (.gpg) asynchronously to its name without the suffix.
+PASSPHRASE is piped to gpg; the encrypted file is kept."
+  (let* ((file (expand-file-name file))
+         (output (file-name-sans-extension file)))
+    (unless (string-suffix-p my/dired-encrypt-suffix file)
+      (user-error "Don't know how to decrypt %s" (file-name-nondirectory file)))
+    (when (equal output file)
+      (user-error "Don't know how to decrypt %s" (file-name-nondirectory file)))
+    (when (and (file-exists-p output)
+               (not (y-or-n-p (format "%s exists, overwrite? "
+                                      (abbreviate-file-name output)))))
+      (user-error "Aborted"))
+    (message "Decrypting %s... (async)" (file-name-nondirectory file))
+    (my/dired--gpg-process
+     (file-name-nondirectory file) "Decrypt" output
+     (concat "gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0"
+             " --output " (shell-quote-argument (file-local-name output))
+             " " (shell-quote-argument (file-local-name file)))
+     passphrase)))
+
+(defun my/dired-decrypt (&optional arg)
+  "Decrypt marked (or next ARG) .gpg files asynchronously.
+The passphrase is read once and the encrypted files are kept."
+  (interactive "P" dired-mode)
+  (let ((files (dired-get-marked-files nil arg nil nil t)))
+    (when files
+      (let ((passphrase (my/dired--read-gpg-passphrase nil)))
+        (my/dired--busy-header
+         (format "Decrypting %d file%s" (length files)
+                 (if (= (length files) 1) "" "s")))
+        (dolist (file files)
+          (my/dired-decrypt-file file passphrase))
+        (dired-post-do-command)))))
+
+(defun my/dired-compress-encrypt (&optional arg)
+  "Compress marked (or next ARG) files to a tar.gz and encrypt it with GPG.
+Prompts for the archive name and passphrase; the result is
+ARCHIVE.tar.gz.gpg and the original files are kept."
+  (interactive "P" dired-mode)
+  (let ((files (dired-get-marked-files nil arg nil nil t)))
+    (unless files (user-error "No files marked"))
+    (let* ((dir-name (file-name-nondirectory (directory-file-name default-directory)))
+           (default-name (concat dir-name ".tar.gz"))
+           (archive-name (read-string (format "Archive name (%s): " default-name)
+                                      default-name))
+           (archive (expand-file-name
+                     (if (string-suffix-p ".tar.gz" archive-name)
+                         archive-name
+                       (concat archive-name ".tar.gz"))))
+           (output (concat archive my/dired-encrypt-suffix))
+           (files-arg (mapconcat (lambda (f) (shell-quote-argument (file-local-name f)))
+                                 files " "))
+           (passphrase (my/dired--read-gpg-passphrase t))
+           (tmp (make-temp-file "mimesis-encrypt-" nil ".tar.gz"))
+           (q-tmp (shell-quote-argument (file-local-name tmp)))
+           (q-out (shell-quote-argument (file-local-name output))))
+      (when (and (file-exists-p output)
+                 (not (y-or-n-p (format "%s exists, overwrite? "
+                                        (abbreviate-file-name output)))))
+        (delete-file tmp t)
+        (user-error "Aborted"))
+      (message "Compressing and encrypting %d files... (async)" (length files))
+      (my/dired--busy-header (format "Encrypting %s" (file-name-nondirectory output)))
+      (my/dired--gpg-process
+       (file-name-nondirectory output) "Encrypt" output
+       (format (concat "tar --force-local -czf %s %s && gpg --batch --yes"
+                       " --pinentry-mode loopback --passphrase-fd 0"
+                       " --symmetric --cipher-algo AES256 --output %s %s;"
+                       " rc=$?; rm -f %s; exit $rc")
+               q-tmp files-arg q-out q-tmp q-tmp)
+       passphrase)
+      (dired-post-do-command))))
+
 (defun my/dired-do-compress (&optional arg)
-  "Compress or uncompress marked (or next ARG) files.
-If any marked files are already compressed, decompress them
-asynchronously via `my/dired-decompress'.  Otherwise show the format
-selection transient."
+  "Compress, encrypt or uncompress marked (or next ARG) files.
+If any marked files are encrypted (.gpg), decrypt them asynchronously via
+`my/dired-decrypt'; if any are already compressed, decompress them via
+`my/dired-decompress'.  Otherwise show the format selection transient."
   (interactive "P" dired-mode)
   (let* ((files (dired-get-marked-files nil current-prefix-arg nil nil t))
          (suffixes dired-compress-file-suffixes)
+         (has-encrypted nil)
          (has-compressed nil))
     (dolist (file files)
-      (dolist (entry suffixes)
-        (when (string-match-p (car entry) file)
-          (setq has-compressed t))))
-    (if has-compressed
-        (my/dired-decompress arg)
-      (my/dired-compress-transient))))
+      (if (string-suffix-p my/dired-encrypt-suffix file)
+          (setq has-encrypted t)
+        (dolist (entry suffixes)
+          (when (string-match-p (car entry) file)
+            (setq has-compressed t)))))
+    (cond (has-encrypted (my/dired-decrypt arg))
+          (has-compressed (my/dired-decompress arg))
+          (t (my/dired-compress-transient)))))
 
 ;;
 ;; -> dired-clipboard-core

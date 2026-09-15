@@ -10,6 +10,15 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-09-15>
+
+Add GPG encryption to the dired compress transient
+
+- New =e= entry (=my/dired-encrypt=) encrypts each marked file symmetrically with GPG to =FILE.gpg= using AES256, and =c= (=my/dired-compress-encrypt=) bundles the selection into a =tar.gz= and encrypts it to =DIR.tar.gz.gpg=; the =z= transient is retitled "Compress or encrypt" and lists both alongside the compression formats
+- =my/dired-do-compress= now detects =.gpg= files and routes them to the new =my/dired-decrypt=, mirroring the existing decompress branch; encrypted files are kept after decryption
+- Passphrases are read once per operation with =read-passwd= (asked twice when encrypting) and fed to =gpg --pinentry-mode loopback --passphrase-fd 0= over a pipe, so no external pinentry is required; encryption and decryption reuse the async =my/dired-compress-sentinel= for revert-on-completion and header-line reporting (=● Encrypting… ●= / =● ✓ Encrypted: … ●=)
+- The dired-core notes no longer claim that =Z= opens the transient (the binding is =z=)
+
 ** <2026-09-05>
 
 Magit-style branch and worktree first actions for vc and vc-dir
