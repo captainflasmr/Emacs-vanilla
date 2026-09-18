@@ -1663,6 +1663,10 @@ DELTA is in 0.1pt units; updates future frames via `default-frame-alist'."
 (define-key my-overrides-mode-map (kbd "M-[") #'my/shell-menu)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (global-set-key (kbd "C-x k") #'kill-buffer)
+;; Accidental `C-x s' (instead of `C-x C-s') saves the current buffer
+;; rather than prompting via `save-some-buffers'.  The overrides mode
+;; map ensures this wins over mode-local bindings too.
+(define-key my-overrides-mode-map (kbd "C-x s") #'save-buffer)
 (define-key my-overrides-mode-map (kbd "C-c j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
 (define-key my-overrides-mode-map (kbd "C-c k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
 (global-set-key (kbd "C-x l") #'scroll-lock-mode)
