@@ -3184,6 +3184,22 @@ the first installed manager by name, with xdg-open as the last resort."
 (add-to-list 'default-frame-alist '(alpha-background . 90))
 
 ;;
+;; -> org-table-fixed-pitch-core
+;;
+(defun my/org-table-fixed-pitch ()
+  "Keep org tables in fixed-pitch even when `variable-pitch-mode' is on.
+Adds a buffer-local relative remap so the `org-table' face inherits the
+`fixed-pitch' face.  With `variable-pitch-mode' off this is visually a
+no-op (the default face is monospace anyway); with it on, org table
+alignment survives while headings and prose render in the variable
+font.  The same one-line remap can be extended to `org-code' or
+`org-block', which in recent org versions no longer inherit
+`fixed-pitch' either."
+  (when (derived-mode-p 'org-mode)
+    (face-remap-add-relative 'org-table :inherit 'fixed-pitch)))
+(add-hook 'org-mode-hook #'my/org-table-fixed-pitch)
+
+;;
 ;; -> imenu-core
 ;;
 (defun my-imenu-create-index ()

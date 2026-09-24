@@ -34,6 +34,8 @@ Note that this package works in combination with https://github.com/captainflasm
 
 Added =my/set-divider-color= on =C-z D=: prompts for a colour (same =read-color= picker as =C-z u= / =C-z U= / =C-z B=) and recolours the three =window-divider= faces (divider plus first/last pixel) on the selected frame, or all frames with a prefix argument.  Pairs with =C-z d=, which toggles the dividing line itself.
 
+Added =my/org-table-fixed-pitch= on =org-mode-hook=: a buffer-local face remap that makes the =org-table= face inherit =fixed-pitch=, so org tables keep their monospace grid alignment while =variable-pitch-mode= (=C-z p=) renders headings and prose in the variable font.  With variable pitch off the remap is visually a no-op.
+
 ** <2026-09-05>
 
 Magit-style branch and worktree first actions for vc and vc-dir
@@ -4569,6 +4571,22 @@ Configures various visual aspects of Emacs, including menu bar, toolbar, and scr
 ;; environments that don't support it.
 (set-frame-parameter nil 'alpha-background 90)
 (add-to-list 'default-frame-alist '(alpha-background . 90))
+
+;;
+;; -> org-table-fixed-pitch-core
+;;
+(defun my/org-table-fixed-pitch ()
+  "Keep org tables in fixed-pitch even when `variable-pitch-mode' is on.
+Adds a buffer-local relative remap so the `org-table' face inherits the
+`fixed-pitch' face.  With `variable-pitch-mode' off this is visually a
+no-op (the default face is monospace anyway); with it on, org table
+alignment survives while headings and prose render in the variable
+font.  The same one-line remap can be extended to `org-code' or
+`org-block', which in recent org versions no longer inherit
+`fixed-pitch' either."
+  (when (derived-mode-p 'org-mode)
+    (face-remap-add-relative 'org-table :inherit 'fixed-pitch)))
+(add-hook 'org-mode-hook #'my/org-table-fixed-pitch)
 #+end_src
 
 * imenu-core
