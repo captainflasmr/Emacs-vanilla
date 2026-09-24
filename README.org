@@ -36,6 +36,8 @@ Added =my/set-divider-color= on =C-z D=: prompts for a colour (same =read-color=
 
 Added =my/org-table-fixed-pitch= on =org-mode-hook=: a buffer-local face remap that makes the =org-table= face inherit =fixed-pitch=, so org tables keep their monospace grid alignment while =variable-pitch-mode= (=C-z p=) renders headings and prose in the variable font.  With variable pitch off the remap is visually a no-op.
 
+=my/kill-ring-save= (=M-w=, =C-c w=) now copies only the visible text of the region when called with a prefix argument, via =org-copy-visible=, so folded headings and hidden blocks are skipped instead of being copied in full.
+
 ** <2026-09-05>
 
 Magit-style branch and worktree first actions for vc and vc-dir
@@ -2628,12 +2630,17 @@ Lightens dark themes by 20%, darkens light themes by 5%."
     (push 'hline rows)
     (cons header rows)))
 
-(defun my/kill-ring-save (beg end flash)
+(defun my/kill-ring-save (beg end &optional copy-visible)
+  "Save the region to the kill ring.
+With a prefix argument, copy only the visible text between BEG
+and END, skipping folded or hidden text, like `org-copy-visible'."
   (interactive (if (use-region-p)
-                   (list (region-beginning) (region-end) nil)
+                   (list (region-beginning) (region-end) current-prefix-arg)
                  (list (line-beginning-position)
-                       (line-beginning-position 2) 'flash)))
-  (kill-ring-save beg end))
+                       (line-beginning-position 2) current-prefix-arg)))
+  (if copy-visible
+      (org-copy-visible beg end)
+    (kill-ring-save beg end)))
 (global-set-key [remap kill-ring-save] 'my/kill-ring-save)
 (define-key my-overrides-mode-map (kbd "C-c w") 'my/kill-ring-save)
 
@@ -4408,6 +4415,7 @@ All three fall back to their default bindings when the region is
 active or in WDired."
   :lighter nil
   :keymap my-dired-clipboard-mode-map)
+#+end_src
 
 #+begin_src emacs-lisp
 (defun my/dired-kill-subdir ()

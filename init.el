@@ -1323,12 +1323,17 @@ Lightens dark themes by 20%, darkens light themes by 5%."
     (push 'hline rows)
     (cons header rows)))
 
-(defun my/kill-ring-save (beg end flash)
+(defun my/kill-ring-save (beg end &optional copy-visible)
+  "Save the region to the kill ring.
+With a prefix argument, copy only the visible text between BEG
+and END, skipping folded or hidden text, like `org-copy-visible'."
   (interactive (if (use-region-p)
-                   (list (region-beginning) (region-end) nil)
+                   (list (region-beginning) (region-end) current-prefix-arg)
                  (list (line-beginning-position)
-                       (line-beginning-position 2) 'flash)))
-  (kill-ring-save beg end))
+                       (line-beginning-position 2) current-prefix-arg)))
+  (if copy-visible
+      (org-copy-visible beg end)
+    (kill-ring-save beg end)))
 (global-set-key [remap kill-ring-save] 'my/kill-ring-save)
 (define-key my-overrides-mode-map (kbd "C-c w") 'my/kill-ring-save)
 
