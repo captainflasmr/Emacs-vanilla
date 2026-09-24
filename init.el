@@ -454,6 +454,7 @@ DELTA is in 0.1pt units; updates future frames via `default-frame-alist'."
 (global-set-key (kbd "C-x v e") 'vc-ediff)
 (global-set-key (kbd "C-x x g") #'revert-buffer)
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
+(global-set-key (kbd "C-x x c") #'clone-indirect-buffer)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
 (setq tab-bar-select-tab-modifiers '(control))
 (defun my/dired-jump-or-up ()
