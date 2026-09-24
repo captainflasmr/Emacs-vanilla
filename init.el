@@ -3017,6 +3017,16 @@ active or in WDired."
   :lighter nil
   :keymap my-dired-clipboard-mode-map)
 
+(defun my/dired-kill-subdir ()
+  "Kill the current subdirectory, then refresh the Dired buffer.
+Reverting via `dired-revert' clears any display artifacts left
+behind by `dired-kill-subdir' while preserving marks, hidden
+subdirectories and the cursor position.  The killed subdirectory
+is not re-inserted as it has been removed from the subdir alist."
+  (interactive)
+  (dired-kill-subdir)
+  (revert-buffer))
+
 (defun my/dired-sort-by-size ()
   (interactive)
   (dired-sort-other "-alGghS"))
@@ -3041,6 +3051,7 @@ active or in WDired."
   (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
   (define-key dired-mode-map (kbd "C-c U") 'my/disk-space-query)
   (define-key dired-mode-map (kbd "b") 'my/dired-file-to-org-link)
+  (define-key dired-mode-map (kbd "k") #'my/dired-kill-subdir)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file)
   (define-key dired-mode-map (kbd "z") #'my/dired-do-compress)
   (define-key dired-mode-map (kbd "3") #'my/dired-sort-by-size)
