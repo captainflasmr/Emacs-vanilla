@@ -307,6 +307,22 @@ then run this to fill the whole document in one keystroke."
 ;;
 ;; -> keys-visual-core
 ;;
+(defun my/set-divider-color (color)
+  "Set the colour of the window dividing line to COLOR.
+Colours the three `window-divider' faces (the divider plus its first and
+last pixels) on the selected frame, the same way `set-foreground-color'
+recolors the default face; with a prefix argument, on every live frame
+instead.  The line only shows while `window-divider-mode' is on (C-z d)."
+  (interactive (list (read-color "Divider colour: ")))
+  (let ((frames (if current-prefix-arg (frame-list) (list (selected-frame)))))
+    (dolist (frame frames)
+      (dolist (face '(window-divider
+                      window-divider-first-pixel
+                      window-divider-last-pixel))
+        (set-face-attribute face frame :foreground color)))
+    (message "Divider colour: %s%s" color
+             (if current-prefix-arg " (all frames)" ""))))
+
 (defvar my-win-keymap (make-sparse-keymap))
  (define-key my-overrides-mode-map (kbd "C-z") my-win-keymap)
 (define-key my-win-keymap (kbd "b") #'(lambda () (interactive)(tab-bar-mode 'toggle)))
@@ -325,6 +341,7 @@ then run this to fill the whole document in one keystroke."
 (define-key my-win-keymap (kbd "u") #'set-cursor-color)
 (define-key my-win-keymap (kbd "U") #'set-foreground-color)
 (define-key my-win-keymap (kbd "B") #'set-background-color)
+(define-key my-win-keymap (kbd "D") #'my/set-divider-color)
 (define-key my-win-keymap (kbd "t")
             (lambda () (interactive)
               (org-table-map-tables 'org-table-align)))

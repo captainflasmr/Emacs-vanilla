@@ -30,6 +30,10 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2026-09-24>
+
+Added =my/set-divider-color= on =C-z D=: prompts for a colour (same =read-color= picker as =C-z u= / =C-z U= / =C-z B=) and recolours the three =window-divider= faces (divider plus first/last pixel) on the selected frame, or all frames with a prefix argument.  Pairs with =C-z d=, which toggles the dividing line itself.
+
 ** <2026-09-05>
 
 Magit-style branch and worktree first actions for vc and vc-dir
@@ -1513,6 +1517,22 @@ Sets up keybindings for quickly toggling visual features like font, theme, line 
 ;;
 ;; -> keys-visual-core
 ;;
+(defun my/set-divider-color (color)
+  "Set the colour of the window dividing line to COLOR.
+Colours the three `window-divider' faces (the divider plus its first and
+last pixels) on the selected frame, the same way `set-foreground-color'
+recolors the default face; with a prefix argument, on every live frame
+instead.  The line only shows while `window-divider-mode' is on (C-z d)."
+  (interactive (list (read-color "Divider colour: ")))
+  (let ((frames (if current-prefix-arg (frame-list) (list (selected-frame)))))
+    (dolist (frame frames)
+      (dolist (face '(window-divider
+                      window-divider-first-pixel
+                      window-divider-last-pixel))
+        (set-face-attribute face frame :foreground color)))
+    (message "Divider colour: %s%s" color
+             (if current-prefix-arg " (all frames)" ""))))
+
 (defvar my-win-keymap (make-sparse-keymap))
  (define-key my-overrides-mode-map (kbd "C-z") my-win-keymap)
 (define-key my-win-keymap (kbd "b") #'(lambda () (interactive)(tab-bar-mode 'toggle)))
@@ -1531,6 +1551,7 @@ Sets up keybindings for quickly toggling visual features like font, theme, line 
 (define-key my-win-keymap (kbd "u") #'set-cursor-color)
 (define-key my-win-keymap (kbd "U") #'set-foreground-color)
 (define-key my-win-keymap (kbd "B") #'set-background-color)
+(define-key my-win-keymap (kbd "D") #'my/set-divider-color)
 (define-key my-win-keymap (kbd "t")
             (lambda () (interactive)
               (org-table-map-tables 'org-table-align)))
