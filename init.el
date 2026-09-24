@@ -2144,6 +2144,7 @@ RET checks out the branch at point; `g' refreshes, `q' quits."
 ;;
 (setq org-table-convert-region-max-lines 9999)
 (setq org-src-tab-acts-natively t)
+(setq org-src-fontify-natively t)
 (setq org-log-done t)
 (setq org-export-with-sub-superscripts nil)
 (setq org-deadline-warning-days 365)
@@ -2194,6 +2195,36 @@ RET checks out the branch at point; `g' refreshes, `q' quits."
 (setq org-goto-interface 'outline-path-completionp)
 (setq org-outline-path-complete-in-steps nil)
 (setq org-imenu-depth 1)
+(defun my/org-refresh-source-fontification ()
+  "Ensure the source block at point is fontified after navigation."
+  (when (and (derived-mode-p 'org-mode)
+             (bound-and-true-p org-src-fontify-natively)
+             (org-in-src-block-p))
+    (let ((element (org-element-at-point)))
+      (when (eq (org-element-type element) 'src-block)
+        (let ((block-begin (org-element-begin element))
+              (block-end (org-element-end element)))
+          (when (and block-begin block-end
+                     (not (get-text-property (point)
+                                             'font-lock-fontified)))
+            (font-lock-flush block-begin block-end)
+            (font-lock-ensure block-begin block-end)))))))
+
+(defun my/org-refresh-visible-fontification (window start)
+  "Ensure the visible Org range in WINDOW from START is fontified."
+  (when (derived-mode-p 'org-mode)
+    (font-lock-ensure start (window-end window))))
+
+(defun my/org-setup-fontification ()
+  "Enable Org fontification and refresh it after navigation."
+  (unless font-lock-mode
+    (font-lock-mode 1))
+  (add-hook 'post-command-hook
+            #'my/org-refresh-source-fontification nil t)
+  (add-hook 'window-scroll-functions
+            #'my/org-refresh-visible-fontification nil t))
+
+(add-hook 'org-mode-hook #'my/org-setup-fontification)
 (with-eval-after-load 'org
   (define-key org-mode-map (kbd "C-'") #'nil)
   (define-key org-mode-map (kbd "C-,") #'nil))
