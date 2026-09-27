@@ -2227,7 +2227,10 @@ RET checks out the branch at point; `g' refreshes, `q' quits."
 (add-hook 'org-mode-hook #'my/org-setup-fontification)
 (with-eval-after-load 'org
   (define-key org-mode-map (kbd "C-'") #'nil)
-  (define-key org-mode-map (kbd "C-,") #'nil))
+  (define-key org-mode-map (kbd "C-,") #'nil)
+  ;; Iterate every table in the buffer until inter-table dependencies
+  ;; converge; `C-u C-u C-c *' does only the table at point.
+  (define-key org-mode-map (kbd "C-c t *") #'org-table-iterate-buffer-tables))
 (setq imenu-flatten t)
 
 ;;
