@@ -3102,6 +3102,20 @@ is not re-inserted as it has been removed from the subdir alist."
   (interactive)
   (dired-sort-other "-alGghX"))
 
+(defun my/dired-open-gthumb ()
+  "Open marked files in gthumb image viewer.
+In dired, uses marked files (or file at point); otherwise uses the
+current buffer's file or directory.  Runs gthumb detached."
+  (interactive)
+  (let ((files (if (derived-mode-p 'dired-mode)
+                   (dired-get-marked-files nil nil nil nil "No file at point")
+                 (list (or buffer-file-name default-directory))))
+        (gthumb (executable-find "gthumb")))
+    (unless gthumb
+      (user-error "gthumb not found in PATH"))
+    (apply #'start-process "gthumb" nil gthumb files)
+    (message "Opened %d file(s) in gthumb" (length files))))
+
 (with-eval-after-load 'dired
   (add-hook 'dired-mode-hook (lambda () (my-dired-clipboard-mode 1)))
   (define-key dired-mode-map (kbd "D") #'my/dired-async-do-delete)
@@ -3113,6 +3127,7 @@ is not re-inserted as it has been removed from the subdir alist."
   (define-key dired-mode-map (kbd "k") #'my/dired-kill-subdir)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file)
   (define-key dired-mode-map (kbd "z") #'my/dired-do-compress)
+  (define-key dired-mode-map (kbd "J") #'my/dired-open-gthumb)
   (define-key dired-mode-map (kbd "3") #'my/dired-sort-by-size)
   (define-key dired-mode-map (kbd "4") #'my/dired-sort-by-date)
   (define-key dired-mode-map (kbd "5") #'my/dired-sort-by-name)
