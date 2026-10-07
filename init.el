@@ -2033,8 +2033,31 @@ and :subject keys, parsed from `git for-each-ref'."
   "Major mode for listing Git branches.
 \\{my/vc-git-branch-list-mode-map}")
 
+(defun my/vc-git-branch-list--checkout (branch)
+  "Check out BRANCH for the current branch list and refresh.
+Point is left on BRANCH so the moved `*' marker stays visible.
+Any `vc-dir' buffer showing the same repository is refreshed too."
+  (let ((root my/vc-git-branch-list--root))
+    (vc-switch-branch root branch)
+    (my/vc-git-branch-list)
+    (goto-char (point-min))
+    (let (found (pos (point-min)) btn)
+      (while (and (not found) (setq btn (next-button pos t)))
+        (if (equal (button-label btn) branch)
+            (progn (goto-char (button-start btn))
+                   (setq found t))
+          (setq pos (button-end btn))))
+      (unless found (goto-char (point-min))))
+    (let ((true-root (file-truename root)))
+      (dolist (buf (buffer-list))
+        (with-current-buffer buf
+          (when (derived-mode-p 'vc-dir-mode)
+            (ignore-errors
+              (when (string-prefix-p true-root (file-truename default-directory))
+                (vc-dir-refresh)))))))))
+
 (defun my/vc-git-branch-list-visit ()
-  "Check out the branch on the current line."
+  "Check out the branch on the current line and refresh the list."
   (interactive)
   (let* ((here (line-number-at-pos))
          (btn (or (button-at (point))
@@ -2043,7 +2066,7 @@ and :subject keys, parsed from `git for-each-ref'."
                     (next-button (point) t))))
          (ok (and btn (= here (line-number-at-pos (button-start btn))))))
     (if ok
-        (vc-switch-branch my/vc-git-branch-list--root (button-label btn))
+        (my/vc-git-branch-list--checkout (button-label btn))
       (user-error "No branch on this line"))))
 
 (defun my/vc-git-branch-list ()
@@ -2059,23 +2082,33 @@ RET checks out the branch at point; `g' refreshes, `q' quits."
          (entries (my/vc-git-branch-entries)))
     (unless entries (user-error "No branches found"))
     (with-current-buffer (get-buffer-create "*vc-git branches*")
-      (let ((inhibit-read-only t))
+      (let* ((inhibit-read-only t)
+             (branch-width (apply #'max (mapcar (lambda (e)
+                                                  (string-width
+                                                   (or (plist-get e :branch) "")))
+                                                entries)))
+             (upstream-width (apply #'max (mapcar (lambda (e)
+                                                    (string-width
+                                                     (or (plist-get e :upstream) "")))
+                                                  entries))))
         (erase-buffer)
         (my/vc-git-branch-list-mode)
         (setq my/vc-git-branch-list--root root)
         (setq default-directory root)
         (insert (format "Branches for %s\n\n" root))
         (dolist (e entries)
-          (insert (if (plist-get e :current) "* " "  "))
-          (insert-button (plist-get e :branch)
-                         'action (lambda (btn)
-                                    (vc-switch-branch
-                                     my/vc-git-branch-list--root
-                                     (button-label btn)))
-                         'follow-link t)
-          (insert (format "  %-24s %s\n"
-                          (or (plist-get e :upstream) "")
-                          (or (plist-get e :subject) "")))))
+          (let ((branch (or (plist-get e :branch) ""))
+                (upstream (or (plist-get e :upstream) ""))
+                (subject (or (plist-get e :subject) "")))
+            (insert (if (plist-get e :current) "* " "  "))
+            (insert-button branch
+                           'action (lambda (btn)
+                                      (my/vc-git-branch-list--checkout
+                                       (button-label btn)))
+                           'follow-link t)
+            (insert (make-string (- branch-width (string-width branch)) ?\s))
+            (insert (format (format "  %%-%ds %%s\n" upstream-width)
+                            upstream subject)))))
       (goto-char (point-min))
       (pop-to-buffer (current-buffer)))))
 
@@ -2084,7 +2117,8 @@ RET checks out the branch at point; `g' refreshes, `q' quits."
   (define-key vc-dir-mode-map (kbd "b m") #'my/vc-git-rename-branch)
   (define-key vc-dir-mode-map (kbd "b M") #'my/vc-git-merge-branch)
   (define-key vc-dir-mode-map (kbd "b k") #'my/vc-git-delete-branch)
-  (define-key vc-dir-mode-map (kbd "b B") #'my/vc-git-branch-list))
+  (define-key vc-dir-mode-map (kbd "b B") #'my/vc-git-branch-list)
+  (define-key vc-dir-mode-map (kbd "y") #'my/vc-git-branch-list))
 
 (with-eval-after-load 'vc-hooks
   (define-key vc-prefix-map (kbd "b b") #'vc-switch-branch)
