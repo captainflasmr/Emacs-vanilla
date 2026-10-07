@@ -4539,16 +4539,21 @@ is not re-inserted as it has been removed from the subdir alist."
 (defun my/dired-open-gthumb ()
   "Open marked files in gthumb image viewer.
 In dired, uses marked files (or file at point); otherwise uses the
-current buffer's file or directory.  Runs gthumb detached."
+current buffer's file or directory.  Runs via `nohup' detached so
+gthumb survives Emacs exit."
   (interactive)
   (let ((files (if (derived-mode-p 'dired-mode)
                    (dired-get-marked-files nil nil nil nil "No file at point")
                  (list (or buffer-file-name default-directory))))
-        (gthumb (executable-find "gthumb")))
+        (gthumb (executable-find "gthumb"))
+        (nohup (executable-find "nohup")))
     (unless gthumb
       (user-error "gthumb not found in PATH"))
-    (apply #'start-process "gthumb" nil gthumb files)
-    (message "Opened %d file(s) in gthumb" (length files))))
+    (let ((proc (if nohup
+                    (apply #'start-process "gthumb" nil nohup gthumb files)
+                  (apply #'start-process "gthumb" nil gthumb files))))
+      (set-process-query-on-exit-flag proc nil)
+      (message "Opened %d file(s) in gthumb" (length files)))))
 
 (with-eval-after-load 'dired
   (add-hook 'dired-mode-hook (lambda () (my-dired-clipboard-mode 1)))
