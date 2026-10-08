@@ -2284,6 +2284,15 @@ RET checks out the branch at point; `g' refreshes, `q' quits."
   ;; Iterate every table in the buffer until inter-table dependencies
   ;; converge; `C-u C-u C-c *' does only the table at point.
   (define-key org-mode-map (kbd "C-c t *") #'org-table-iterate-buffer-tables))
+(defun my/org-todo-stop-after-keyword (&rest _)
+  "Move point to just after TODO keyword when `org-todo' leaves it at BOL.
+Speed command `t' (via `org-self-insert-command') runs with point at
+beginning of headline, where `org-todo' skips its cursor fixup."
+  (when (and (bolp) (org-at-heading-p))
+    (when (looking-at org-todo-line-regexp)
+      (goto-char (or (match-end 2) (match-end 1)))
+      (when (looking-at " ") (forward-char 1)))))
+(advice-add 'org-todo :after #'my/org-todo-stop-after-keyword)
 (setq imenu-flatten t)
 
 ;;
