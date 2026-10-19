@@ -574,7 +574,9 @@ otherwise run `vc-diff'."
   (define-key project-prefix-map (kbd "V") #'my/vc-dir-here))
 (with-eval-after-load 'diff-mode
   (define-key diff-mode-map (kbd "M-j") #'nil)
-  (define-key diff-mode-map (kbd "M-k") #'nil))
+  (define-key diff-mode-map (kbd "M-k") #'nil)
+  ;; Wrap long lines in diffs (e.g. buffers produced by `vc-diff').
+  (add-hook 'diff-mode-hook #'visual-line-mode))
 
 ;;
 ;; -> vc-git-skip-worktree-core
