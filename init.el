@@ -971,8 +971,10 @@ When `my/async-trash-enabled' is nil, delegates to the standard
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(custom-enabled-themes '(misterioso))
- '(warning-suppress-log-types '((frameset)))
- '(warning-suppress-types '((frameset))))
+ '(warning-suppress-log-types '((frameset)
+                                (files missing-lexbind-cookie)))
+ '(warning-suppress-types '((frameset)
+                            (files missing-lexbind-cookie))))
 
 (set-cursor-color "white")
 
