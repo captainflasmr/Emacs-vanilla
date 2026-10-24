@@ -4664,7 +4664,7 @@ patterns are anchored at the end of the path."
       ;; Default Invalid Key
       (_ (message "Invalid key: %c" key)))))
 
-(global-set-key (kbd "C-c e") 'my/export-menu)
+(global-set-key (kbd "C-c X") 'my/export-menu)
 
 ;;
 ;; -> gh-release-core

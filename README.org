@@ -36,6 +36,8 @@ Note that this package works in combination with https://github.com/captainflasm
 
 Window navigation's global =M-n=/=M-p= bindings now stand aside in file buffers while =diff-minimap-mode= is active, so the package's own =M-n=/=M-p= step through diff hunks (alongside =C-x v ]=/=C-x v [=).  Use =C-x o= to switch windows in that state.  The minibuffer keeps history navigation, non-file buffers keep window navigation, and =diff-mode='s own =M-n=/=M-p= remain untouched.
 
+Moved =my/export-menu= from =C-c e= to =C-c X=, freeing =C-c e= for =diff-minimap-show-hunk= in file buffers.
+
 ** <2026-09-24>
 
 Added =my/set-divider-color= on =C-z D=: prompts for a colour (same =read-color= picker as =C-z u= / =C-z U= / =C-z B=) and recolours the three =window-divider= faces (divider plus first/last pixel) on the selected frame, or all frames with a prefix argument.  Pairs with =C-z d=, which toggles the dividing line itself.
@@ -6569,7 +6571,7 @@ A soft wrapper around the Emacs basic publishing mechanism for my own exporting 
       ;; Default Invalid Key
       (_ (message "Invalid key: %c" key)))))
 
-(global-set-key (kbd "C-c e") 'my/export-menu)
+(global-set-key (kbd "C-c X") 'my/export-menu)
 #+end_src
 
 * gh-release-core

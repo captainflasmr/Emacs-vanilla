@@ -17,6 +17,7 @@ Let diff-minimap own M-n/M-p in file buffers
 - =my/window-nav-passthrough-filter= now also returns nil in file buffers while =diff-minimap-mode= is active, so =diff-minimap-next-hunk= / =diff-minimap-previous-hunk= win over the global window-navigation bindings; use =C-x o= to switch windows there.
 - The minibuffer keeps history navigation, non-file buffers keep window navigation, and =diff-mode= keeps its own =M-n=/=M-p= hunk commands.
 - =my/window-nav-passthrough-modes= documents that =diff-minimap-mode= is handled separately because it is a minor mode.
+- Moved =my/export-menu= from =C-c e= to =C-c X=, freeing =C-c e= for =diff-minimap-show-hunk= in file buffers.
 
 ** <2026-09-15>
 
