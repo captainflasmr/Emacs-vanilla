@@ -524,7 +524,9 @@ DIRECTION is -1 for the left tab and 1 for the right tab."
 The global window-navigation bindings stand aside in these modes so
 that mode-provided bindings apply instead (e.g. `diff-hunk-next' /
 `diff-hunk-prev' in `diff-mode').  Minibuffers always fall back to
-history navigation; add other modes here to do the same there.")
+history navigation; add other modes here to do the same there.
+`diff-minimap-mode' is handled separately in
+`my/window-nav-passthrough-filter' because it is a minor mode.")
 
 (defun my/window-nav-passthrough-filter (binding)
   "Return BINDING for window navigation, except in passthrough contexts.
@@ -537,8 +539,12 @@ buffer's own bindings:
   to change windows from the minibuffer instead;
 - in the modes listed in `my/window-nav-passthrough-modes',
   preserving their M-n/M-p commands (e.g. hunk navigation in
-  `diff-mode')."
+  `diff-mode');
+- in file buffers while `diff-minimap-mode' is active, so its
+  M-n/M-p hunk navigation wins; use C-x o to switch windows there."
   (unless (or (minibufferp)
+              (and (bound-and-true-p diff-minimap-mode)
+                   (buffer-file-name))
               (apply #'derived-mode-p my/window-nav-passthrough-modes))
     binding))
 

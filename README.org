@@ -30,6 +30,12 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2026-10-24>
+
+=diff-minimap= owns =M-n=/=M-p= in file buffers
+
+Window navigation's global =M-n=/=M-p= bindings now stand aside in file buffers while =diff-minimap-mode= is active, so the package's own =M-n=/=M-p= step through diff hunks (alongside =C-x v ]=/=C-x v [=).  Use =C-x o= to switch windows in that state.  The minibuffer keeps history navigation, non-file buffers keep window navigation, and =diff-mode='s own =M-n=/=M-p= remain untouched.
+
 ** <2026-09-24>
 
 Added =my/set-divider-color= on =C-z D=: prompts for a colour (same =read-color= picker as =C-z u= / =C-z U= / =C-z B=) and recolours the three =window-divider= faces (divider plus first/last pixel) on the selected frame, or all frames with a prefix argument.  Pairs with =C-z d=, which toggles the dividing line itself.
@@ -1751,7 +1757,9 @@ DIRECTION is -1 for the left tab and 1 for the right tab."
 The global window-navigation bindings stand aside in these modes so
 that mode-provided bindings apply instead (e.g. `diff-hunk-next' /
 `diff-hunk-prev' in `diff-mode').  Minibuffers always fall back to
-history navigation; add other modes here to do the same there.")
+history navigation; add other modes here to do the same there.
+`diff-minimap-mode' is handled separately in
+`my/window-nav-passthrough-filter' because it is a minor mode.")
 
 (defun my/window-nav-passthrough-filter (binding)
   "Return BINDING for window navigation, except in passthrough contexts.
@@ -1764,8 +1772,12 @@ buffer's own bindings:
   to change windows from the minibuffer instead;
 - in the modes listed in `my/window-nav-passthrough-modes',
   preserving their M-n/M-p commands (e.g. hunk navigation in
-  `diff-mode')."
+  `diff-mode');
+- in file buffers while `diff-minimap-mode' is active, so its
+  M-n/M-p hunk navigation wins; use C-x o to switch windows there."
   (unless (or (minibufferp)
+              (and (bound-and-true-p diff-minimap-mode)
+                   (buffer-file-name))
               (apply #'derived-mode-p my/window-nav-passthrough-modes))
     binding))
 
