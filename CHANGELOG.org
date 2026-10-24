@@ -18,6 +18,7 @@ Let diff-minimap own M-n/M-p in file buffers
 - The minibuffer keeps history navigation, non-file buffers keep window navigation, and =diff-mode= keeps its own =M-n=/=M-p= hunk commands.
 - =my/window-nav-passthrough-modes= documents that =diff-minimap-mode= is handled separately because it is a minor mode.
 - Moved =my/export-menu= from =C-c e= to =C-c X=, freeing =C-c e= for =diff-minimap-show-hunk= in file buffers.
+- Added =my/vc-dirty-indicator=: a bold Git-style status letter (=M= modified, =A= added, =D= deleted/missing, =U= conflict, =L= locked) at the start of the mode line when the current file has local VCS changes.  The letter uses the mode line's normal colours and reuses =vc-mode='s state face, so it costs no extra VCS calls.
 
 ** <2026-09-15>
 

@@ -3456,6 +3456,57 @@ Passes a prefix argument to prompt for an optional file filter regexp."
      (and (stringp regexp) (not (string-blank-p regexp)) regexp))))
 
 ;;
+;; -> vc-modeline-core
+;;
+(defface my/vc-dirty-indicator-face
+  '((t :weight bold))
+  "Face for the mode-line local-changes indicator.
+Only the weight is set, so the foreground and background follow the
+mode line's normal colours."
+  :group 'vc)
+
+(defun my/vc-dirty-indicator ()
+  "Return a Git-style status letter for local VCS changes.
+The letter is `M' (modified), `A' (added), `D' (deleted or
+missing), `U' (conflict), or `L' (locked).  Reads the existing
+`vc-mode' state face, so no extra VCS commands are run for each
+mode-line update."
+  (let* ((face (and (bound-and-true-p vc-mode)
+                    (stringp vc-mode)
+                    (> (length vc-mode) 1)
+                    (get-text-property 1 'face vc-mode)))
+         (info (pcase face
+                 ('vc-edited-state '("M" "Locally modified file"))
+                 ('vc-locally-added-state '("A" "Locally added file"))
+                 ('vc-conflict-state '("U" "File contains merge conflicts"))
+                 ('vc-removed-state '("D" "File removed from version control"))
+                 ('vc-missing-state '("D" "Tracked file missing from disk"))
+                 ('vc-locked-state '("L" "File locked by another user")))))
+    (when info
+      (propertize (concat (car info) " ")
+                  'face 'my/vc-dirty-indicator-face
+                  'help-echo (cadr info)))))
+
+(defun my/vc-dirty-indicator--install ()
+  "Insert the dirty indicator at the start of `mode-line-format'."
+  (let* ((indicator '(:eval (my/vc-dirty-indicator)))
+         (fmt (default-value 'mode-line-format)))
+    (when (and (listp fmt) fmt)
+      (setq fmt (delete indicator fmt))
+      (let ((new nil)
+            (inserted nil))
+        (dolist (item fmt)
+          (push item new)
+          (when (and (not inserted) (eq item 'mode-line-front-space))
+            (push indicator new)
+            (setq inserted t)))
+        (unless inserted
+          (push indicator new))
+        (setq-default mode-line-format (nreverse new))))))
+
+(my/vc-dirty-indicator--install)
+
+;;
 ;; -> project-core
 ;;
 (require 'project)
