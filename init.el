@@ -519,13 +519,14 @@ DIRECTION is -1 for the left tab and 1 for the right tab."
 (define-key my-overrides-mode-map (kbd "M-'") #'delete-window)
 (define-key my-overrides-mode-map (kbd "M-m") (lambda () (interactive) (select-window (split-window-vertically))))
 
-(defvar my/window-nav-passthrough-modes '(diff-mode)
+(defvar my/window-nav-passthrough-modes '(diff-mode emeld-mode)
   "Modes where M-n/M-p keep the mode's own commands.
 The global window-navigation bindings stand aside in these modes so
 that mode-provided bindings apply instead (e.g. `diff-hunk-next' /
-`diff-hunk-prev' in `diff-mode').  Minibuffers always fall back to
-history navigation; add other modes here to do the same there.
-`diff-minimap-mode' is handled separately in
+`diff-hunk-prev' in `diff-mode', `emeld-next-change' /
+`emeld-previous-change' in `emeld-mode').  Minibuffers always fall
+back to history navigation; add other modes here to do the same
+there.  `diff-minimap-mode' is handled separately in
 `my/window-nav-passthrough-filter' because it is a minor mode.")
 
 (defun my/window-nav-passthrough-filter (binding)
