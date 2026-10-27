@@ -437,8 +437,11 @@ geometry-based lookup, so it works across nested splits."
                               (my/adaptive-resize nil -1)))
 (define-key my-overrides-mode-map (kbd "C-M-k") (lambda () (interactive)
                               (my/adaptive-resize nil 1)))
-(global-set-key (kbd "C--") (lambda ()(interactive)(text-scale-adjust -1)))
-(global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
+;; `text-scale-adjust' derives the direction from the invoking key, so bind
+;; it directly.  Passing -1 from a lambda for C-- negates that direction and
+;; makes the first press increase the text size instead.
+(global-set-key (kbd "C--") #'text-scale-adjust)
+(global-set-key (kbd "C-=") #'text-scale-adjust)
 (defun my/global-font-size-change (delta)
   "Change the default face height by DELTA steps on all frames.
 DELTA is in 0.1pt units; updates future frames via `default-frame-alist'.
