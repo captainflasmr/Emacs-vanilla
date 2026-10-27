@@ -1678,13 +1678,20 @@ geometry-based lookup, so it works across nested splits."
 (global-set-key (kbd "C-=") (lambda ()(interactive)(text-scale-adjust 1)))
 (defun my/global-font-size-change (delta)
   "Change the default face height by DELTA steps on all frames.
-DELTA is in 0.1pt units; updates future frames via `default-frame-alist'."
+DELTA is in 0.1pt units; updates future frames via `default-frame-alist'.
+Store the new height as an override spec so changing theme does not
+restore the theme's font size."
   (interactive "p")
   (let* ((step (* delta 10))
-         (height (max 40 (+ (face-attribute 'default :height) step)))
+         (current (if (boundp 'my/main-font-height)
+                      my/main-font-height
+                    (face-attribute 'default :height)))
+         (height (max 40 (+ current step)))
          (font-spec (font-spec :family (face-attribute 'default :family)
                                :height height)))
-    (set-face-attribute 'default nil :height height)
+    (face-spec-set 'default `((t (:height ,height))) 'face-override-spec)
+    (when (boundp 'my/main-font-height)
+      (setq my/main-font-height height))
     (setq default-frame-alist
           (cons (cons 'font font-spec)
                 (assq-delete-all 'font default-frame-alist)))))
