@@ -2200,7 +2200,10 @@ RET checks out the branch at point; `g' refreshes, `q' quits."
                (inhibit-same-window . t)))
 (add-to-list 'display-buffer-alist
              '("\\*Help\\*"
-               (display-buffer-reuse-window display-buffer-same-window)))
+               (display-buffer-reuse-window display-buffer-in-direction)
+               (direction . right)
+               (window-width . 0.4)
+               (inhibit-same-window . t)))
 (add-to-list 'display-buffer-alist
              '("\\*Async" display-buffer-no-window
                (allow-no-window . t)))
