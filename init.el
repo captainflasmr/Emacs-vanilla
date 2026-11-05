@@ -2500,7 +2500,6 @@ beginning of headline, where `org-todo' skips its cursor fixup."
         "~/DCIM/content/aab--repeat.org"
         "~/DCIM/content/aaa--todo.org"
         "~/DCIM/content/aab--move.org"
-        "~/DCIM/content/aab--sell.org"
         "~/DCIM/content/aac--emacs-todo.org"))
 (setq org-agenda-sticky t)
 (setq diary-file "~/DCIM/content/diary.org")
