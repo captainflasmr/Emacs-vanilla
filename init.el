@@ -809,6 +809,7 @@ buffer's file otherwise.  No-op if the bit is not set."
 (tab-bar-history-mode 1)
 (global-font-lock-mode t)
 (repeat-mode 1)
+(add-to-list 'auto-mode-alist '("\\.cshtml\\'" . html-mode))
 
 ;;
 ;; -> tab-bar-format
@@ -871,6 +872,7 @@ This makes every tab bar tab the same uniform width."
 (setq isearch-lazy-count t
       lazy-count-prefix-format "(%s/%s) "
       lazy-count-suffix-format nil)
+(setq isearch-allow-motion t)
 
 ;;
 ;; -> confirm-core
@@ -1036,6 +1038,7 @@ When `my/async-trash-enabled' is nil, delegates to the standard
  '(variable-pitch ((t (:family "Sans" :height 115))))
  '(mode-line ((t (:height 140 :underline nil :overline nil :box nil))))
  '(mode-line-inactive ((t (:height 140 :underline nil :overline nil :box nil))))
+ '(mode-line-buffer-id ((t (:foreground "#EEEEFF" :weight bold))))
  '(org-level-1 ((t (:inherit default :weight bold :height 1.0))))
  '(org-level-2 ((t (:inherit default :weight regular :height 1.0))))
  '(org-level-3 ((t (:inherit default :weight regular :height 1.0))))
@@ -2392,10 +2395,116 @@ beginning of headline, where `org-todo' skips its cursor fixup."
       (when (looking-at " ") (forward-char 1)))))
 (advice-add 'org-todo :after #'my/org-todo-stop-after-keyword)
 (setq imenu-flatten t)
+(add-to-list 'auto-mode-alist '("\\.org_archive\\'" . org-mode))
+
+;;
+;; -> org-capture-core
+;;
+(defun my-capture-top-level ()
+  "Function to capture a new entry at the top level of the given file."
+  (goto-char (point-min))
+  (or (outline-next-heading)
+      (goto-char (point-max)))
+  (unless (bolp) (insert "\n")))
+
+(setq org-capture-templates
+      '(
+        ("b" "Blog" plain
+         (file+function
+          "~/DCIM/content/blog.org"
+          my-capture-top-level)
+         "* TODO %^{title} :%(format-time-string \"%Y\"):
+:PROPERTIES:
+:EXPORT_FILE_NAME: %<%Y%m%d%H%M%S>-blog--%\\1
+:EXPORT_HUGO_SECTION: blog
+:EXPORT_HUGO_LASTMOD: <%<%Y-%m-%d %H:%M>>
+:EXPORT_HUGO_CUSTOM_FRONT_MATTER+: :thumbnail /blog/%<%Y%m%d%H%M%S>-blog--%\\1.jpg
+:END:
+%?
+" :prepend t :jump-to-captured t)
+
+        ("e" "Emacs" plain
+         (file+function
+          "~/DCIM/content/emacs.org"
+          my-capture-top-level)
+         "* TODO %^{title} :emacs:%(format-time-string \"%Y\"):
+:PROPERTIES:
+:EXPORT_FILE_NAME: %<%Y%m%d%H%M%S>-emacs--%\\1
+:EXPORT_HUGO_SECTION: emacs
+:EXPORT_HUGO_LASTMOD: <%<%Y-%m-%d %H:%M>>
+:EXPORT_HUGO_CUSTOM_FRONT_MATTER+: :thumbnail /emacs/%<%Y%m%d%H%M%S>-emacs--%\\1.jpg
+:END:
+%?
+" :prepend t :jump-to-captured t)
+
+        ("l" "Linux" plain
+         (file+function
+          "~/DCIM/content/linux.org"
+          my-capture-top-level)
+         "* TODO %^{title} :%(format-time-string \"%Y\"):
+:PROPERTIES:
+:EXPORT_FILE_NAME: %<%Y%m%d%H%M%S>-linux--%\\1
+:EXPORT_HUGO_SECTION: linux
+:EXPORT_HUGO_LASTMOD: <%<%Y-%m-%d %H:%M>>
+:EXPORT_HUGO_CUSTOM_FRONT_MATTER+: :thumbnail /linux/%<%Y%m%d%H%M%S>-linux--%\\1.jpg
+:END:
+%?
+" :prepend t :jump-to-captured t)
+
+        ("a" "Art")
+
+        ("av" "Art Videos" plain
+         (file+function
+          "~/DCIM/content/art.org"
+          my-capture-top-level)
+         "* TODO %^{title} :videos:painter:krita:artrage:%(format-time-string \"%Y\"):
+:PROPERTIES:
+:EXPORT_FILE_NAME: %<%Y%m%d%H%M%S>--%\\1-%\\2
+:EXPORT_HUGO_SECTION: art--videos
+:EXPORT_HUGO_LASTMOD: <%<%Y-%m-%d %H:%M>>
+:EXPORT_HUGO_CUSTOM_FRONT_MATTER+: :thumbnail /art--videos/%<%Y%m%d%H%M%S>--%\\1-%\\2.jpg
+:VIDEO:
+:END:
+#+begin_export md
+{{< youtube %^{youtube} >}}
+#+end_export
+%?
+" :prepend t :jump-to-captured t)
+
+        ("aa" "Art" plain
+         (file+function
+          "~/DCIM/content/art.org"
+          my-capture-top-level)
+         "* TODO %^{title} :painter:krita:artrage:%(format-time-string \"%Y\"):
+:PROPERTIES:
+:EXPORT_FILE_NAME: %\\1
+:EXPORT_HUGO_SECTION: art--all
+:EXPORT_HUGO_LASTMOD: <%<%Y-%m-%d %H:%M>>
+:EXPORT_HUGO_CUSTOM_FRONT_MATTER+: :thumbnail /art--all/%\\1.jpg
+:VIDEO:
+:END:
+#+attr_org: :width 300px
+#+attr_html: :width 100%
+#+begin_export md
+#+end_export
+%?
+" :prepend t :jump-to-captured t)))
+
+;; The "g" (Gallery) capture template is now in transmute.el
 
 ;;
 ;; -> org-agenda-core
 ;;
+(setq org-agenda-files
+      '("~/DCIM/content/aaa--calendar.org"
+        "~/DCIM/content/aab--repeat.org"
+        "~/DCIM/content/aaa--todo.org"
+        "~/DCIM/content/aab--move.org"
+        "~/DCIM/content/aab--sell.org"
+        "~/DCIM/content/aac--emacs-todo.org"))
+(setq org-agenda-sticky t)
+(setq diary-file "~/DCIM/content/diary.org")
+
 (with-eval-after-load 'org-agenda
   (setq org-agenda-include-diary t)
   (setq org-agenda-show-all-dates t)
@@ -3392,6 +3501,12 @@ the first installed manager by name, with xdg-open as the last resort."
 (set-fringe-mode '(20 . 20))
 (setq bookmark-set-fringe-mark nil)
 (setq bookmark-fringe-mark nil)
+(set-face-background 'fringe (face-background 'default))
+(when (boundp 'enable-theme-functions)
+  (add-hook 'enable-theme-functions
+            (lambda (&rest _)
+              (when (facep 'fringe)
+                (set-face-background 'fringe (face-background 'default))))))
 
 (when (fboundp 'my/rainbow-mode)
   (add-hook 'prog-mode-hook #'my/rainbow-mode)
@@ -3400,8 +3515,22 @@ the first installed manager by name, with xdg-open as the last resort."
 
 ;; Slight transparency on the frame background. Harmless in TTY/Wayland
 ;; environments that don't support it.
-(set-frame-parameter nil 'alpha-background 90)
-(add-to-list 'default-frame-alist '(alpha-background . 90))
+(set-frame-parameter nil 'alpha-background 98)
+(add-to-list 'default-frame-alist '(alpha-background . 98))
+
+;; Neomacs is a Rust implementation of Emacs with its own renderer.  Its
+;; visual effects are defcustoms in `neomacs-effects', which is loaded at
+;; startup under a graphical Neomacs but absent from GNU Emacs, hence the
+;; guard.  Assign with `setopt' rather than `setq': each option's :set
+;; function pushes the new value to the running renderer.  Discover the rest
+;; with `M-x customize-group RET neomacs RET'.
+(when (fboundp 'neomacs-effect-names)
+  (require 'neomacs-effects)
+  ;; No fading tail behind the moving cursor; 0.0 draws none (default 0.7).
+  (setopt neomacs-cursor-motion-trail-size 0.0)
+  ;; To remove the glide as well, jump straight to the new position:
+  ;; (setopt neomacs-cursor-motion-enabled nil)
+  )
 
 ;;
 ;; -> org-fixed-pitch-core
@@ -4243,6 +4372,28 @@ schema-index jumps even while a language server is connected."
          (sysPath (getenv "PATH")))
     (setenv "PATH" (concat (mapconcat #'identity xPaths ";") ";" sysPath))
     (setq exec-path (append xPaths (split-string sysPath ";") (list "." exec-directory)))))
+
+(defun pwsh-here ()
+  "Open a native Windows PowerShell console in the current directory."
+  (interactive)
+  (start-process "powershell" nil "powershell.exe"
+                 "-NoExit" "-Command"
+                 (format "Set-Location -LiteralPath '%s'"
+                         (expand-file-name default-directory))))
+
+;;
+;; -> linux-specific-core
+;;
+(when (eq system-type 'gnu/linux)
+  (define-key my-jump-keymap (kbd "a") (lambda () (interactive) (find-file "~/DCIM/content/emacs.org")))
+  (define-key my-jump-keymap (kbd "c") (lambda () (interactive) (find-file "~/DCIM/content/aaa--calendar.org")))
+  (define-key my-jump-keymap (kbd "f") (lambda () (interactive) (find-file "~/nas")))
+  (define-key my-jump-keymap (kbd "m") (lambda () (interactive) (find-file "~/DCIM/Camera")))
+  (define-key my-jump-keymap (kbd "j") (lambda () (interactive) (find-file "~/DCIM/content/aaa--todo.org")))
+  (define-key my-jump-keymap (kbd "n") (lambda () (interactive) (find-file "~/DCIM/Screenshots")))
+  (define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "~/DCIM/content/")))
+  ;; Sway/Waybar stores its config as JSON with comments.
+  (add-to-list 'auto-mode-alist '("waybar.*/config\\'" . js-json-mode)))
 
 ;;
 ;; -> programming-core
