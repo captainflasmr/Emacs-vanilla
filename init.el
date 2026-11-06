@@ -307,14 +307,16 @@ then run this to fill the whole document in one keystroke."
 ;;
 ;; -> font-size-core
 ;;
-;; Main font sizes. Edit these numbers, then re-evaluate this section
-;; (or restart Emacs). Values are in 1/10pt, so 105 means 10.5pt.
-;; They override the `custom-set-faces' above.
+;; Main font sizes. Edit these numbers, or override them from the
+;; top-level init with `my/set-font-size-overrides' (see below), then
+;; re-evaluate this section (or restart Emacs). Values are in 1/10pt,
+;; so 105 means 10.5pt. They override the `custom-set-faces' above.
 (defvar my/main-font-height 90
   "Height for the `default' face.")
 
 (defvar my/base-font-height my/main-font-height
-  "Baseline height restored by `my/reset-display-scale'.")
+  "Fallback height for `my/reset-display-scale'.
+Used when `my/font-size-overrides' has no entry for `default'.")
 
 (defvar my/variable-pitch-height 100
   "Height for `variable-pitch' face.")
@@ -325,6 +327,25 @@ This is relative to the `default' face, so the mode line follows
 `my/main-font-height' when the global font size changes.  A value of
 1.0 makes it the same height as `default'; use e.g. 1.1 for 10% larger.")
 
+(defvar my/font-size-overrides nil
+  "Alist of per-face height overrides for `my/apply-main-font-sizes'.
+Keys are faces such as `default', `fixed-pitch', `variable-pitch',
+`mode-line' and `mode-line-inactive'.  `default' and `variable-pitch'
+take absolute heights in 1/10pt; `fixed-pitch' and the mode-line faces
+take a scale relative to `default'.  Set this before loading this file,
+or call `my/set-font-size-overrides' afterwards.")
+
+(defun my/font-size-override (face fallback)
+  "Return the height configured for FACE, or FALLBACK.
+`my/font-size-overrides' takes precedence over the individual
+`my/*-height' variables."
+  (or (cdr (assq face my/font-size-overrides)) fallback))
+
+(defun my/default-font-height ()
+  "Return the configured height for the `default' face.
+This is the baseline used by `my/reset-display-scale'."
+  (my/font-size-override 'default my/base-font-height))
+
 (defun my/set-face-height (face height)
   "Give FACE a HEIGHT that survives theme changes.
 HEIGHT is an absolute value in 1/10pt, or a relative scale such as 1.0.
@@ -334,27 +355,48 @@ the theme's own height over it."
   (face-spec-set face `((t (:height ,height))) 'face-override-spec))
 
 (defun my/apply-main-font-sizes ()
-  "Apply `my/main-font-height' and related face heights."
+  "Apply `my/main-font-height' and related face heights.
+`my/font-size-overrides' can override the non-default faces."
   (my/set-face-height 'default my/main-font-height)
   ;; Keep `fixed-pitch' relative to `default' so it follows
   ;; `text-scale-mode' (used by `org-slides').  An absolute height here
   ;; leaves code and tables small while the surrounding text is scaled up,
   ;; which makes each code line look double-spaced.
   (when (facep 'fixed-pitch)
-    (my/set-face-height 'fixed-pitch 1.0))
+    (my/set-face-height 'fixed-pitch
+                        (my/font-size-override 'fixed-pitch 1.0)))
   (when (facep 'variable-pitch)
-    (my/set-face-height 'variable-pitch my/variable-pitch-height))
-  (my/set-face-height 'mode-line my/mode-line-height)
-  (my/set-face-height 'mode-line-inactive my/mode-line-height))
+    (my/set-face-height 'variable-pitch
+                        (my/font-size-override 'variable-pitch
+                                               my/variable-pitch-height)))
+  (let ((mode-line-height (my/font-size-override 'mode-line
+                                                 my/mode-line-height)))
+    (my/set-face-height 'mode-line mode-line-height)
+    (my/set-face-height 'mode-line-inactive
+                        (my/font-size-override 'mode-line-inactive
+                                               mode-line-height))))
+
+(defun my/set-font-size-overrides (overrides)
+  "Set `my/font-size-overrides' to OVERRIDES and reapply the font sizes.
+OVERRIDES is an alist of (FACE . HEIGHT) pairs; see
+`my/font-size-overrides'.  The global font size is reset to the effective
+`default' height, so subsequent `C-M-=' / `C-M--' start from the override."
+  (setq my/font-size-overrides overrides)
+  (setq my/main-font-height (my/default-font-height))
+  (my/apply-main-font-sizes)
+  (setq default-frame-alist
+        (cons (cons 'font (font-spec :family (face-attribute 'default :family)
+                                    :height my/main-font-height))
+              (assq-delete-all 'font default-frame-alist))))
 
 (defun my/reset-display-scale ()
   "Reset buffer text scaling and the global font size to their defaults.
 `C-z z' runs this after zooming with `C--'/`C-=' or
-`C-M--'/`C-M-='."
+`C-M--'/`C-M-='.  Honors `my/font-size-overrides'."
   (interactive)
   (when (bound-and-true-p text-scale-mode)
     (text-scale-set 0))
-  (setq my/main-font-height my/base-font-height)
+  (setq my/main-font-height (my/default-font-height))
   (my/apply-main-font-sizes)
   (setq default-frame-alist
         (cons (cons 'font (font-spec :family (face-attribute 'default :family)
@@ -362,6 +404,9 @@ the theme's own height over it."
               (assq-delete-all 'font default-frame-alist)))
   (message "Display scale reset"))
 
+;; If a profile was set before this file loaded, start from its default.
+(when my/font-size-overrides
+  (setq my/main-font-height (my/default-font-height)))
 (my/apply-main-font-sizes)
 ;; The override specs above survive theme recalculation on their own, but
 ;; re-apply them anyway to cover code that clears the override spec.
