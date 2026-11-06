@@ -12,6 +12,12 @@ This document contains the release notes for Emacs-core
 
 ** <2026-11-06>
 
+Suppress repeat-mode echo-area key hints
+
+- =modes-core=: set =repeat-echo-function= to =repeat-echo-mode-line=, so repeat-mode keeps the "[Repeating...]" mode-line indicator but no longer lists the available repeat keys in the minibuffer.
+
+** <2026-11-06>
+
 Allow per-machine font-size overrides from the top-level init
 
 - =font-size-core=: added =my/font-size-overrides= (an alist of =FACE= to height) and =my/set-font-size-overrides=, so target-specific sizes no longer require editing the Emacs-vanilla module.

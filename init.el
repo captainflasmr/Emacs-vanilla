@@ -854,6 +854,8 @@ buffer's file otherwise.  No-op if the bit is not set."
 (tab-bar-history-mode 1)
 (global-font-lock-mode t)
 (repeat-mode 1)
+;; Keep the mode-line indicator but suppress the echo-area list of keys.
+(setq repeat-echo-function #'repeat-echo-mode-line)
 (add-to-list 'auto-mode-alist '("\\.cshtml\\'" . html-mode))
 
 ;;

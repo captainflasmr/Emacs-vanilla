@@ -32,6 +32,10 @@ Note that this package works in combination with https://github.com/captainflasm
 
 ** <2026-11-06>
 
+Suppressed the repeat-mode echo-area key hints.  =repeat-echo-function= is now =repeat-echo-mode-line=, so repeat-mode shows its "[Repeating...]" indicator in the mode line instead of listing the available keys in the minibuffer.
+
+** <2026-11-06>
+
 Added =my/font-size-overrides= and =my/set-font-size-overrides= so per-machine font sizes can be set from the top-level init without editing =font-size-core=.  The alist can override =default=, =fixed-pitch=, =variable-pitch=, =mode-line= and =mode-line-inactive=; =my/reset-display-scale= restores the effective default, and =C-M-== /=C-M--= start from the override.
 
 ** <2026-11-05>
@@ -2107,7 +2111,7 @@ buffer's file otherwise.  No-op if the bit is not set."
 
 * modes-core
 
-Turns on various modes like `global-font-lock-mode` for syntax highlighting and `show-paren-mode` for matching parenthesis visualization, and configures preferences for a wide array of basic behaviours and visual indicators.
+Turns on various modes like `global-font-lock-mode` for syntax highlighting and `show-paren-mode` for matching parenthesis visualization, and configures preferences for a wide array of basic behaviours and visual indicators.  `repeat-mode` shows its "[Repeating...]" indicator in the mode line instead of listing the available keys in the echo area.
 
 #+begin_src elisp
 ;;
@@ -2123,6 +2127,8 @@ Turns on various modes like `global-font-lock-mode` for syntax highlighting and 
 (tab-bar-history-mode 1)
 (global-font-lock-mode t)
 (repeat-mode 1)
+;; Keep the mode-line indicator but suppress the echo-area list of keys.
+(setq repeat-echo-function #'repeat-echo-mode-line)
 (add-to-list 'auto-mode-alist '("\\.cshtml\\'" . html-mode))
 #+end_src
 
