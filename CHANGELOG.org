@@ -12,6 +12,13 @@ This document contains the release notes for Emacs-core
 
 ** <2026-11-06>
 
+Fix the "Invalid font" startup error
+
+- =font-size-core=: added =my/sync-default-frame-font=, which stores the resolved default-face font object in =default-frame-alist= instead of a bare =font-spec=.  The =font= frame parameter accepts a font name or font object, so the old spec signalled "Invalid font" when a new frame was created.
+- =my/set-font-size-overrides=, =my/reset-display-scale=, and =my/global-font-size-change= now use the shared helper.
+
+** <2026-11-06>
+
 Suppress repeat-mode echo-area key hints
 
 - =modes-core=: set =repeat-echo-function= to =repeat-echo-mode-line=, so repeat-mode keeps the "[Repeating...]" mode-line indicator but no longer lists the available repeat keys in the minibuffer.

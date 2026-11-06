@@ -376,6 +376,17 @@ the theme's own height over it."
                         (my/font-size-override 'mode-line-inactive
                                                mode-line-height))))
 
+(defun my/sync-default-frame-font ()
+  "Record the current default face font in `default-frame-alist'.
+Use a font object rather than a font spec: the `font' frame parameter
+accepts a font name or font object, and a bare font spec signals
+\"Invalid font\" when a new frame is created."
+  (let ((font (face-attribute 'default :font)))
+    (when font
+      (setq default-frame-alist
+            (cons (cons 'font font)
+                  (assq-delete-all 'font default-frame-alist))))))
+
 (defun my/set-font-size-overrides (overrides)
   "Set `my/font-size-overrides' to OVERRIDES and reapply the font sizes.
 OVERRIDES is an alist of (FACE . HEIGHT) pairs; see
@@ -384,10 +395,7 @@ OVERRIDES is an alist of (FACE . HEIGHT) pairs; see
   (setq my/font-size-overrides overrides)
   (setq my/main-font-height (my/default-font-height))
   (my/apply-main-font-sizes)
-  (setq default-frame-alist
-        (cons (cons 'font (font-spec :family (face-attribute 'default :family)
-                                    :height my/main-font-height))
-              (assq-delete-all 'font default-frame-alist))))
+  (my/sync-default-frame-font))
 
 (defun my/reset-display-scale ()
   "Reset buffer text scaling and the global font size to their defaults.
@@ -398,10 +406,7 @@ OVERRIDES is an alist of (FACE . HEIGHT) pairs; see
     (text-scale-set 0))
   (setq my/main-font-height (my/default-font-height))
   (my/apply-main-font-sizes)
-  (setq default-frame-alist
-        (cons (cons 'font (font-spec :family (face-attribute 'default :family)
-                                    :height my/main-font-height))
-              (assq-delete-all 'font default-frame-alist)))
+  (my/sync-default-frame-font)
   (message "Display scale reset"))
 
 ;; If a profile was set before this file loaded, start from its default.
@@ -571,15 +576,11 @@ restores the baseline height."
          (current (if (boundp 'my/main-font-height)
                       my/main-font-height
                     (face-attribute 'default :height)))
-         (height (max 40 (+ current step)))
-         (font-spec (font-spec :family (face-attribute 'default :family)
-                               :height height)))
+         (height (max 40 (+ current step))))
     (face-spec-set 'default `((t (:height ,height))) 'face-override-spec)
     (when (boundp 'my/main-font-height)
       (setq my/main-font-height height))
-    (setq default-frame-alist
-          (cons (cons 'font font-spec)
-                (assq-delete-all 'font default-frame-alist)))))
+    (my/sync-default-frame-font)))
 (define-key my-overrides-mode-map (kbd "C-M--")
             (lambda () (interactive) (my/global-font-size-change -1)))
 (define-key my-overrides-mode-map (kbd "C-M-=")
