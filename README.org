@@ -30,6 +30,10 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2026-11-07>
+
+Removed diary entries from the agenda.  =org-agenda-include-diary= is now =nil=, so agenda views no longer include diary or holiday entries; =diary-file= remains configured for the calendar.
+
 ** <2026-11-06>
 
 Fixed the "Invalid font" startup error from the font-size overrides.  =my/sync-default-frame-font= now stores the resolved default-face font object in =default-frame-alist= instead of a bare =font-spec=, which the =font= frame parameter rejects when a new frame is created.
@@ -3940,7 +3944,7 @@ Customizes the Org Agenda for a personalized task management and calendar view, 
 (setq diary-file "~/DCIM/content/diary.org")
 
 (with-eval-after-load 'org-agenda
-  (setq org-agenda-include-diary t)
+  (setq org-agenda-include-diary nil)
   (setq org-agenda-show-all-dates t)
   (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
   (setq org-agenda-custom-commands

@@ -2553,7 +2553,7 @@ beginning of headline, where `org-todo' skips its cursor fixup."
 (setq diary-file "~/DCIM/content/diary.org")
 
 (with-eval-after-load 'org-agenda
-  (setq org-agenda-include-diary t)
+  (setq org-agenda-include-diary nil)
   (setq org-agenda-show-all-dates t)
   (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
   (setq org-agenda-custom-commands

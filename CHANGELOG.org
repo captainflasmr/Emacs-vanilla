@@ -10,6 +10,12 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-11-07>
+
+Remove diary entries from the agenda
+
+- =org-agenda-core=: set =org-agenda-include-diary= to =nil= so agenda views no longer include diary or holiday entries.  =diary-file= remains configured for the calendar.
+
 ** <2026-11-06>
 
 Fix the "Invalid font" startup error
