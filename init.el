@@ -1105,7 +1105,15 @@ When `my/async-trash-enabled' is nil, delegates to the standard
  '(window-divider-first-pixel ((t (:foreground "#606060"))))
  '(window-divider-last-pixel ((t (:foreground "#606060"))))
  '(org-tag ((t (:height 0.9))))
- '(vertical-border ((t (:foreground "#606060")))))
+ '(vertical-border ((t (:foreground "#606060"))))
+ ;; doom-themes (as of 2026-01) sets up a two-face inheritance cycle
+ ;; between `gnus-group-news-low' and `gnus-group-news-low-empty'.
+ ;; Emacs 31+ rejects cycles while realising faces for a new frame, so
+ ;; `make-frame' fails and anything that opens a frame (e.g.
+ ;; `thanos/type') breaks.  Match the ancestors doom-themes uses
+ ;; upstream (doomemacs/themes#875) to break the cycle.
+ '(gnus-group-news-low ((t (:inherit gnus-group-mail-1))))
+ '(gnus-group-news-low-empty ((t (:inherit gnus-group-mail-1-empty)))))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
