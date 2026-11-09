@@ -30,6 +30,10 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2026-11-09>
+
+=F12= (=do_backup home=) now shows its =*backup*= output in the current window instead of opening a separate window.
+
 ** <2026-11-07>
 
 Removed diary entries from the agenda.  =org-agenda-include-diary= is now =nil=, so agenda views no longer include diary or holiday entries; =diary-file= remains configured for the calendar.
@@ -3715,6 +3719,9 @@ Configures rules and behaviours for display-buffer functions to control how new 
              '("\\*Messages" display-buffer-same-window))
 (add-to-list 'display-buffer-alist
              '("\\*Process" display-buffer-same-window))
+;; Show `do_backup home' (F12) output in the current window instead of a split.
+(add-to-list 'display-buffer-alist
+             '("\\*backup\\*" display-buffer-same-window))
 (add-to-list 'display-buffer-alist
              '("\\*vc-dir\\*"
                (display-buffer-same-window)))

@@ -2344,6 +2344,9 @@ RET checks out the branch at point; `g' refreshes, `q' quits."
              '("\\*Messages" display-buffer-same-window))
 (add-to-list 'display-buffer-alist
              '("\\*Process" display-buffer-same-window))
+;; Show `do_backup home' (F12) output in the current window instead of a split.
+(add-to-list 'display-buffer-alist
+             '("\\*backup\\*" display-buffer-same-window))
 (add-to-list 'display-buffer-alist
              '("\\*vc-dir\\*"
                (display-buffer-same-window)))
