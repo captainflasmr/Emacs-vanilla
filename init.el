@@ -1053,11 +1053,15 @@ On Windows the command is run through bash (from PortableGit) since
                (dedicated . t)
                (window-width . 0.3)
                (inhibit-same-window . t)))
+;; Help reuses an existing window whenever possible, including the other
+;; half of a split.  Only when no window can be reused does it open a
+;; full-width bottom window, so it never shrinks into a narrow side pane.
 (add-to-list 'display-buffer-alist
              '("\\*Help\\*"
-               (display-buffer-reuse-window display-buffer-in-direction)
-               (direction . right)
-               (window-width . 0.4)
+               (display-buffer-reuse-window
+                display-buffer-use-some-window
+                display-buffer-at-bottom)
+               (window-height . 0.4)
                (inhibit-same-window . t)))
 (add-to-list 'display-buffer-alist
              '("\\*Async" display-buffer-no-window
