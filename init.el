@@ -217,8 +217,8 @@ OVERRIDES is an alist of (FACE . HEIGHT) pairs; see
 
 (defun my/reset-display-scale ()
   "Reset buffer text scaling and the global font size to their defaults.
-`C-z z' runs this after zooming with `C--'/`C-=' or
-`C-M--'/`C-M-='.  Honors `my/font-size-overrides'."
+Run this after zooming with `C--'/`C-=' or `C-M--'/`C-M-='.
+Honors `my/font-size-overrides'."
   (interactive)
   (when (bound-and-true-p text-scale-mode)
     (text-scale-set 0))
@@ -285,7 +285,7 @@ instead.  The line only shows while `window-divider-mode' is on (C-z d)."
 (define-key my-win-keymap (kbd "t")
             (lambda () (interactive)
               (org-table-map-tables 'org-table-align)))
-(define-key my-win-keymap (kbd "z") #'my/reset-display-scale)
+(define-key my-win-keymap (kbd "z") #'font-lock-update)
 
 ;;
 ;; -> keys-other-core
@@ -363,7 +363,7 @@ geometry-based lookup, so it works across nested splits."
   "Change the default face height by DELTA steps on all frames.
 DELTA is in 0.1pt units; updates future frames via `default-frame-alist'.
 Store the new height as an override spec so changing theme does not
-restore the theme's font size.  `my/reset-display-scale' (C-z z)
+restore the theme's font size.  `my/reset-display-scale'
 restores the baseline height."
   (interactive "p")
   (let* ((step (* delta 10))

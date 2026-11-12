@@ -30,6 +30,10 @@ Note that this package works in combination with https://github.com/captainflasm
 
 * Whats New
 
+** <2026-11-12>
+
+Rebound =C-z z= to =font-lock-update=, which refontifies the current buffer so Org and other font-locked buffers redraw their faces immediately.  =my/reset-display-scale= is still available from the appearance menu's =0= entry.
+
 ** <2026-11-09>
 
 =F12= (=do_backup home=) now shows its =*backup*= output in the current window instead of opening a separate window.
@@ -678,7 +682,7 @@ Any functions that are run being associated with a mode.
 
 * font-size-core
 
-Defines the default face heights and keeps them applied across theme and frame changes.  The numbers here are the defaults; per-machine overrides belong in the top-level init via =my/set-font-size-overrides= (see the =fonts= section there).  =my/reset-display-scale= (=C-z z=) restores the effective baseline after using =C--=/=C-== for buffer zoom or =C-M--=/=C-M-== for the global font size.
+Defines the default face heights and keeps them applied across theme and frame changes.  The numbers here are the defaults; per-machine overrides belong in the top-level init via =my/set-font-size-overrides= (see the =fonts= section there).  =my/reset-display-scale= restores the effective baseline after using =C--=/=C-== for buffer zoom or =C-M--=/=C-M-== for the global font size; the appearance menu's =0= entry still calls it.
 
 #+begin_src elisp
 ;;
@@ -776,8 +780,8 @@ OVERRIDES is an alist of (FACE . HEIGHT) pairs; see
 
 (defun my/reset-display-scale ()
   "Reset buffer text scaling and the global font size to their defaults.
-`C-z z' runs this after zooming with `C--'/`C-=' or
-`C-M--'/`C-M-='.  Honors `my/font-size-overrides'."
+Run this after zooming with `C--'/`C-=' or `C-M--'/`C-M-='.
+Honors `my/font-size-overrides'."
   (interactive)
   (when (bound-and-true-p text-scale-mode)
     (text-scale-set 0))
@@ -850,7 +854,7 @@ instead.  The line only shows while `window-divider-mode' is on (C-z d)."
 (define-key my-win-keymap (kbd "t")
             (lambda () (interactive)
               (org-table-map-tables 'org-table-align)))
-(define-key my-win-keymap (kbd "z") #'my/reset-display-scale)
+(define-key my-win-keymap (kbd "z") #'font-lock-update)
 #+end_src
 
 * keys-other-core
@@ -941,7 +945,7 @@ geometry-based lookup, so it works across nested splits."
   "Change the default face height by DELTA steps on all frames.
 DELTA is in 0.1pt units; updates future frames via `default-frame-alist'.
 Store the new height as an override spec so changing theme does not
-restore the theme's font size.  `my/reset-display-scale' (C-z z)
+restore the theme's font size.  `my/reset-display-scale'
 restores the baseline height."
   (interactive "p")
   (let* ((step (* delta 10))
