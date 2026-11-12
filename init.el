@@ -111,7 +111,6 @@
 (define-key my-jump-keymap (kbd "l") #'bookmark-jump)
 (define-key my-jump-keymap (kbd "o") (lambda () (interactive) (switch-to-buffer "*scratch*")))
 (define-key my-jump-keymap (kbd "s") (lambda () (interactive) (find-file "~/source")))
-(define-key my-jump-keymap (kbd "y") (lambda () (interactive) (find-file "~/.emacs.d/Emacs-DIYer")))
 (define-key my-jump-keymap (kbd "-") #'tab-close)
 
 ;; 1. First, rescue 'kill-region' by binding it to something else
@@ -177,9 +176,9 @@ the theme's own height over it."
 `my/font-size-overrides' can override the non-default faces."
   (my/set-face-height 'default my/main-font-height)
   ;; Keep `fixed-pitch' relative to `default' so it follows
-  ;; `text-scale-mode' (used by `org-slides').  An absolute height here
-  ;; leaves code and tables small while the surrounding text is scaled up,
-  ;; which makes each code line look double-spaced.
+  ;; `text-scale-mode'.  An absolute height here leaves code and tables
+  ;; small while the surrounding text is scaled up, which makes each
+  ;; code line look double-spaced.
   (when (facep 'fixed-pitch)
     (my/set-face-height 'fixed-pitch
                         (my/font-size-override 'fixed-pitch 1.0)))
@@ -272,12 +271,9 @@ instead.  The line only shows while `window-divider-mode' is on (C-z d)."
 (define-key my-win-keymap (kbd "f") #'font-lock-mode)
 (define-key my-win-keymap (kbd "g") #'global-hl-line-mode)
 (define-key my-win-keymap (kbd "h") #'font-lock-update)
-(define-key my-win-keymap (kbd "l") #'my/sync-ui-accent-color)
 (define-key my-win-keymap (kbd "n") #'display-line-numbers-mode)
-(define-key my-win-keymap (kbd "o") #'my/center-buffer-mode)
 (define-key my-win-keymap (kbd "p") #'variable-pitch-mode)
 (define-key my-win-keymap (kbd "q") #'toggle-menu-bar-mode-from-frame)
-(define-key my-win-keymap (kbd "r") #'my/rainbow-mode)
 (define-key my-win-keymap (kbd "u") #'set-cursor-color)
 (define-key my-win-keymap (kbd "U") #'set-foreground-color)
 (define-key my-win-keymap (kbd "B") #'set-background-color)
@@ -294,8 +290,6 @@ instead.  The line only shows while `window-divider-mode' is on (C-z d)."
 (global-set-key (kbd "M-s +") #'ediff-regions-linewise)
 (define-key my-overrides-mode-map (kbd "M-h") #'my/mark-block)
 (global-set-key (kbd "M-s x") #'diff-buffer-with-file)
-(global-set-key (kbd "C-c f") #'my/find-file)
-(global-set-key (kbd "C-c g") #'my/grep)
 
 ;;
 ;; -> keybinding-core
@@ -417,7 +411,6 @@ restores the baseline height."
 (define-key my-overrides-mode-map (kbd "C-M-p") #'(lambda ()(interactive)(scroll-down nil)))
 (define-key my-overrides-mode-map (kbd "M-a") #'delete-other-windows)
 (define-key my-overrides-mode-map (kbd "M-o") #'bookmark-jump)
-(define-key my-overrides-mode-map (kbd "M-/") #'my/quick-window-jump)
 (define-key my-overrides-mode-map (kbd "M-;") (lambda () (interactive) (select-window (split-window-horizontally))))
 (define-key my-overrides-mode-map (kbd "M-'") #'delete-window)
 (define-key my-overrides-mode-map (kbd "M-m") (lambda () (interactive) (select-window (split-window-vertically))))
@@ -427,8 +420,12 @@ restores the baseline height."
 The global window-navigation bindings stand aside in these modes so
 that mode-provided bindings apply instead.  Minibuffers always fall
 back to history navigation; add other modes here to do the same
-there.  `diff-minimap-mode' is handled separately in
-`my/window-nav-passthrough-filter' because it is a minor mode.")
+there.")
+
+(defvar my/window-nav-passthrough-minor-modes nil
+  "Minor modes where M-n/M-p keep the mode's own commands.
+Only consulted in file buffers.  The top-level init adds
+package-specific minor modes here.")
 
 (defun my/window-nav-passthrough-filter (binding)
   "Return BINDING for window navigation, except in passthrough contexts.
@@ -442,18 +439,21 @@ buffer's own bindings:
 - in the modes listed in `my/window-nav-passthrough-modes',
   preserving their M-n/M-p commands (e.g. hunk navigation in
   `diff-mode');
-- in file buffers while `diff-minimap-mode' is active, so its
-  M-n/M-p hunk navigation wins; use C-x o to switch windows there."
+- in file buffers while a minor mode in
+  `my/window-nav-passthrough-minor-modes' is active, so its M-n/M-p
+  commands win; use C-x o to switch windows there."
   (unless (or (minibufferp)
-              (and (bound-and-true-p diff-minimap-mode)
-                   (buffer-file-name))
+              (and (buffer-file-name)
+                   (seq-some (lambda (mode)
+                               (and (boundp mode) (symbol-value mode)))
+                             my/window-nav-passthrough-minor-modes))
               (apply #'derived-mode-p my/window-nav-passthrough-modes))
     binding))
 
 (define-key my-overrides-mode-map (kbd "M-n")
             '(menu-item "" other-window :filter my/window-nav-passthrough-filter))
 (define-key my-overrides-mode-map (kbd "M-p")
-            '(menu-item "" my/previous-window :filter my/window-nav-passthrough-filter))
+            '(menu-item "" previous-window :filter my/window-nav-passthrough-filter))
 
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
 (global-set-key (kbd "M-z") #'visual-line-mode)
@@ -621,12 +621,11 @@ This makes every tab bar tab the same uniform width."
  '(window-divider-last-pixel ((t (:foreground "#606060"))))
  '(org-tag ((t (:height 0.9))))
  '(vertical-border ((t (:foreground "#606060"))))
- ;; doom-themes (as of 2026-01) sets up a two-face inheritance cycle
- ;; between `gnus-group-news-low' and `gnus-group-news-low-empty'.
- ;; Emacs 31+ rejects cycles while realising faces for a new frame, so
- ;; `make-frame' fails and anything that opens a frame (e.g.
- ;; `thanos/type') breaks.  Match the ancestors doom-themes uses
- ;; upstream (doomemacs/themes#875) to break the cycle.
+ ;; Some themes set up a two-face inheritance cycle between
+ ;; `gnus-group-news-low' and `gnus-group-news-low-empty'.  Emacs 31+
+ ;; rejects cycles while realising faces for a new frame, so `make-frame'
+ ;; fails and anything that opens a frame breaks.  Inherit both faces
+ ;; from a common ancestor to break the cycle.
  '(gnus-group-news-low ((t (:inherit gnus-group-mail-1))))
  '(gnus-group-news-low-empty ((t (:inherit gnus-group-mail-1-empty)))))
 
@@ -1208,8 +1207,6 @@ beginning of headline, where `org-todo' skips its cursor fixup."
 #+end_export
 %?
 " :prepend t :jump-to-captured t)))
-
-;; The "g" (Gallery) capture template is now in transmute.el
 
 ;;
 ;; -> org-agenda-core
@@ -2225,29 +2222,10 @@ the first installed manager by name, with xdg-open as the last resort."
               (when (facep 'fringe)
                 (set-face-background 'fringe (face-background 'default))))))
 
-(when (fboundp 'my/rainbow-mode)
-  (add-hook 'prog-mode-hook #'my/rainbow-mode)
-  (add-hook 'org-mode-hook #'my/rainbow-mode)
-  (add-hook 'conf-space-mode-hook #'my/rainbow-mode))
-
 ;; Slight transparency on the frame background. Harmless in TTY/Wayland
 ;; environments that don't support it.
 (set-frame-parameter nil 'alpha-background 98)
 (add-to-list 'default-frame-alist '(alpha-background . 98))
-
-;; Neomacs is a Rust implementation of Emacs with its own renderer.  Its
-;; visual effects are defcustoms in `neomacs-effects', which is loaded at
-;; startup under a graphical Neomacs but absent from GNU Emacs, hence the
-;; guard.  Assign with `setopt' rather than `setq': each option's :set
-;; function pushes the new value to the running renderer.  Discover the rest
-;; with `M-x customize-group RET neomacs RET'.
-(when (fboundp 'neomacs-effect-names)
-  (require 'neomacs-effects)
-  ;; No fading tail behind the moving cursor; 0.0 draws none (default 0.7).
-  (setopt neomacs-cursor-motion-trail-size 0.0)
-  ;; To remove the glide as well, jump straight to the new position:
-  ;; (setopt neomacs-cursor-motion-enabled nil)
-  )
 
 ;;
 ;; -> org-fixed-pitch-core
@@ -2747,8 +2725,8 @@ of ID, then any sibling file."
 
 (defun my/xsd-xref--local-activate ()
   "Register the XSD xref backend buffer-locally in nxml-mode, ahead
-of eglot's buffer-local backend, so `M-.' keeps using exact
-schema-index jumps even while a language server is connected."
+of a language server's buffer-local backend, so `M-.' keeps using
+exact schema-index jumps even while a language server is connected."
   (add-hook 'xref-backend-functions #'my/xsd-xref-backend -100 t))
 
 (add-hook 'nxml-mode-hook #'my/xsd-xref--local-activate)
@@ -2934,7 +2912,7 @@ schema-index jumps even while a language server is connected."
   "Discovered SSH agent socket for the current user, or nil.
 
 When sway launches Emacs directly, SSH_AUTH_SOCK is not inherited, so
-`git push' from vc-dir/magit cannot reach the gcr agent that already
+`git push' from vc-dir cannot reach the gcr agent that already
 holds the key and fails with
 `ssh_askpass: exec(/usr/lib/ssh/ssh-askpass): No such file or directory'.")
 
@@ -2953,14 +2931,6 @@ holds the key and fails with
 (require 'org)
 (org-babel-do-load-languages
  'org-babel-load-languages '((C . t)))
-
-(defun my/eglot-dir-locals ()
-  "Create .dir-locals.el file for eglot ada-mode using the selected DIRED path."
-  (interactive)
-  (add-dir-local-variable
-   'ada-mode
-   'eglot-workspace-configuration
-   `((ada . (:projectFile ,(dired-get-filename))))))
 
 (setq vc-handled-backends
       (append (and (executable-find "svn") '(SVN)) '(Git)))
@@ -3175,12 +3145,6 @@ patterns are anchored at the end of the path."
         (flymake-show-buffer-diagnostics)
         (my/flymake-sync-diagnostics))))
   (define-key flymake-mode-map (kbd "M-M") #'my/flymake-toggle-diagnostics))
-
-;;
-;; -> simply-annotate-search-map
-;;
-(with-eval-after-load 'simply-annotate
-  (set-keymap-parent simply-annotate-command-map search-map))
 
 ;;
 ;; -> development-core
@@ -3534,14 +3498,3 @@ NOTES is the release notes text, and FILES is a list of file paths to attach."
 \\{my/gh-release-mode-map}")
 
 (global-set-key (kbd "C-c G") 'my/gh-release-menu)
-
-;;
-;; -> core-configuration
-;;
-(load-file "~/.emacs.d/Emacs-DIYer/init.el")
-
-;;
-;; -> dwim
-;;
-;;
-;; (my/sync-ui-accent-color "coral")
