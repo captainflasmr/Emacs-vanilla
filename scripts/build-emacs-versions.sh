@@ -4,6 +4,9 @@
 # flows into "installed to..." and the outer loop, masking real build errors.
 set -eo pipefail
 
+# Directory containing this script and the desktop-entry helper.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Directory for Emacs builds
 BUILD_ROOT="$HOME/emacs-builds"
 INSTALL_ROOT="$HOME/emacs-versions"
@@ -466,6 +469,11 @@ case $build_method in
             echo "Master is now the default 'emacs' in PATH. Verify with:"
             echo "  hash -r; emacs --version; emacs --batch --eval '(message \"%s\" system-configuration-features)'"
             echo "To revert to pacman emacs-wayland: rm ~/bin/emacs (restores /usr/bin/emacs 30.2)."
+        fi
+
+        # Refresh rofi/drun desktop entries for every installed version.
+        if [[ -x "$SCRIPT_DIR/create-emacs-desktop-entries.sh" ]]; then
+            "$SCRIPT_DIR/create-emacs-desktop-entries.sh"
         fi
         ;;
     
