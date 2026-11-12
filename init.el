@@ -450,10 +450,15 @@ buffer's own bindings:
               (apply #'derived-mode-p my/window-nav-passthrough-modes))
     binding))
 
+(defun my/previous-window ()
+  "Select the previous window in the cyclic window order."
+  (interactive)
+  (other-window -1))
+
 (define-key my-overrides-mode-map (kbd "M-n")
             '(menu-item "" other-window :filter my/window-nav-passthrough-filter))
 (define-key my-overrides-mode-map (kbd "M-p")
-            '(menu-item "" previous-window :filter my/window-nav-passthrough-filter))
+            '(menu-item "" my/previous-window :filter my/window-nav-passthrough-filter))
 
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
 (global-set-key (kbd "M-z") #'visual-line-mode)
