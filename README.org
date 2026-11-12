@@ -2814,7 +2814,6 @@ gthumb survives Emacs exit."
 
 (with-eval-after-load 'dired
   (add-hook 'dired-mode-hook (lambda () (my-dired-clipboard-mode 1)))
-  (define-key dired-mode-map (kbd "D") #'my/dired-async-do-delete)
   (define-key dired-mode-map (kbd "C") 'dired-copy-file)
   (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
   (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
