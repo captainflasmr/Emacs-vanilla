@@ -1111,6 +1111,34 @@ On Windows the command is run through bash (from PortableGit) since
         ("CANCELLED" . "#426b3e")
         ("CLOSED" . "#6b6b6b")))
 
+(eval-when-compile (defvar font-lock-beg))
+
+(defun my/org-font-lock-extend-region ()
+  "Extend fontification back to the beginning of the containing block.
+Jit-lock can start fontifying partway through a large block, for
+example after restoring a cursor position deep in a literate file.
+`org-fontify-meta-lines-and-blocks' then never sees the `#+begin_'
+line and marks the block body fontified without adding its faces."
+  (when (> font-lock-beg (point-min))
+    (condition-case nil
+        (save-excursion
+          (goto-char font-lock-beg)
+          (let ((element (org-element-at-point)))
+            (when (memq (org-element-type element)
+                        '(src-block example-block export-block
+                          comment-block quote-block verse-block
+                          center-block special-block))
+              (let ((begin (org-element-property :begin element)))
+                (when (and begin (< begin font-lock-beg))
+                  (setq font-lock-beg begin)
+                  t)))))
+      (error nil))))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (add-hook 'font-lock-extend-region-functions
+                      #'my/org-font-lock-extend-region nil t)))
+
 (defun my/org-todo-stop-after-keyword (&rest _)
   "Move point to just after TODO keyword when `org-todo' leaves it at BOL.
 Speed command `t' (via `org-self-insert-command') runs with point at

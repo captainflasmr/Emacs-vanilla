@@ -1733,7 +1733,7 @@ The Help rule prefers reusing an existing window, including the other half of a 
 
 Extends and customizes Org mode for document structuring, note-taking, and project management, highlighting customization options for exporting, appearance, and functionality enhancements.
 
-Native source-block fontification is enabled explicitly.  Large literate files can leave a newly visited source block without a font-lock text property, so a buffer-local post-command/scroll hook asks Emacs to ensure fontification for the visible range or current source block.  This avoids running the much more expensive full-buffer =font-lock-update= after every jump.
+Native source-block fontification is enabled explicitly.  Large literate files can leave a newly visited source block without faces: jit-lock may begin fontifying partway through a block, for example after restoring a cursor position deep in the file, so Org's block fontifier never sees the =#+begin_src= line and marks the body fontified without adding any faces.  A buffer-local =font-lock-extend-region-functions= entry moves the start of fontification back to the beginning of the containing block, so Org always sees the delimiter.  This avoids running the much more expensive full-buffer =font-lock-update= after every jump.
 
 #+begin_src elisp
 ;;
@@ -1768,6 +1768,34 @@ Native source-block fontification is enabled explicitly.  Large literate files c
         ("DONE" . "#77aa66")
         ("CANCELLED" . "#426b3e")
         ("CLOSED" . "#6b6b6b")))
+
+(eval-when-compile (defvar font-lock-beg))
+
+(defun my/org-font-lock-extend-region ()
+  "Extend fontification back to the beginning of the containing block.
+Jit-lock can start fontifying partway through a large block, for
+example after restoring a cursor position deep in a literate file.
+`org-fontify-meta-lines-and-blocks' then never sees the `#+begin_'
+line and marks the block body fontified without adding its faces."
+  (when (> font-lock-beg (point-min))
+    (condition-case nil
+        (save-excursion
+          (goto-char font-lock-beg)
+          (let ((element (org-element-at-point)))
+            (when (memq (org-element-type element)
+                        '(src-block example-block export-block
+                          comment-block quote-block verse-block
+                          center-block special-block))
+              (let ((begin (org-element-property :begin element)))
+                (when (and begin (< begin font-lock-beg))
+                  (setq font-lock-beg begin)
+                  t)))))
+      (error nil))))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (add-hook 'font-lock-extend-region-functions
+                      #'my/org-font-lock-extend-region nil t)))
 
 (defun my/org-todo-stop-after-keyword (&rest _)
   "Move point to just after TODO keyword when `org-todo' leaves it at BOL.
