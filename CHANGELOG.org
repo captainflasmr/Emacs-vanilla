@@ -10,6 +10,13 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-11-16>
+
+Move machine-specific Org definitions to the top-level init
+
+- Removed =org-agenda-files=, =diary-file=, =my-capture-top-level= and =org-capture-templates= from =org-agenda-core= / =org-capture-core=; they now live in the top-level init because the file lists and capture templates are typically bespoke.
+- =org-agenda-core= keeps the generic agenda defaults, and =org-refile-targets= still derives its targets from =org-agenda-files=.
+
 ** <2026-11-07>
 
 Remove diary entries from the agenda
