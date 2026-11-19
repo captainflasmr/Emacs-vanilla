@@ -191,7 +191,13 @@ the theme's own height over it."
     (my/set-face-height 'mode-line mode-line-height)
     (my/set-face-height 'mode-line-inactive
                         (my/font-size-override 'mode-line-inactive
-                                               mode-line-height))))
+                                               mode-line-height))
+    ;; Org's clock text inherits `mode-line', but its realised face can keep
+    ;; an old height after a theme change (and old Org versions copied the
+    ;; face outright).  Reset it with the mode line so the clock cannot stay
+    ;; large when the theme or font size changes.
+    (my/set-face-height 'org-mode-line-clock mode-line-height)
+    (my/set-face-height 'org-mode-line-clock-overrun mode-line-height)))
 
 (defun my/sync-default-frame-font ()
   "Record the current default face font in `default-frame-alist'.

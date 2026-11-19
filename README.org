@@ -32,6 +32,10 @@ Note that this package works in combination with https://github.com/captainflasm
 
 ** <2026-11-19>
 
+Kept Org's mode-line clock text at the same height as the rest of the mode line.  =my/apply-main-font-sizes= now resets =org-mode-line-clock= and =org-mode-line-clock-overrun= with the mode-line faces, so a stale realised face or an old copied Org face can no longer leave the running clock oversized after a theme change.
+
+** <2026-11-19>
+
 Bound =my/selective-display-fold= to =C-c F=, which was free; it replaces the old =C-c f= binding that is now =my/find-file=.  =C-x $= keeps the stock =set-selective-display= behaviour.
 
 ** <2026-11-19>
@@ -778,7 +782,13 @@ the theme's own height over it."
     (my/set-face-height 'mode-line mode-line-height)
     (my/set-face-height 'mode-line-inactive
                         (my/font-size-override 'mode-line-inactive
-                                               mode-line-height))))
+                                               mode-line-height))
+    ;; Org's clock text inherits `mode-line', but its realised face can keep
+    ;; an old height after a theme change (and old Org versions copied the
+    ;; face outright).  Reset it with the mode line so the clock cannot stay
+    ;; large when the theme or font size changes.
+    (my/set-face-height 'org-mode-line-clock mode-line-height)
+    (my/set-face-height 'org-mode-line-clock-overrun mode-line-height)))
 
 (defun my/sync-default-frame-font ()
   "Record the current default face font in `default-frame-alist'.
