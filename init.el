@@ -1976,7 +1976,7 @@ Return nil (fall through) in WDired."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "M-w")
       `(menu-item "" nil :filter ,#'my/dired-clipboard--copy-binding))
-    (define-key map (kbd "C-S-w")
+    (define-key map (kbd "C-w")
       `(menu-item "" nil :filter ,#'my/dired-clipboard--cut-binding))
     (define-key map (kbd "C-y")
       `(menu-item "" nil :filter ,#'my/dired-clipboard--paste-binding))
@@ -1984,9 +1984,9 @@ Return nil (fall through) in WDired."
   "Keymap for `my-dired-clipboard-mode'.")
 
 (define-minor-mode my-dired-clipboard-mode
-  "Copy, cut and paste files in Dired with M-w, C-S-w and C-y.
+  "Copy, cut and paste files in Dired with M-w, C-w and C-y.
 M-w copies marked files to the clipboard.
-C-S-w cuts marked files to the clipboard.
+C-w cuts marked files to the clipboard.
 C-y pastes files from the clipboard into the current directory.
 All three fall back to their default bindings when the region is
 active or in WDired."

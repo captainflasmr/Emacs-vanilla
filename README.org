@@ -32,6 +32,10 @@ Note that this package works in combination with https://github.com/captainflasm
 
 ** <2026-11-19>
 
+Rebound the Dired file-clipboard cut command from =C-S-w= to =C-w=, completing the =M-w= (copy), =C-w= (cut), =C-y= (paste) trio.  The existing filters still fall through to =kill-region= when a region is active and in WDired, so normal text killing is unaffected.
+
+** <2026-11-19>
+
 Moved GitHub release management out of =gh-release-core= into =Emacs-DIYer=, since it drives the external =gh= CLI rather than built-in Emacs functionality.  The =my/gh-release-*= commands, =my/gh-release-mode= and the =C-c G= menu are unchanged and now load with =Emacs-DIYer=.
 
 ** <2026-11-16>
@@ -2681,7 +2685,7 @@ Return nil (fall through) in WDired."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "M-w")
       `(menu-item "" nil :filter ,#'my/dired-clipboard--copy-binding))
-    (define-key map (kbd "C-S-w")
+    (define-key map (kbd "C-w")
       `(menu-item "" nil :filter ,#'my/dired-clipboard--cut-binding))
     (define-key map (kbd "C-y")
       `(menu-item "" nil :filter ,#'my/dired-clipboard--paste-binding))
@@ -2689,9 +2693,9 @@ Return nil (fall through) in WDired."
   "Keymap for `my-dired-clipboard-mode'.")
 
 (define-minor-mode my-dired-clipboard-mode
-  "Copy, cut and paste files in Dired with M-w, C-S-w and C-y.
+  "Copy, cut and paste files in Dired with M-w, C-w and C-y.
 M-w copies marked files to the clipboard.
-C-S-w cuts marked files to the clipboard.
+C-w cuts marked files to the clipboard.
 C-y pastes files from the clipboard into the current directory.
 All three fall back to their default bindings when the region is
 active or in WDired."
