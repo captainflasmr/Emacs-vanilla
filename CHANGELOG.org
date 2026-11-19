@@ -12,6 +12,12 @@ This document contains the release notes for Emacs-core
 
 ** <2026-11-19>
 
+Move GitHub release management to Emacs-DIYer
+
+- Removed =gh-release-core= — the =my/gh-release-*= commands, =my/gh-release-mode= and the =C-c G= menu — because it depends on the external =gh= CLI.  The block now lives in =Emacs-DIYer=; all key bindings are unchanged.
+
+** <2026-11-19>
+
 Fix the Dired C copy binding
 
 - =dired-core=: bound =C= to =dired-do-copy= instead of =dired-copy-file=.  The latter is a non-interactive helper taking =FROM TO OK-FLAG= in Emacs 27–31, so the old binding failed when invoked; =dired-do-copy= is the supported command and also runs the existing destination-switch advice.
