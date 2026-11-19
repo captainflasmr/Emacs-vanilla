@@ -2825,14 +2825,16 @@ cannot handle."
 (advice-add 'vc-svn-registered :around #'my/vc-svn-registered-silent)
 
 (defun my/selective-display-fold (&optional level)
-  "Fold text indented same of more than the cursor.
-If level is set, set the indent level to LEVEL.
-If 'selective-display' is already set to LEVEL, clicking
-F5 again will unset 'selective-display' by setting it to 0."
+  "Fold text indented at least as much as the cursor.
+If LEVEL is set, set the indent level to LEVEL.
+Invoking again at the same level unfolds the buffer."
   (interactive "P")
   (if (eq selective-display (1+ (current-column)))
       (set-selective-display 0)
     (set-selective-display (or level (1+ (current-column))))))
+
+;; C-c F for Fold; C-x $ keeps the stock `set-selective-display'.
+(global-set-key (kbd "C-c F") #'my/selective-display-fold)
 
 (defun concatenate-project-files (root-dir output-file &optional exclude-patterns)
   "Traverse ROOT-DIR recursively and concatenate all text files into OUTPUT-FILE.

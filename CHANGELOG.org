@@ -12,6 +12,12 @@ This document contains the release notes for Emacs-core
 
 ** <2026-11-19>
 
+Rebind selective-display folding
+
+- =programming-core=: bound =my/selective-display-fold= to =C-c F=, its old =C-c f= binding having become =my/find-file=.  The docstring now reflects the current behaviour, and =C-x $= keeps the stock =set-selective-display= command.
+
+** <2026-11-19>
+
 Add a GUI-style paste binding
 
 - =keybinding-core=: bound =C-S-v= to =yank=.  =C-y= is unchanged and remains the portable fallback for terminal frames, where =C-S-v= is not distinguishable.
