@@ -12,6 +12,12 @@ This document contains the release notes for Emacs-core
 
 ** <2026-11-19>
 
+Add a GUI-style paste binding
+
+- =keybinding-core=: bound =C-S-v= to =yank=.  =C-y= is unchanged and remains the portable fallback for terminal frames, where =C-S-v= is not distinguishable.
+
+** <2026-11-19>
+
 Move Linux-specific bindings to the top-level init
 
 - Removed =linux-specific-core=: the personal =M-l= jump aliases and the Waybar =auto-mode-alist= entry now live in the top-level init, so Emacs-vanilla keeps only platform-neutral keymaps.

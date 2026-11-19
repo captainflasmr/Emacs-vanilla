@@ -462,6 +462,8 @@ buffer's own bindings:
 
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
 (global-set-key (kbd "M-z") #'visual-line-mode)
+;; GUI-style paste (Ctrl+Shift+V); C-y remains the portable fallback.
+(global-set-key (kbd "C-S-v") #'yank)
 
 (defun my/vc-dir-diff-stay ()
   "Show the file at point from vc-dir, keeping point in the vc-dir window.

@@ -32,6 +32,10 @@ Note that this package works in combination with https://github.com/captainflasm
 
 ** <2026-11-19>
 
+Bound =C-S-v= to =yank= as a GUI-style paste key.  =C-y= remains unchanged and is still the reliable choice in terminal frames, where =C-S-v= cannot be distinguished.
+
+** <2026-11-19>
+
 Moved =linux-specific-core= out to the top-level init.  The Linux jump aliases and the Waybar =auto-mode-alist= entry are machine-specific, so Emacs-vanilla keeps only the generic keymaps.
 
 ** <2026-11-19>
@@ -1060,6 +1064,8 @@ buffer's own bindings:
 
 (global-set-key (kbd "C-c U") #'my/disk-space-query)
 (global-set-key (kbd "M-z") #'visual-line-mode)
+;; GUI-style paste (Ctrl+Shift+V); C-y remains the portable fallback.
+(global-set-key (kbd "C-S-v") #'yank)
 
 (defun my/vc-dir-diff-stay ()
   "Show the file at point from vc-dir, keeping point in the vc-dir window.
