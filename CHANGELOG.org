@@ -10,6 +10,12 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-11-19>
+
+Leave repeat-mode off by default
+
+- =modes-core=: removed the =repeat-mode= activation and the =repeat-echo-function= override, so repeatable commands no longer enter repeat mode automatically.  Enable it interactively with =M-x repeat-mode= when wanted.
+
 ** <2026-11-16>
 
 Move machine-specific Org definitions to the top-level init
