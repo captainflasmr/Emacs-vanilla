@@ -12,6 +12,12 @@ This document contains the release notes for Emacs-core
 
 ** <2026-11-19>
 
+Fix the Dired C copy binding
+
+- =dired-core=: bound =C= to =dired-do-copy= instead of =dired-copy-file=.  The latter is a non-interactive helper taking =FROM TO OK-FLAG= in Emacs 27–31, so the old binding failed when invoked; =dired-do-copy= is the supported command and also runs the existing destination-switch advice.
+
+** <2026-11-19>
+
 Remove the Ediff Dired-directory helper
 
 - Deleted =my/ediff-dired-directories= from =diff-core=; it had no key binding, so nothing else changes.
