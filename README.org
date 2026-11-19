@@ -32,6 +32,10 @@ Note that this package works in combination with https://github.com/captainflasm
 
 ** <2026-11-19>
 
+Moved =linux-specific-core= out to the top-level init.  The Linux jump aliases and the Waybar =auto-mode-alist= entry are machine-specific, so Emacs-vanilla keeps only the generic keymaps.
+
+** <2026-11-19>
+
 Rebound the Dired file-clipboard cut command from =C-S-w= to =C-w=, completing the =M-w= (copy), =C-w= (cut), =C-y= (paste) trio.  The existing filters still fall through to =kill-region= when a region is active and in WDired, so normal text killing is unaffected.
 
 ** <2026-11-19>
@@ -3566,26 +3570,6 @@ Curates configurations specific to the Windows operating system, adjusting paths
                  "-NoExit" "-Command"
                  (format "Set-Location -LiteralPath '%s'"
                          (expand-file-name default-directory))))
-#+end_src
-
-* linux-specific-core
-
-Curates configurations specific to Linux, making adjustments for paths, fonts, and system integrations ensuring Emacs is well integrated with the Linux desktop environment.
-
-#+begin_src elisp
-;;
-;; -> linux-specific-core
-;;
-(when (eq system-type 'gnu/linux)
-  (define-key my-jump-keymap (kbd "a") (lambda () (interactive) (find-file "~/DCIM/content/emacs.org")))
-  (define-key my-jump-keymap (kbd "c") (lambda () (interactive) (find-file "~/DCIM/content/aaa--calendar.org")))
-  (define-key my-jump-keymap (kbd "f") (lambda () (interactive) (find-file "~/nas")))
-  (define-key my-jump-keymap (kbd "m") (lambda () (interactive) (find-file "~/DCIM/Camera")))
-  (define-key my-jump-keymap (kbd "j") (lambda () (interactive) (find-file "~/DCIM/content/aaa--todo.org")))
-  (define-key my-jump-keymap (kbd "n") (lambda () (interactive) (find-file "~/DCIM/Screenshots")))
-  (define-key my-jump-keymap (kbd "w") (lambda () (interactive) (find-file "~/DCIM/content/")))
-  ;; Sway/Waybar stores its config as JSON with comments.
-  (add-to-list 'auto-mode-alist '("waybar.*/config\\'" . js-json-mode)))
 #+end_src
 
 * programming-core

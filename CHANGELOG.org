@@ -12,6 +12,12 @@ This document contains the release notes for Emacs-core
 
 ** <2026-11-19>
 
+Move Linux-specific bindings to the top-level init
+
+- Removed =linux-specific-core=: the personal =M-l= jump aliases and the Waybar =auto-mode-alist= entry now live in the top-level init, so Emacs-vanilla keeps only platform-neutral keymaps.
+
+** <2026-11-19>
+
 Rebind Dired clipboard cut to C-w
 
 - =dired-core=: changed =my-dired-clipboard-mode= from =C-S-w= to =C-w=, so copy/cut/paste now match =M-w=, =C-w= and =C-y=.  The filters still fall through to =kill-region= when the region is active and in WDired.
