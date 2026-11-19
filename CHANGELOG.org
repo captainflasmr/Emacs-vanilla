@@ -12,6 +12,18 @@ This document contains the release notes for Emacs-core
 
 ** <2026-11-19>
 
+Remove the Ediff Dired-directory helper
+
+- Deleted =my/ediff-dired-directories= from =diff-core=; it had no key binding, so nothing else changes.
+
+** <2026-11-19>
+
+Remove the gthumb Dired helper
+
+- Deleted =my/dired-open-gthumb= and its =J= binding from =dired-mode-map=.  =gthumb= remains configured as image-dired's external viewer.
+
+** <2026-11-19>
+
 Leave repeat-mode off by default
 
 - =modes-core=: removed the =repeat-mode= activation and the =repeat-echo-function= override, so repeatable commands no longer enter repeat mode automatically.  Enable it interactively with =M-x repeat-mode= when wanted.

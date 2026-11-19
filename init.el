@@ -2019,25 +2019,6 @@ is not re-inserted as it has been removed from the subdir alist."
   (interactive)
   (dired-sort-other "-alGghX"))
 
-(defun my/dired-open-gthumb ()
-  "Open marked files in gthumb image viewer.
-In dired, uses marked files (or file at point); otherwise uses the
-current buffer's file or directory.  Runs via `nohup' detached so
-gthumb survives Emacs exit."
-  (interactive)
-  (let ((files (if (derived-mode-p 'dired-mode)
-                   (dired-get-marked-files nil nil nil nil "No file at point")
-                 (list (or buffer-file-name default-directory))))
-        (gthumb (executable-find "gthumb"))
-        (nohup (executable-find "nohup")))
-    (unless gthumb
-      (user-error "gthumb not found in PATH"))
-    (let ((proc (if nohup
-                    (apply #'start-process "gthumb" nil nohup gthumb files)
-                  (apply #'start-process "gthumb" nil gthumb files))))
-      (set-process-query-on-exit-flag proc nil)
-      (message "Opened %d file(s) in gthumb" (length files)))))
-
 (with-eval-after-load 'dired
   (add-hook 'dired-mode-hook (lambda () (my-dired-clipboard-mode 1)))
   (define-key dired-mode-map (kbd "C") 'dired-copy-file)
@@ -2048,7 +2029,6 @@ gthumb survives Emacs exit."
   (define-key dired-mode-map (kbd "k") #'my/dired-kill-subdir)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file)
   (define-key dired-mode-map (kbd "z") #'my/dired-do-compress)
-  (define-key dired-mode-map (kbd "J") #'my/dired-open-gthumb)
   (define-key dired-mode-map (kbd "3") #'my/dired-sort-by-size)
   (define-key dired-mode-map (kbd "4") #'my/dired-sort-by-date)
   (define-key dired-mode-map (kbd "5") #'my/dired-sort-by-name)
@@ -2277,29 +2257,6 @@ With universal argument, use the traditional recentf-open-files interface."
 (add-hook 'ediff-prepare-buffer-hook
           (if (fboundp 'outline-show-all) #'outline-show-all #'show-all))
 (add-hook 'ediff-prepare-buffer-hook (lambda () (visual-line-mode -1)))
-
-(defun my/ediff-dired-directories ()
-  "Compare two directories using Ediff, seeded from visible Dired buffers.
-
-Dir A defaults to the current Dired buffer; Dir B to another visible
-Dired buffer.  Confirm or edit each at the prompt.
-
-Passes a prefix argument to prompt for an optional file filter regexp."
-  (interactive)
-  (let* ((dirs (delq nil
-                     (mapcar (lambda (w)
-                               (with-selected-window w
-                                 (when (eq major-mode 'dired-mode)
-                                   (dired-current-directory))))
-                             (window-list-1 nil 'visible t))))
-         (dir-a (read-directory-name "Dir A: " (car dirs) (car dirs) t))
-         (dir-b (read-directory-name "Dir B: " (cadr dirs) (cadr dirs) t))
-         (regexp (when current-prefix-arg
-                   (read-string "File filter regexp (empty for all): "))))
-    (ediff-directories
-     (file-name-as-directory dir-a)
-     (file-name-as-directory dir-b)
-     (and (stringp regexp) (not (string-blank-p regexp)) regexp))))
 
 ;;
 ;; -> vc-modeline-core
