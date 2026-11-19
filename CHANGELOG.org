@@ -12,6 +12,12 @@ This document contains the release notes for Emacs-core
 
 ** <2026-11-19>
 
+Rebind revert to C-z z
+
+- =keys-visual-core=: bound =C-z z= to =revert-buffer-quick= where available (Emacs 30+) and to =revert-buffer= otherwise.  =font-lock-update= remains on =C-z h=.  The earlier =C-x R= experiment was removed.
+
+** <2026-11-19>
+
 Keep the Org clock mode-line text at the mode-line height
 
 - =font-size-core=: =my/apply-main-font-sizes= now applies the mode-line height to =org-mode-line-clock= and =org-mode-line-clock-overrun= as well.  The clock face inherits =mode-line=, but a theme change or an older Org build that copied the face could leave it with a stale explicit height, making the running-clock text stay oversized.

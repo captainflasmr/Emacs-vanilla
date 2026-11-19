@@ -32,6 +32,10 @@ Note that this package works in combination with https://github.com/captainflasm
 
 ** <2026-11-19>
 
+Bound revert to =C-z z=, using =revert-buffer-quick= on Emacs 30+ and =revert-buffer= on older versions.  =font-lock-update= remains on =C-z h=; the short-lived =C-x R= binding is gone.
+
+** <2026-11-19>
+
 Kept Org's mode-line clock text at the same height as the rest of the mode line.  =my/apply-main-font-sizes= now resets =org-mode-line-clock= and =org-mode-line-clock-overrun= with the mode-line faces, so a stale realised face or an old copied Org face can no longer leave the running clock oversized after a theme change.
 
 ** <2026-11-19>
@@ -884,7 +888,12 @@ instead.  The line only shows while `window-divider-mode' is on (C-z d)."
 (define-key my-win-keymap (kbd "t")
             (lambda () (interactive)
               (org-table-map-tables 'org-table-align)))
-(define-key my-win-keymap (kbd "z") #'font-lock-update)
+;; `revert-buffer-quick' exists from Emacs 30; fall back to the full
+;; `revert-buffer' on older versions.
+(define-key my-win-keymap (kbd "z")
+  (if (fboundp 'revert-buffer-quick)
+      #'revert-buffer-quick
+    #'revert-buffer))
 #+end_src
 
 * keys-other-core
@@ -1001,7 +1010,7 @@ restores the baseline height."
 (define-key my-overrides-mode-map (kbd "C-c k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
 (global-set-key (kbd "C-x l") #'scroll-lock-mode)
 (global-set-key (kbd "C-x v e") 'vc-ediff)
-(global-set-key (kbd "C-x x g") #'revert-buffer)
+
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "C-x x c") #'clone-indirect-buffer)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)

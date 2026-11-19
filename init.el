@@ -287,7 +287,12 @@ instead.  The line only shows while `window-divider-mode' is on (C-z d)."
 (define-key my-win-keymap (kbd "t")
             (lambda () (interactive)
               (org-table-map-tables 'org-table-align)))
-(define-key my-win-keymap (kbd "z") #'font-lock-update)
+;; `revert-buffer-quick' exists from Emacs 30; fall back to the full
+;; `revert-buffer' on older versions.
+(define-key my-win-keymap (kbd "z")
+  (if (fboundp 'revert-buffer-quick)
+      #'revert-buffer-quick
+    #'revert-buffer))
 
 ;;
 ;; -> keys-other-core
@@ -391,7 +396,7 @@ restores the baseline height."
 (define-key my-overrides-mode-map (kbd "C-c k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
 (global-set-key (kbd "C-x l") #'scroll-lock-mode)
 (global-set-key (kbd "C-x v e") 'vc-ediff)
-(global-set-key (kbd "C-x x g") #'revert-buffer)
+
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "C-x x c") #'clone-indirect-buffer)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
