@@ -32,6 +32,19 @@ Note that this package works in combination with https://github.com/captainflasm
 
 ** <2026-11-26>
 
+Add one-chord save and idle auto-save
+
+- =keybinding-core=: bound =C-t= to =save-buffer= globally, giving a
+  single left-hand chord alongside =C-x s= and =C-x C-s=.  Mode-local
+  =C-t= bindings, such as the Dired thumbnail prefix, still win.
+- New =auto-save-core=: enables =auto-save-visited-mode= after five
+  seconds of idle time for Org buffers, while the stock =auto-save-mode=
+  remains the crash-recovery net.  Real auto-saves are inhibited over
+  TRAMP, and the block is guarded to Emacs 29.1+ where
+  =auto-save-visited-predicate= exists.
+
+** <2026-11-26>
+
 Removed redundant settings and fixed the Org Babel language list.
 
 - Dropped settings that were already defaults or no-ops: =global-font-lock-mode=, =desktop-save-mode=, =display-time-mode=, =window-divider-mode=, =visible-bell=, =make-backup-files=, =default-buffer-file-coding-system=, =set-buffer-modified-p=, =org-src-fontify-natively=, =org-agenda-include-diary=, =org-agenda-show-all-dates=, =ediff-highlight-all-diffs= and =flymake-show-diagnostics-at-end-of-line=.
@@ -1017,6 +1030,8 @@ restores the baseline height."
 (define-key my-overrides-mode-map (kbd "M-[") #'my/shell-menu)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (define-key my-overrides-mode-map (kbd "C-x s") #'save-buffer)
+;; Global, so mode-local C-t bindings (Dired thumbnails) still win.
+(global-set-key (kbd "C-t") #'save-buffer)
 (define-key my-overrides-mode-map (kbd "C-c j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
 (define-key my-overrides-mode-map (kbd "C-c k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
 (global-set-key (kbd "C-x l") #'scroll-lock-mode)
@@ -1270,6 +1285,27 @@ Adjusts Emacs's file backup settings for a better experience, specifying backup 
       delete-old-versions t  ; Automatically delete excess backups
       kept-new-versions 10   ; how many of the newest versions to keep
       kept-old-versions 5)   ; and how many of the old
+#+end_src
+
+* auto-save-core
+
+Adds real saves to the visited file when Emacs has been idle.  The stock
+=auto-save-mode= remains enabled as the crash-recovery net; this only saves
+Org buffers, and never over TRAMP.  The predicate first appeared in Emacs
+29.1, so older versions keep the mode off rather than save every buffer.
+
+#+begin_src elisp
+;;
+;; -> auto-save-core
+;;
+(when (boundp 'auto-save-visited-predicate)
+  (setq auto-save-visited-interval 5)
+  (setq remote-file-name-inhibit-auto-save-visited t)
+  (setq auto-save-visited-predicate
+        (lambda ()
+          (and (derived-mode-p 'org-mode)
+               (not (file-remote-p buffer-file-name)))))
+  (auto-save-visited-mode 1))
 #+end_src
 
 * custom-settings-core

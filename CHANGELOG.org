@@ -12,6 +12,19 @@ This document contains the release notes for Emacs-core
 
 ** <2026-11-26>
 
+Add one-chord save and idle auto-save
+
+- =keybinding-core=: bound =C-t= to =save-buffer= globally, giving a
+  single left-hand chord alongside =C-x s= and =C-x C-s=.  Mode-local
+  =C-t= bindings, such as the Dired thumbnail prefix, still win.
+- New =auto-save-core=: enables =auto-save-visited-mode= after five
+  seconds of idle time for Org buffers, while the stock =auto-save-mode=
+  remains the crash-recovery net.  Real auto-saves are inhibited over
+  TRAMP, and the block is guarded to Emacs 29.1+ where
+  =auto-save-visited-predicate= exists.
+
+** <2026-11-26>
+
 Remove redundant settings and fix Org Babel languages
 
 - =modes-core=: dropped =desktop-save-mode=, =display-time-mode= and =global-font-lock-mode=; =show-paren-mode= is kept for 27.2.

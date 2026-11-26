@@ -388,6 +388,8 @@ restores the baseline height."
 (define-key my-overrides-mode-map (kbd "M-[") #'my/shell-menu)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (define-key my-overrides-mode-map (kbd "C-x s") #'save-buffer)
+;; Global, so mode-local C-t bindings (Dired thumbnails) still win.
+(global-set-key (kbd "C-t") #'save-buffer)
 (define-key my-overrides-mode-map (kbd "C-c j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
 (define-key my-overrides-mode-map (kbd "C-c k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
 (global-set-key (kbd "C-x l") #'scroll-lock-mode)
@@ -593,6 +595,18 @@ This makes every tab bar tab the same uniform width."
       delete-old-versions t  ; Automatically delete excess backups
       kept-new-versions 10   ; how many of the newest versions to keep
       kept-old-versions 5)   ; and how many of the old
+
+;;
+;; -> auto-save-core
+;;
+(when (boundp 'auto-save-visited-predicate)
+  (setq auto-save-visited-interval 5)
+  (setq remote-file-name-inhibit-auto-save-visited t)
+  (setq auto-save-visited-predicate
+        (lambda ()
+          (and (derived-mode-p 'org-mode)
+               (not (file-remote-p buffer-file-name)))))
+  (auto-save-visited-mode 1))
 
 ;;
 ;; -> custom-settings-core
