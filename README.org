@@ -34,14 +34,8 @@ Note that this package works in combination with https://github.com/captainflasm
 
 Add one-chord save and idle auto-save
 
-- =keybinding-core=: bound =C-t= to =save-buffer= globally, giving a
-  single left-hand chord alongside =C-x s= and =C-x C-s=.  Mode-local
-  =C-t= bindings, such as the Dired thumbnail prefix, still win.
-- New =auto-save-core=: enables =auto-save-visited-mode= after five
-  seconds of idle time for Org buffers, while the stock =auto-save-mode=
-  remains the crash-recovery net.  Real auto-saves are inhibited over
-  TRAMP, and the block is guarded to Emacs 29.1+ where
-  =auto-save-visited-predicate= exists.
+- =keybinding-core=: bound =C-t= to =save-buffer= globally, giving a single left-hand chord alongside =C-x s= and =C-x C-s=.  Mode-local =C-t= bindings, such as the Dired thumbnail prefix, still win.
+- New =auto-save-core=: enables =auto-save-visited-mode= after five seconds of idle time for Org buffers, while the stock =auto-save-mode= remains the crash-recovery net.  Real auto-saves are inhibited over TRAMP, and the block is guarded to Emacs 29.1+ where =auto-save-visited-predicate= exists.
 
 ** <2026-11-26>
 
@@ -1299,7 +1293,7 @@ Org buffers, and never over TRAMP.  The predicate first appeared in Emacs
 ;; -> auto-save-core
 ;;
 (when (boundp 'auto-save-visited-predicate)
-  (setq auto-save-visited-interval 5)
+  (setq auto-save-visited-interval 2)
   (setq remote-file-name-inhibit-auto-save-visited t)
   (setq auto-save-visited-predicate
         (lambda ()

@@ -600,7 +600,7 @@ This makes every tab bar tab the same uniform width."
 ;; -> auto-save-core
 ;;
 (when (boundp 'auto-save-visited-predicate)
-  (setq auto-save-visited-interval 5)
+  (setq auto-save-visited-interval 2)
   (setq remote-file-name-inhibit-auto-save-visited t)
   (setq auto-save-visited-predicate
         (lambda ()
