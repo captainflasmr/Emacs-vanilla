@@ -1,6 +1,5 @@
 ;; -*- lexical-binding: t; -*-
 
-;; -*- lexical-binding: t; -*-
 ;;
 ;; -> requires-core
 ;;
@@ -8,8 +7,6 @@
 (require 'grep)
 (require 'bookmark)
 (require 'dired)
-(require 'ox-md)
-(require 'color)
 
 ;;
 ;; -> custom-settings-redirect
@@ -73,7 +70,6 @@
 (define-minor-mode my-overrides-mode
   "Activate the `my-overrides-mode-map'."
   :global t
-  :init-value nil
   :keymap my-overrides-mode-map)
 
 (my-overrides-mode 1)
@@ -117,7 +113,7 @@
 (global-set-key (kbd "C-x C-k") 'kill-region)
 
 ;;
-;; -> keys-visual-core
+;; -> hooks-core
 ;;
 (add-hook 'text-mode-hook 'visual-line-mode)
 
@@ -127,7 +123,8 @@
 ;; Main font sizes. Edit these numbers, or override them from the
 ;; top-level init with `my/set-font-size-overrides' (see below), then
 ;; re-evaluate this section (or restart Emacs). Values are in 1/10pt,
-;; so 105 means 10.5pt. They override the `custom-set-faces' above.
+;; so 105 means 10.5pt.  These variables own the font heights;
+;; `custom-set-faces' below only sets families and other attributes.
 (defvar my/main-font-height 90
   "Height for the `default' face.")
 
@@ -390,13 +387,13 @@ restores the baseline height."
 (global-set-key (kbd "C-c c") #'org-capture)
 (define-key my-overrides-mode-map (kbd "M-[") #'my/shell-menu)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
-(global-set-key (kbd "C-x k") #'kill-buffer)
 (define-key my-overrides-mode-map (kbd "C-x s") #'save-buffer)
 (define-key my-overrides-mode-map (kbd "C-c j") #'(lambda() (interactive)(tab-bar-history-back)(my/repeat-history)))
 (define-key my-overrides-mode-map (kbd "C-c k") #'(lambda() (interactive)(tab-bar-history-forward)(my/repeat-history)))
 (global-set-key (kbd "C-x l") #'scroll-lock-mode)
 (global-set-key (kbd "C-x v e") 'vc-ediff)
 
+;; `C-x x t' is stock from Emacs 28; keep it for 27.2.
 (global-set-key (kbd "C-x x t") #'toggle-truncate-lines)
 (global-set-key (kbd "C-x x c") #'clone-indirect-buffer)
 (global-set-key (kbd "C-;") #'my/comment-or-uncomment)
@@ -408,6 +405,7 @@ restores the baseline height."
       (dired-up-directory)
     (dired-jump)))
 (define-key my-overrides-mode-map (kbd "M-e") #'my/dired-jump-or-up)
+;; `M-g i' is stock from Emacs 29; keep it for 27.2 and 28.
 (global-set-key (kbd "M-g i") #'imenu)
 (global-set-key (kbd "C-O") #'imenu)
 (global-set-key (kbd "M-g o") #'org-goto)
@@ -500,7 +498,6 @@ otherwise run `vc-diff'."
 (with-eval-after-load 'project
   (define-key project-prefix-map (kbd "V") #'my/vc-dir-here))
 (with-eval-after-load 'diff-mode
-  (define-key diff-mode-map (kbd "M-j") #'nil)
   (define-key diff-mode-map (kbd "M-k") #'nil)
   ;; Wrap long lines in diffs (e.g. buffers produced by `vc-diff').
   (add-hook 'diff-mode-hook #'visual-line-mode))
@@ -510,13 +507,11 @@ otherwise run `vc-diff'."
 ;;
 (tooltip-mode -1)
 (column-number-mode 1)
-(desktop-save-mode -1)
-(display-time-mode -1)
 (global-auto-revert-mode t)
 (savehist-mode 1)
+;; `show-paren-mode' is on by default from Emacs 28; keep it for 27.2.
 (show-paren-mode t)
 (tab-bar-history-mode 1)
-(global-font-lock-mode t)
 (add-to-list 'auto-mode-alist '("\\.cshtml\\'" . html-mode))
 
 ;;
@@ -551,7 +546,6 @@ This makes every tab bar tab the same uniform width."
 ;;
 ;; -> bell-core
 ;;
-(setq visible-bell t)
 (setq ring-bell-function 'ignore)
 
 ;;
@@ -562,7 +556,6 @@ This makes every tab bar tab the same uniform width."
 (set-default-coding-systems 'utf-8)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
-(setq default-buffer-file-coding-system 'utf-8)
 
 ;;
 ;; -> setqs-core
@@ -589,13 +582,11 @@ This makes every tab bar tab the same uniform width."
 (setq confirm-kill-emacs 'y-or-n-p)
 (setq confirm-kill-processes nil)
 (setq confirm-nonexistent-file-or-buffer nil)
-(set-buffer-modified-p nil)
 (setq delete-by-moving-to-trash t)
 
 ;;
 ;; -> backups-core
 ;;
-(setq make-backup-files 1)
 (setq backup-directory-alist '(("." . "~/backup"))
       backup-by-copying t    ; Don't delink hardlinks
       version-control t      ; Use version numbers on backups
@@ -611,11 +602,11 @@ This makes every tab bar tab the same uniform width."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:family "Monospace" :foundry "ADBO" :slant normal :weight regular :height 105 :width normal))))
- '(fixed-pitch ((t (:family "Monospace" :foundry "ADBO" :slant normal :weight regular :height 1.0 :width normal))))
- '(variable-pitch ((t (:family "Sans" :height 115))))
- '(mode-line ((t (:height 140 :underline nil :overline nil :box nil))))
- '(mode-line-inactive ((t (:height 140 :underline nil :overline nil :box nil))))
+ '(default ((t (:family "Monospace" :foundry "ADBO" :slant normal :weight regular :width normal))))
+ '(fixed-pitch ((t (:family "Monospace" :foundry "ADBO" :slant normal :weight regular :width normal))))
+ '(variable-pitch ((t (:family "Sans"))))
+ '(mode-line ((t (:underline nil :overline nil :box nil))))
+ '(mode-line-inactive ((t (:underline nil :overline nil :box nil))))
  '(mode-line-buffer-id ((t (:foreground "#EEEEFF" :weight bold))))
  '(org-level-1 ((t (:inherit default :weight bold :height 1.0))))
  '(org-level-2 ((t (:inherit default :weight regular :height 1.0))))
@@ -629,7 +620,6 @@ This makes every tab bar tab the same uniform width."
  '(ediff-odd-diff-A ((t (:background "#b8fbb8" :foreground "#000000" :extend t))))
  '(font-lock-warning-face ((t (:foreground "#930000" :inverse-video nil))))
  '(org-link ((t (:underline nil))))
- '(indent-guide-face ((t (:background "#282828" :foreground "#666666"))))
  '(widget-button ((t (:inherit fixed-pitch :weight regular))))
  '(window-divider ((t (:foreground "#606060"))))
  '(window-divider-first-pixel ((t (:foreground "#606060"))))
@@ -1092,8 +1082,9 @@ On Windows the command is run through bash (from PortableGit) since
 ;; -> org-core
 ;;
 (setq org-table-convert-region-max-lines 9999)
+;; `org-src-tab-acts-natively' defaults to t on Org 9.4+/Emacs 28; keep
+;; it for 27.2.
 (setq org-src-tab-acts-natively t)
-(setq org-src-fontify-natively t)
 (setq org-log-done t)
 (setq org-export-with-sub-superscripts nil)
 (setq org-deadline-warning-days 365)
@@ -1103,7 +1094,11 @@ On Windows the command is run through bash (from PortableGit) since
 (setq org-reverse-note-order t)
 (setq org-src-preserve-indentation t)
 (setq org-cycle-separator-lines 1)
-(setq org-edit-src-content-indentation 0)
+;; Org 9.8 renamed this to `org-src-content-indentation'.
+(if (boundp 'org-src-content-indentation)
+    (setq org-src-content-indentation 0)
+  (with-no-warnings
+    (setq org-edit-src-content-indentation 0)))
 (setq org-tags-sort-function 'org-string-collate-greaterp)
 (setq org-startup-indented t)
 (setq org-use-speed-commands t)
@@ -1168,8 +1163,6 @@ beginning of headline, where `org-todo' skips its cursor fixup."
 (setq org-agenda-sticky t)
 
 (with-eval-after-load 'org-agenda
-  (setq org-agenda-include-diary nil)
-  (setq org-agenda-show-all-dates t)
   (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
   (setq org-agenda-custom-commands
         '(("j" "Month View" agenda ""
@@ -1247,35 +1240,35 @@ Checks xdg-terminal-exec, $TERMINAL, $XDG_CURRENT_DESKTOP hints, then
   (let ((shell-cmd (format "cd %s && exec \"$SHELL\""
                            (shell-quote-argument dir))))
     (or
-     (when-let ((xdg (executable-find "xdg-terminal-exec")))
+     (when-let* ((xdg (executable-find "xdg-terminal-exec")))
        (list xdg "--" "sh" "-lc" shell-cmd))
-     (when-let ((tname (getenv "TERMINAL"))
-                (path (executable-find tname)))
+     (when-let* ((tname (getenv "TERMINAL"))
+                 (path (executable-find tname)))
        (list path "-e" "sh" "-lc" shell-cmd))
      (when-let* ((desk (getenv "XDG_CURRENT_DESKTOP"))
                  (name (my/terminal-for-desktop desk))
                  (path (executable-find name)))
        (list path "-e" "sh" "-lc" shell-cmd))
      (seq-some (lambda (cand)
-                 (when-let ((path (executable-find (car cand))))
+                 (when-let* ((path (executable-find (car cand))))
                    (list path (cdr cand) "sh" "-lc" shell-cmd)))
                my/terminal-candidates))))
 
 (defun my/terminal-windows-args (dir)
   "Return start-process args to open DIR in a Windows terminal, or nil.
 Checks wt (Windows Terminal), powershell, then cmd.exe."
-  (or (when-let ((wt (executable-find "wt.exe")))
+  (or (when-let* ((wt (executable-find "wt.exe")))
         (list wt "-d" dir))
-      (when-let ((pwsh (executable-find "powershell.exe")))
+      (when-let* ((pwsh (executable-find "powershell.exe")))
         (list pwsh "-NoExit" "-Command"
               (format "Set-Location -LiteralPath %s"
                       (shell-quote-argument dir))))
-      (when-let ((cmd (executable-find "cmd.exe")))
+      (when-let* ((cmd (executable-find "cmd.exe")))
         (list cmd "/K" (format "cd /d %s" (shell-quote-argument dir))))))
 
 (defun my/terminal-macos-args (dir)
   "Return start-process args to open DIR in Terminal.app, or nil."
-  (when-let ((open (executable-find "open")))
+  (when-let* ((open (executable-find "open")))
     (list open "-a" "Terminal" dir)))
 
 (defun my/dired-open-terminal ()
@@ -1379,7 +1372,7 @@ For tar.gz, FILE-CMD is nil because single files should use gzip instead.")
   "Compress, encrypt or uncompress marked files in Dired with format selection."
   [:description
    (lambda () (format "Compress or encrypt %s"
-                      (if-let ((files (dired-get-marked-files nil nil nil nil t)))
+                      (if-let* ((files (dired-get-marked-files nil nil nil nil t)))
                           (mapconcat #'file-name-nondirectory files ", ")
                         "nothing")))
    ("z" "xz     – best ratio, slow"     my/dired-compress-xz)
@@ -2034,10 +2027,8 @@ is not re-inserted as it has been removed from the subdir alist."
 
 (with-eval-after-load 'dired
   (add-hook 'dired-mode-hook (lambda () (my-dired-clipboard-mode 1)))
-  (define-key dired-mode-map (kbd "C") #'dired-do-copy)
   (define-key dired-mode-map (kbd "C-c d") 'my/dired-duplicate-file)
   (define-key dired-mode-map (kbd "C-c u") 'my/dired-du)
-  (define-key dired-mode-map (kbd "C-c U") 'my/disk-space-query)
   (define-key dired-mode-map (kbd "b") 'my/dired-file-to-org-link)
   (define-key dired-mode-map (kbd "k") #'my/dired-kill-subdir)
   (define-key dired-mode-map (kbd "_") #'dired-create-empty-file)
@@ -2051,12 +2042,12 @@ is not re-inserted as it has been removed from the subdir alist."
 
 (defun my-dired-switch-to-destination ()
   "Switch to the destination window after copying in Dired."
-  (when-let ((dest-window
-              (get-window-with-predicate
-               (lambda (win)
-                 (with-current-buffer (window-buffer win)
-                   (and (derived-mode-p 'dired-mode)
-                        (not (eq win (selected-window)))))))))
+  (when-let* ((dest-window
+               (get-window-with-predicate
+                (lambda (win)
+                  (with-current-buffer (window-buffer win)
+                    (and (derived-mode-p 'dired-mode)
+                         (not (eq win (selected-window)))))))))
     (select-window dest-window)))
 
 (defun my/dired-sort-move-to-first-file (&rest _)
@@ -2136,12 +2127,12 @@ the first installed manager by name, with xdg-open as the last resort."
 (setq window-divider-default-bottom-width 2)
 (setq window-divider-default-right-width 2)
 (setq window-divider-default-places t)
-(window-divider-mode -1)
-(defvar my/internal-border-width 0 "Default internal border width for toggling.")
-(modify-all-frames-parameters `((internal-border-width . ,my/internal-border-width)))
 (set-fringe-mode '(20 . 20))
-(setq bookmark-set-fringe-mark nil)
-(setq bookmark-fringe-mark nil)
+;; Emacs 29 renamed `bookmark-set-fringe-mark' to `bookmark-fringe-mark'.
+(if (boundp 'bookmark-fringe-mark)
+    (setq bookmark-fringe-mark nil)
+  (with-no-warnings
+    (setq bookmark-set-fringe-mark nil)))
 (set-face-background 'fringe (face-background 'default))
 (when (boundp 'enable-theme-functions)
   (add-hook 'enable-theme-functions
@@ -2265,10 +2256,8 @@ With universal argument, use the traditional recentf-open-files interface."
 ;; -> diff-core
 ;;
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
-(setq ediff-highlight-all-diffs t)
 (setq ediff-split-window-function 'split-window-horizontally)
-(add-hook 'ediff-prepare-buffer-hook
-          (if (fboundp 'outline-show-all) #'outline-show-all #'show-all))
+(add-hook 'ediff-prepare-buffer-hook #'outline-show-all)
 (add-hook 'ediff-prepare-buffer-hook (lambda () (visual-line-mode -1)))
 
 ;;
@@ -2330,11 +2319,12 @@ mode-line update."
   "Return the project root or nil if unavailable."
   (if (fboundp 'project-root)
       ;; Use project-root if available (Emacs 29+)
-      (when-let ((project (project-current)))
+      (when-let* ((project (project-current)))
         (project-root project))
     ;; Compatibility for Emacs < 29
-    (when-let ((project (project-current)))
-      (car (project-roots project)))))
+    (with-no-warnings
+      (when-let* ((project (project-current)))
+        (car (project-roots project))))))
 
 (defun my/project-create-compilation-search-path ()
   "Populate the 'compilation-search-path' variable.
@@ -2730,10 +2720,12 @@ exact schema-index jumps even while a language server is connected."
 ;; -> tab-bar-core
 ;;
 (setq tab-bar-close-button-show nil)
-(setq tab-bar-new-button-show nil)
+;; Emacs 28+ controls the new-tab button through `tab-bar-format'.
+(if (boundp 'tab-bar-format)
+    (setq tab-bar-format (remove 'tab-bar-format-add-tab tab-bar-format))
+  (with-no-warnings
+    (setq tab-bar-new-button-show nil)))
 (setq tab-bar-new-tab-to 'rightmost)
-(setq tab-bar-close-button-show nil)
-(setq tab-bar-auto-width-max '((120) 20))
 
 ;;
 ;; -> windows-specific-core
@@ -2817,10 +2809,10 @@ holds the key and fails with
       (unless (getenv "SSH_ASKPASS_REQUIRE")
         (setenv "SSH_ASKPASS_REQUIRE" "prefer")))))
 
-;; org babel
-(require 'org)
+;; org babel: append C to the languages loaded by `shell-core'.
 (org-babel-do-load-languages
- 'org-babel-load-languages '((C . t)))
+ 'org-babel-load-languages
+ (append org-babel-load-languages '((C . t))))
 
 (setq vc-handled-backends
       (append (and (executable-find "svn") '(SVN)) '(Git)))
@@ -2972,8 +2964,6 @@ patterns are anchored at the end of the path."
 ;;
 ;; -> flymake-core
 ;;
-(setq flymake-show-diagnostics-at-end-of-line nil)
-
 (with-eval-after-load 'flymake
   (define-key flymake-mode-map (kbd "M-N") #'flymake-goto-next-error)
   (define-key flymake-mode-map (kbd "M-P") #'flymake-goto-prev-error)

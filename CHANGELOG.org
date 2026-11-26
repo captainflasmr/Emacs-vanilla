@@ -10,6 +10,27 @@ This document contains the release notes for Emacs-core
 
 * Versions
 
+** <2026-11-26>
+
+Remove redundant settings and fix Org Babel languages
+
+- =modes-core=: dropped =desktop-save-mode=, =display-time-mode= and =global-font-lock-mode=; =show-paren-mode= is kept for 27.2.
+- =bell-core=: dropped =visible-bell=, which is unused with =ring-bell-function= set to =ignore=.
+- =coding-core=: dropped the obsolete =default-buffer-file-coding-system=.
+- =confirm-core=: dropped the no-op =set-buffer-modified-p=.
+- =backups-core=: dropped =make-backup-files=, already =t= by default.
+- =org-core=: dropped =org-src-fontify-natively=, =org-agenda-include-diary= and =org-agenda-show-all-dates=, all already defaults.
+- =diff-core=: dropped =ediff-highlight-all-diffs=, already =t= by default, and replaced the obsolete =show-all= fallback with =outline-show-all=.
+- =flymake-core=: dropped =flymake-show-diagnostics-at-end-of-line=, already =nil= by default.
+- =keybinding-core= and =dired-core=: dropped the stock =C-x k=, Dired =C= and redundant Dired =C-c U= bindings, plus the no-op =diff-mode= =M-j= unbinding.  =C-x x t= and =M-g i= remain for Emacs 27.2/28.
+- =visuals-core=: dropped =window-divider-mode= and the no-op internal-border-width block; =bookmark-fringe-mark= now uses its Emacs 29+ name with a fallback for older versions.
+- =tab-bar-core=: hides the new-tab button through =tab-bar-format= on Emacs 28+, falling back to =tab-bar-new-button-show= on 27.2.
+- =custom-settings-core=: removed the redundant font heights and the unused =indent-guide-face=.
+- =org-core=: uses =org-src-content-indentation= on Org 9.8+ with a fallback for older Org.
+- =programming-core=: =org-babel-do-load-languages= now appends C instead of replacing the shell entry.
+- Removed the duplicate =lexical-binding= cookie and the unused =ox-md= and =color= requires.
+- Replaced the obsolete =when-let= and =if-let= macros with =when-let*= and =if-let*=.
+
 ** <2026-11-19>
 
 Rebind revert to C-z z
