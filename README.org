@@ -1745,7 +1745,7 @@ On Windows the command is run through bash (from PortableGit) since
 
 Configures rules and behaviours for display-buffer functions to control how new buffers are shown, whether in existing windows or new splits, enhancing window management in Emacs.
 
-The Help rule prefers reusing an existing window, including the other half of a split, and otherwise opens a full-width bottom window.  This keeps Help out of narrow side panes when the frame is already split.
+The Help rule prefers reusing an existing window, including the other half of a split, and otherwise opens a full-width bottom window.  This keeps Help out of narrow side panes when the frame is already split.  ElDoc's documentation buffer opens in a dedicated right-hand side window and keeps its width, while Flymake diagnostics stay in a reusable bottom window.
 
 #+begin_src elisp
 ;;
@@ -1757,7 +1757,15 @@ The Help rule prefers reusing an existing window, including the other half of a 
                (inhibit-same-window . t)
                (window-height . 0.4)))
 (add-to-list 'display-buffer-alist
-             '("\\*\\(eldoc.*\\*\\|Flymake.*\\)"
+             '("\\` ?\\*eldoc.*\\*\\'"
+               (display-buffer-in-side-window)
+               (side . right)
+               (slot . 0)
+               (window-width . 0.35)
+               (preserve-size . (t . nil))
+               (inhibit-same-window . t)))
+(add-to-list 'display-buffer-alist
+             '("\\*Flymake.*\\*"
                (display-buffer-reuse-window display-buffer-at-bottom)
                (inhibit-same-window . t)
                (window-height . 0.4)))

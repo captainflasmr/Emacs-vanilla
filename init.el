@@ -1044,7 +1044,15 @@ On Windows the command is run through bash (from PortableGit) since
                (inhibit-same-window . t)
                (window-height . 0.4)))
 (add-to-list 'display-buffer-alist
-             '("\\*\\(eldoc.*\\*\\|Flymake.*\\)"
+             '("\\` ?\\*eldoc.*\\*\\'"
+               (display-buffer-in-side-window)
+               (side . right)
+               (slot . 0)
+               (window-width . 0.35)
+               (preserve-size . (t . nil))
+               (inhibit-same-window . t)))
+(add-to-list 'display-buffer-alist
+             '("\\*Flymake.*\\*"
                (display-buffer-reuse-window display-buffer-at-bottom)
                (inhibit-same-window . t)
                (window-height . 0.4)))
