@@ -2979,8 +2979,6 @@ patterns are anchored at the end of the path."
 ;; -> flymake-core
 ;;
 (with-eval-after-load 'flymake
-  (define-key flymake-mode-map (kbd "M-N") #'flymake-goto-next-error)
-  (define-key flymake-mode-map (kbd "M-P") #'flymake-goto-prev-error)
   (define-key flymake-mode-map (kbd "<f8>") #'flymake-goto-next-error)
   (define-key flymake-mode-map (kbd "<S-f8>") #'flymake-goto-prev-error)
 
